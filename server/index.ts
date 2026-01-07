@@ -2,25 +2,41 @@ import express, { Application } from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
-import route from "./routes/userRoute.js";
 import cors from "cors";
+import userRoute from "./routes/userRoute.js";
+import loginRoutes from "./routes/loginRoutes.js";
 
-const app: Application = express();
-app.use(bodyParser.json());
-app.use(cors());
 dotenv.config();
 
-const PORT: number = parseInt(process.env.PORT || "7000", 10);
-const MONGOURL: string = process.env.MONGO_URL as string;
+const app: Application = express();
 
+// Middleware
+app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
+
+const PORT: number = parseInt(process.env.PORT || "7000", 10);
+const MONGOURL: string = process.env.MONGO_URL || process.env.MONGODB_URI || "mongodb://localhost:27017/esm_database";
+
+// Database connection
 mongoose
   .connect(MONGOURL)
   .then(() => {
-    console.log("DB connected successfully.");
+    console.log("✅ DB connected successfully.");
     app.listen(PORT, () => {
-      console.log(`Server is running on port :${PORT}`);
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
     });
   })
-  .catch((error: Error) => console.log(error));
+  .catch((error: Error) => {
+    console.error("❌ MongoDB connection error:", error);
+  });
 
-app.use("/api", route);
+// Health check
+app.get("/", (req, res) => {
+  res.json({ message: "Server is running!" });
+});
+
+// Routes
+app.use("/api", loginRoutes);  // Login route: POST /api/login
+app.use("/api", userRoute);     // User routes: GET/POST/PUT/DELETE /api/users

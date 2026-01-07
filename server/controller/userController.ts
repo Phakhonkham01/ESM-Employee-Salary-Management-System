@@ -18,9 +18,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       status,
     } = req.body;
 
-    // Check if user_id already exists
-
-
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {

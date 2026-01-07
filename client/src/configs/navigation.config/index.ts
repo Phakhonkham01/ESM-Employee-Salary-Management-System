@@ -1,0 +1,116 @@
+import {
+    NAV_ITEM_TYPE_TITLE,
+    NAV_ITEM_TYPE_ITEM,
+    NAV_ITEM_TYPE_COLLAPSE
+} from '@/constants/navigation.constant'
+
+import type { NavigationTree } from '@/@types/navigation'
+
+const navigationConfig: NavigationTree[] = [
+    {
+        key: 'home',
+        path: '/home',
+        title: 'Home',
+        translateKey: '',
+        icon: 'home',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    /** Example purpose only, please remove */
+    {
+        key: 'singleMenuItem',
+        path: '/single-menu-view',
+        title: "AAAAA",
+        translateKey: '',
+        icon: 'singleMenu',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    {
+        key: 'collapseMenu',
+        path: '',
+        title: 'BBBBB',
+        translateKey: '',
+        icon: 'collapseMenu',
+        type: NAV_ITEM_TYPE_COLLAPSE,
+        authority: [],
+        subMenu: [
+            {
+                key: 'collapseMenu.item1',
+                path: '/collapse-menu-item-view-1',
+                title: 'Collapse menu item 1',
+                translateKey: 'nav.collapseMenu.item1',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'collapseMenu.item2',
+                path: '/collapse-menu-item-view-2',
+                title: 'Collapse menu item 2',
+                translateKey: 'nav.collapseMenu.item2',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+        ],
+    },
+    {
+        key: 'groupMenu',
+        path: '',
+        title: 'QQQQQQQQ',
+        translateKey: '',
+        icon: 'groupMenu',
+        type: NAV_ITEM_TYPE_TITLE,
+        authority: [],
+        subMenu: [
+            {
+                key: 'groupMenu.single',
+                path: '/group-single-menu-item-view',
+                title: 'DDDDDDDD',
+                translateKey: '',
+                icon: 'groupSingleMenu',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'groupMenu.collapse',
+                path: '',
+                title: 'EEEEEEEE',
+                translateKey: '',
+                icon: 'groupCollapseMenu',
+                type: NAV_ITEM_TYPE_COLLAPSE,
+                authority: [],
+                subMenu: [
+                    {
+                        key: 'groupMenu.collapse.item1',
+                        path: '/group-collapse-menu-item-view-1',
+                        title: 'Menu item 1',
+                        translateKey: 'nav.groupMenu.collapse.item1',
+                        icon: '',
+                        type: NAV_ITEM_TYPE_ITEM,
+                        authority: [],
+                        subMenu: [],
+                    },
+                    {
+                        key: 'groupMenu.collapse.item2',
+                        path: '/group-collapse-menu-item-view-2',
+                        title: 'Menu item 2',
+                        translateKey: 'nav.groupMenu.collapse.item2',
+                        icon: '',
+                        type: NAV_ITEM_TYPE_ITEM,
+                        authority: [],
+                        subMenu: [],
+                    },
+                ],
+            },
+        ],
+    },
+]
+
+export default navigationConfig
