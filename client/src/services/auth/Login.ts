@@ -1,6 +1,8 @@
+
+
 import axios from "axios";
 
-const API_URL = "http://localhost:8000/api";
+const API_URL = "http://localhost:7000/api";
 
 export interface LoginCredentials {
   email: string;
@@ -9,15 +11,22 @@ export interface LoginCredentials {
 
 export interface UserData {
   _id: string;
-  name: string;
-  lastname: string;
   email: string;
   role: "Supervisor" | "Admin" | "Employee";
-  position: "IT" | "CONTENT" | "SSD";
-  department: "CX" | "LCC" | "DDS";
-  base_salary: number;
-  start_date: string;
+  first_name_en: string;
+  last_name_en: string;
+  nickname_en: string;
+  first_name_la: string;
+  last_name_la: string;
+  nickname_la: string;
+  date_of_birth: string;
+  start_work: string;
+  vacation_days: number;
+  gender: "Male" | "Female" | "Other";
+  position_id: string;
+  department_id: string;
   status: "Active" | "Inactive" | "On Leave";
+  created_at: string;
 }
 
 export interface LoginResponse {
@@ -25,7 +34,6 @@ export interface LoginResponse {
   user: UserData;
 }
 
-// Login user
 export const loginUser = async (
   credentials: LoginCredentials
 ): Promise<LoginResponse> => {
@@ -34,7 +42,7 @@ export const loginUser = async (
     return response.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || "Login failed. Please try again."
+      error.response?.data?.message || "Invalid email or password"
     );
   }
 };

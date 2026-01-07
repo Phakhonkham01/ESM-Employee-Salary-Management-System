@@ -20,10 +20,10 @@ const navigationConfig: NavigationTree[] = [
     /** Example purpose only, please remove */
     {
         key: 'singleMenuItem',
-        path: '/single-menu-view',
-        title: "AAAAA",
+        path: '/user-management',
+        title: "User Management",
         translateKey: '',
-        icon: 'singleMenu',
+        icon: 'user',
         type: NAV_ITEM_TYPE_ITEM,
         authority: [],
         subMenu: [],

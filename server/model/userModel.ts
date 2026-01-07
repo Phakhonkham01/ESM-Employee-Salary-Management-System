@@ -1,73 +1,101 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface IUser extends Document {
-  
-  name: string;
-  lastname: string;
   email: string;
   password: string;
-  role: "Admin" | "Supervisor" | "Employee";
-  position: "IT" | "CONTENT" | "SSD";
-  department: "CX" | "LCC" | "DDS";
-  base_salary: number;
-  start_date: Date;
+  role: "Supervisor" | "Admin" | "Employee";
+  first_name_en: string;
+  last_name_en: string;
+  nickname_en: string;
+  first_name_la: string;
+  last_name_la: string;
+  nickname_la: string;
+  date_of_birth: Date;
+  start_work: Date;
+  vacation_days: number;
+  gender: "Male" | "Female" | "Other";
+  position_id: string;
+  department_id: string;
   status: "Active" | "Inactive" | "On Leave";
-  createdAt?: Date;
-  updatedAt?: Date;
+  created_at: Date;
 }
 
-const userSchema: Schema = new Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-    },
-    lastname: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    role: {
-      type: String,
-      enum: ["Admin", "Supervisor", "Employee"],
-      required: true,
-    },
-    position: {
-      type: String,
-      enum: ["IT", "CONTENT", "SSD"],
-      required: true,
-    },
-    department: {
-      type: String,
-      enum: ["CX", "LCC", "DDS"],
-      required: true,
-    },
-    base_salary: {
-      type: Number,
-      required: true,
-    },
-    start_date: {
-      type: Date,
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["Active", "Inactive", "On Leave"],
-      default: "Active",
-    },
+const userSchema: Schema = new Schema({
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
   },
-  {
-    timestamps: true,
-  }
-);
+  password: {
+    type: String,
+    required: true,
+  },
+  role: {
+    type: String,
+    enum: ["Supervisor", "Admin", "Employee"],
+    default: "Employee",
+  },
+  first_name_en: {
+    type: String,
+    required: true,
+  },
+  last_name_en: {
+    type: String,
+    required: true,
+  },
+  nickname_en: {
+    type: String,
+    required: true,
+  },
+  first_name_la: {
+    type: String,
+    required: true,
+  },
+  last_name_la: {
+    type: String,
+    required: true,
+  },
+  nickname_la: {
+    type: String,
+    required: true,
+  },
+  date_of_birth: {
+    type: Date,
+    required: true,
+  },
+  start_work: {
+    type: Date,
+    required: true,
+  },
+  vacation_days: {
+    type: Number,
+    default: 0,
+  },
+  gender: {
+    type: String,
+    enum: ["Male", "Female", "Other"],
+    required: true,
+  },
+  position_id: {
+    type: String,
+    required: true,
+  },
+  department_id: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["Active", "Inactive", "On Leave"],
+    default: "Active",
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-export default mongoose.model<IUser>("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
+export default User;

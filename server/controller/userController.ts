@@ -2,50 +2,58 @@ import { Request, Response } from "express";
 import User, { IUser } from "../model/userModel.js";
 import bcrypt from "bcryptjs";
 
-// Create User (Supervisor/Admin/Employee)
+// Create User
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const {
-      name,
-      lastname,
       email,
       password,
       role,
-      position,
-      department,
-      base_salary,
-      start_date,
+      first_name_en,
+      last_name_en,
+      nickname_en,
+      first_name_la,
+      last_name_la,
+      nickname_la,
+      date_of_birth,
+      start_work,
+      vacation_days,
+      gender,
+      position_id,
+      department_id,
       status,
     } = req.body;
 
-    // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(400).json({ message: "Email already exists" });
       return;
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
     const newUser: IUser = new User({
-      
-      name,
-      lastname,
       email,
       password: hashedPassword,
       role,
-      position,
-      department,
-      base_salary,
-      start_date,
+      first_name_en,
+      last_name_en,
+      nickname_en,
+      first_name_la,
+      last_name_la,
+      nickname_la,
+      date_of_birth,
+      start_work,
+      vacation_days: vacation_days || 0,
+      gender,
+      position_id,
+      department_id,
       status: status || "Active",
+      created_at: new Date(),
     });
 
     await newUser.save();
     
-    // Remove password from response
     const userResponse: any = newUser.toObject();
     delete userResponse.password;
 
@@ -91,7 +99,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     const { id } = req.params;
     const updateData = req.body;
 
-    // If password is being updated, hash it
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
@@ -138,21 +145,18 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       res.status(401).json({ message: "Invalid email or password" });
       return;
     }
 
-    // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       res.status(401).json({ message: "Invalid email or password" });
       return;
     }
 
-    // Remove password from response
     const userResponse: any = user.toObject();
     delete userResponse.password;
 
