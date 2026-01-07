@@ -15,7 +15,7 @@ export const protectedRoutes: Routes = [
     {
         key: 'singleMenuItem',
         path: '/user-management',
-        component: lazy(() => import('@/views/user-management/Create_User')),
+        component: lazy(() => import('@/views/user-management/MainComponent')),
         authority: [],
     },
     {
