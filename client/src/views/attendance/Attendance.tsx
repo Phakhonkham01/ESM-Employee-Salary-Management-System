@@ -1,374 +1,332 @@
-import React, { useState, useEffect } from 'react';
-import { Users, DollarSign, Clock, Calendar, Mail, History, Plus, Edit2, Trash2, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { getAllUsers, deleteUser } from '../../services/Create_user/api'
+import type { UserData } from '../../services/Create_user/api'
+import { HiPencil, HiTrash, HiRefresh } from 'react-icons/hi'
 
-// Types
-interface Employee {
-    id: string;
-    name: string;
-    email: string;
-    baseSalary: number;
-    otHours: number;
-    absentDays: number;
-    leaveDays: number;
-    otRate: number;
+interface UserListProps {
+    onEdit: (user: UserData) => void
 }
 
-interface SalaryHistory {
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    month: string;
-    baseSalary: number;
-    otHours: number;
-    otPay: number;
-    absentDays: number;
-    absentDeduction: number;
-    totalSalary: number;
-    sentDate: string;
-}
+const SalaryCalculation: React.FC<UserListProps> = ({ onEdit }) => {
+    const [users, setUsers] = useState<UserData[]>([])
+    const [loading, setLoading] = useState(false)
 
-const Attendance: React.FC = () => {
-    const [employees, setEmployees] = useState<Employee[]>([
-        {
-            id: '1',
-            name: 'ນາງ ສົມສີ ວົງສະຫວັນ',
-            email: 'somsee@example.com',
-            baseSalary: 3000000,
-            otHours: 10,
-            absentDays: 0,
-            leaveDays: 2,
-            otRate: 20000
-        },
-        {
-            id: '2',
-            name: 'ທ້າວ ບຸນມີ ພັນທະວົງ',
-            email: 'bounmee@example.com',
-            baseSalary: 3500000,
-            otHours: 15,
-            absentDays: 1,
-            leaveDays: 1,
-            otRate: 25000
-        },
-        {
-            id: '3',
-            name: 'ນາງ ແສງດາວ ໄຊຍະວົງ',
-            email: 'saengdao@example.com',
-            baseSalary: 2800000,
-            otHours: 5,
-            absentDays: 0,
-            leaveDays: 3,
-            otRate: 18000
+    useEffect(() => {
+        fetchUsers()
+    }, [])
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true)
+            const response = await getAllUsers()
+            setUsers(response.users)
+        } catch (error: any) {
+            console.error('Error fetching users:', error)
+        } finally {
+            setLoading(false)
         }
-    ]);
+    }
 
-    const [history, setHistory] = useState<SalaryHistory[]>([]);
-    const [activeTab, setActiveTab] = useState<'employees' | 'salary' | 'history'>('salary');
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-
-    const [formData, setFormData] = useState<Partial<Employee>>({
-        name: '',
-        email: '',
-        baseSalary: 0,
-        otHours: 0,
-        absentDays: 0,
-        leaveDays: 0,
-        otRate: 20000
-    });
-
-    // Calculate salary
-    const calculateSalary = (emp: Employee) => {
-        const otPay = emp.otHours * emp.otRate;
-        const dailySalary = emp.baseSalary / 26; // Assuming 26 working days
-        const absentDeduction = emp.absentDays * dailySalary;
-        const totalSalary = emp.baseSalary + otPay - absentDeduction;
-
-        return {
-            otPay,
-            absentDeduction,
-            totalSalary
-        };
-    };
-
-    // CRUD Operations
-    const handleAdd = () => {
-        if (formData.name && formData.email && formData.baseSalary !== undefined) {
-            const newEmployee: Employee = {
-                id: Date.now().toString(),
-                name: formData.name,
-                email: formData.email,
-                baseSalary: Number(formData.baseSalary), // ensure number (was number | undefined)
-                otHours: Number(formData.otHours || 0),
-                absentDays: Number(formData.absentDays || 0),
-                leaveDays: Number(formData.leaveDays || 0),
-                otRate: Number(formData.otRate || 20000)
-            };
-            setEmployees([...employees, newEmployee]);
-            setFormData({ name: '', email: '', baseSalary: 0, otHours: 0, absentDays: 0, leaveDays: 0, otRate: 20000 });
-            setShowAddForm(false);
+    const handleDelete = async (id: string) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                await deleteUser(id)
+                fetchUsers()
+            } catch (error: any) {
+                console.error('Error deleting user:', error)
+            }
         }
-    };
-
-    const handleEdit = (id: string) => {
-        const emp = employees.find(e => e.id === id);
-        if (emp) {
-            setFormData(emp);
-            setEditingId(id);
-            setShowAddForm(true);
-        }
-    };
-
-    const handleUpdate = () => {
-        if (editingId && formData.name && formData.email && formData.baseSalary) {
-            setEmployees(employees.map(emp =>
-                emp.id === editingId ? { ...emp, ...formData } as Employee : emp
-            ));
-            setFormData({ name: '', email: '', baseSalary: 0, otHours: 0, absentDays: 0, leaveDays: 0, otRate: 20000 });
-            setEditingId(null);
-            setShowAddForm(false);
-        }
-    };
-
-    const handleDelete = (id: string) => {
-        if (confirm('ທ່ານຕ້ອງການລົບພະນັກງານນີ້ແທ້ບໍ? / Are you sure you want to delete this employee?')) {
-            setEmployees(employees.filter(emp => emp.id !== id));
-        }
-    };
-
-    // Send email to individual employee
-    const sendToEmployee = (emp: Employee) => {
-        const { otPay, absentDeduction, totalSalary } = calculateSalary(emp);
-        const emailBody = `
-ສະບາຍດີ ${emp.name},
-
-ຂໍ້ມູນເງິນເດືອນ ແລະ ວັນພັກຂອງທ່ານປະຈຳເດືອນ ${selectedMonth}:
-
-📊 ລາຍລະອຽດເງິນເດືອນ:
-- ເງິນເດືອນພື້ນຖານ: ${emp.baseSalary.toLocaleString()} ກີບ
-- ຊົ່ວໂມງ OT: ${emp.otHours} ຊົ່ວໂມງ (${otPay.toLocaleString()} ກີບ)
-- ວັນຂາດງານ: ${emp.absentDays} ມື້ (-${absentDeduction.toLocaleString()} ກີບ)
-- ວັນລາພັກ: ${emp.leaveDays} ມື້
-
-💰 ເງິນເດືອນທັງໝົດ: ${totalSalary.toLocaleString()} ກີບ
-
-ຂອບໃຈ,
-ພະແນກບຸກຄະລາກອນ
-    `.trim();
-
-        const mailtoLink = `mailto:${emp.email}?subject=Salary Information - ${selectedMonth}&body=${encodeURIComponent(emailBody)}`;
-        window.location.href = mailtoLink;
-
-        // Add to history
-        const historyEntry: SalaryHistory = {
-            id: Date.now().toString(),
-            employeeId: emp.id,
-            employeeName: emp.name,
-            month: selectedMonth,
-            baseSalary: emp.baseSalary,
-            otHours: emp.otHours,
-            otPay,
-            absentDays: emp.absentDays,
-            absentDeduction,
-            totalSalary,
-            sentDate: new Date().toISOString()
-        };
-        setHistory([historyEntry, ...history]);
-    };
-
-    // Send email to all employees
-    const sendToAll = () => {
-        if (employees.length === 0) {
-            alert('ບໍ່ມີຂໍ້ມູນພະນັກງານ / No employees found');
-            return;
-        }
-
-        const emailList = employees.map(emp => emp.email).join(',');
-        let emailBody = `ສະບາຍດີທຸກທ່ານ,\n\nຂໍ້ມູນເງິນເດືອນ ແລະ ວັນພັກປະຈຳເດືອນ ${selectedMonth}:\n\n`;
-
-        employees.forEach(emp => {
-            const { otPay, absentDeduction, totalSalary } = calculateSalary(emp);
-            emailBody += `
-📌 ${emp.name}:
-- ເງິນເດືອນພື້ນຖານ: ${emp.baseSalary.toLocaleString()} ກີບ
-- OT: ${emp.otHours}ຊມ (${otPay.toLocaleString()} ກີບ)
-- ຂາດງານ: ${emp.absentDays}ມື້ (-${absentDeduction.toLocaleString()} ກີບ)
-- ລາພັກ: ${emp.leaveDays}ມື້
-- ລວມທັງໝົດ: ${totalSalary.toLocaleString()} ກີບ
-\n`;
-        });
-
-        emailBody += '\nຂອບໃຈ,\nພະແນກບຸກຄະລາກອນ';
-
-        const mailtoLink = `mailto:${emailList}?subject=Monthly Salary Report - ${selectedMonth}&body=${encodeURIComponent(emailBody)}`;
-        window.location.href = mailtoLink;
-
-        // Add all to history
-        const newHistoryEntries: SalaryHistory[] = employees.map(emp => {
-            const { otPay, absentDeduction, totalSalary } = calculateSalary(emp);
-            return {
-                id: `${Date.now()}-${emp.id}`,
-                employeeId: emp.id,
-                employeeName: emp.name,
-                month: selectedMonth,
-                baseSalary: emp.baseSalary,
-                otHours: emp.otHours,
-                otPay,
-                absentDays: emp.absentDays,
-                absentDeduction,
-                totalSalary,
-                sentDate: new Date().toISOString()
-            };
-        });
-        setHistory([...newHistoryEntries, ...history]);
-    };
+    }
 
     return (
-        <div className="">
-            <div className="max-w-7xl mx-auto">
-                {/* Navigation Tabs */}
-                <div className="bg-white rounded-lg shadow-lg mb-6">
-                    <div className="flex border-b">
-                        <button
-                            onClick={() => setActiveTab('salary')}
-                            className={`flex-1 py-4 px-6 flex items-center justify-center gap-2 font-medium transition-colors ${activeTab === 'salary'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-600 hover:text-indigo-600'
-                                }`}
-                        >
-                            <DollarSign size={20} />
-                            ຄຳນວນເງິນເດືອນ / Salary
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('history')}
-                            className={`flex-1 py-4 px-6 flex items-center justify-center gap-2 font-medium transition-colors ${activeTab === 'history'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-600 hover:text-indigo-600'
-                                }`}
-                        >
-                            <History size={20} />
-                            ປະຫວັດການສົ່ງ / History
-                        </button>
-                    </div>
-                </div>
-                {/* Salary Tab */}
-                {activeTab === 'salary' && (
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800">ຄຳນວນເງິນເດືອນ</h2>
-                            <div className="flex gap-3">
-                                <input
-                                    type="month"
-                                    value={selectedMonth}
-                                    onChange={(e) => setSelectedMonth(e.target.value)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
-                                <button
-                                    onClick={sendToAll}
-                                    className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700 transition-colors"
-                                >
-                                    <Mail size={20} />
-                                    ສົ່ງໃຫ້ທຸກຄົນ / Send to All
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-4">
-                            {employees.map((emp) => {
-                                const { otPay, absentDeduction, totalSalary } = calculateSalary(emp);
-                                return (
-                                    <div key={emp.id} className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h3 className="text-xl font-bold text-gray-800">{emp.name}</h3>
-                                                <p className="text-gray-600">{emp.email}</p>
-                                            </div>
-                                            <button
-                                                onClick={() => sendToEmployee(emp)}
-                                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors"
-                                            >
-                                                <Send size={18} />
-                                                ສົ່ງ / Send
-                                            </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div className="bg-white p-4 rounded-lg">
-                                                <p className="text-sm text-gray-600">ເງິນເດືອນພື້ນຖານ</p>
-                                                <p className="text-lg font-bold text-gray-800">{emp.baseSalary.toLocaleString()} ກີບ</p>
-                                            </div>
-                                            <div className="bg-white p-4 rounded-lg">
-                                                <p className="text-sm text-gray-600">OT ({emp.otHours} ຊມ)</p>
-                                                <p className="text-lg font-bold text-green-600">+{otPay.toLocaleString()} ກີບ</p>
-                                            </div>
-                                            <div className="bg-white p-4 rounded-lg">
-                                                <p className="text-sm text-gray-600">ຂາດງານ ({emp.absentDays} ມື້)</p>
-                                                <p className="text-lg font-bold text-red-600">-{absentDeduction.toLocaleString()} ກີບ</p>
-                                            </div>
-                                            <div className="bg-white p-4 rounded-lg">
-                                                <p className="text-sm text-gray-600">ລາພັກ</p>
-                                                <p className="text-lg font-bold text-blue-600">{emp.leaveDays} ມື້</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 bg-indigo-600 text-white p-4 rounded-lg">
-                                            <p className="text-sm">ເງິນເດືອນທັງໝົດ / Total Salary</p>
-                                            <p className="text-3xl font-bold">{totalSalary.toLocaleString()} ກີບ</p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* History Tab */}
-                {activeTab === 'history' && (
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <h2 className="text-2xl font-bold text-gray-800 mb-6">ປະຫວັດການສົ່ງເງິນເດືອນ</h2>
-
-                        {history.length === 0 ? (
-                            <div className="text-center py-12 text-gray-500">
-                                <History size={48} className="mx-auto mb-4 opacity-50" />
-                                <p>ຍັງບໍ່ມີປະຫວັດການສົ່ງເງິນເດືອນ</p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-100">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left">ຊື່ / Name</th>
-                                            <th className="px-4 py-3 text-center">ເດືອນ / Month</th>
-                                            <th className="px-4 py-3 text-right">ເງິນເດືອນພື້ນຖານ</th>
-                                            <th className="px-4 py-3 text-center">OT</th>
-                                            <th className="px-4 py-3 text-right">ລວມ / Total</th>
-                                            <th className="px-4 py-3 text-center">ວັນທີສົ່ງ / Sent Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {history.map((record) => (
-                                            <tr key={record.id} className="border-b hover:bg-gray-50">
-                                                <td className="px-4 py-3">{record.employeeName}</td>
-                                                <td className="px-4 py-3 text-center">{record.month}</td>
-                                                <td className="px-4 py-3 text-right">{record.baseSalary.toLocaleString()} ກີບ</td>
-                                                <td className="px-4 py-3 text-center">{record.otHours}ຊມ</td>
-                                                <td className="px-4 py-3 text-right font-bold text-indigo-600">
-                                                    {record.totalSalary.toLocaleString()} ກີບ
-                                                </td>
-                                                <td className="px-4 py-3 text-center text-sm text-gray-600">
-                                                    {new Date(record.sentDate).toLocaleString('lo-LA')}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                )}
+        <div
+            style={{
+                backgroundColor: 'white',
+                borderRadius: '12px',
+                padding: '30px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            }}
+        >
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                }}
+            >
+                <h2
+                    style={{
+                        margin: 0,
+                        fontSize: '20px',
+                        fontWeight: '600',
+                        color: '#1f2937',
+                    }}
+                >
+                    📋 Users List ({users.length})
+                </h2>
+               
             </div>
-        </div>
-    );
-};
 
-export default Attendance;
+            {loading ? (
+                <div
+                    style={{
+                        textAlign: 'center',
+                        padding: '40px',
+                        color: '#6b7280',
+                        fontSize: '14px',
+                    }}
+                >
+                    Loading users...
+                </div>
+            ) : (
+                <>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table
+                            style={{
+                                width: '100%',
+                                borderCollapse: 'collapse',
+                            }}
+                        >
+                            <thead>
+                                <tr
+                                    style={{
+                                        backgroundColor: '#f3f4f6',
+                                        borderBottom: '2px solid #e5e7eb',
+                                    }}
+                                >
+                                    <th style={tableHeaderStyle}>Name (EN)</th>
+                                    <th style={tableHeaderStyle}>Name (LA)</th>
+                                    <th style={tableHeaderStyle}>Email</th>
+                                    <th style={tableHeaderStyle}>Role</th>
+                                    <th style={tableHeaderStyle}>Gender</th>
+                                    <th style={tableHeaderStyle}>Position</th>
+                                    <th style={tableHeaderStyle}>Department</th>
+                                    <th style={tableHeaderStyle}>Status</th>
+                                    <th style={tableHeaderStyle}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map((user) => (
+                                    <tr
+                                        key={user._id}
+                                        style={{
+                                            borderBottom: '1px solid #e5e7eb',
+                                            transition:
+                                                'background-color 0.2s ease',
+                                        }}
+                                        onMouseEnter={(e) =>
+                                            (e.currentTarget.style.backgroundColor =
+                                                '#f9fafb')
+                                        }
+                                        onMouseLeave={(e) =>
+                                            (e.currentTarget.style.backgroundColor =
+                                                'white')
+                                        }
+                                    >
+                                        <td style={tableCellStyle}>
+                                            <div style={{ fontWeight: '500' }}>
+                                                {user.first_name_en}{' '}
+                                                {user.last_name_en}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: '12px',
+                                                    color: '#6b7280',
+                                                    marginTop: '2px',
+                                                }}
+                                            >
+                                                ({user.nickname_en})
+                                            </div>
+                                        </td>
+                                        <td style={tableCellStyle}>
+                                            <div style={{ fontWeight: '500' }}>
+                                                {user.first_name_la}{' '}
+                                                {user.last_name_la}
+                                            </div>
+                                            <div
+                                                style={{
+                                                    fontSize: '12px',
+                                                    color: '#6b7280',
+                                                    marginTop: '2px',
+                                                }}
+                                            >
+                                                ({user.nickname_la})
+                                            </div>
+                                        </td>
+                                        <td style={tableCellStyle}>
+                                            {user.email}
+                                        </td>
+                                        <td style={tableCellStyle}>
+                                            <span
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '500',
+                                                    backgroundColor:
+                                                        user.role === 'Admin'
+                                                            ? '#dbeafe'
+                                                            : user.role ===
+                                                                'Supervisor'
+                                                              ? '#fef3c7'
+                                                              : '#e0e7ff',
+                                                    color:
+                                                        user.role === 'Admin'
+                                                            ? '#1e40af'
+                                                            : user.role ===
+                                                                'Supervisor'
+                                                              ? '#92400e'
+                                                              : '#3730a3',
+                                                }}
+                                            >
+                                                {user.role}
+                                            </span>
+                                        </td>
+                                        <td style={tableCellStyle}>
+                                            {user.gender === 'Male'
+                                                ? '♂️'
+                                                : user.gender === 'Female'
+                                                  ? '♀️'
+                                                  : '⚧'}{' '}
+                                            {user.gender}
+                                        </td>
+                                        <td style={tableCellStyle}>
+                                            {user.position_id?.position_name ||
+                                                '-'}
+                                        </td>
+
+                                        <td style={tableCellStyle}>
+                                            {user.department_id
+                                                ?.department_name || '-'}
+                                        </td>
+
+                                        <td style={tableCellStyle}>
+                                            <span
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '500',
+                                                    backgroundColor:
+                                                        user.status === 'Active'
+                                                            ? '#d1fae5'
+                                                            : user.status ===
+                                                                'Inactive'
+                                                              ? '#fee2e2'
+                                                              : '#fef3c7',
+                                                    color:
+                                                        user.status === 'Active'
+                                                            ? '#065f46'
+                                                            : user.status ===
+                                                                'Inactive'
+                                                              ? '#991b1b'
+                                                              : '#92400e',
+                                                }}
+                                            >
+                                                {user.status === 'Active' &&
+                                                    '✅'}
+                                                {user.status === 'Inactive' &&
+                                                    '❌'}
+                                                {user.status === 'On Leave' &&
+                                                    '🏖️'}{' '}
+                                                {user.status}
+                                            </span>
+                                        </td>
+                                        <td
+                                            style={{
+                                                ...tableCellStyle,
+                                                textAlign: 'center',
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    gap: '8px',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                                <button
+                                                    onClick={() => onEdit(user)}
+                                                    style={actionButtonStyle(
+                                                        '#3b82f6',
+                                                        '#2563eb',
+                                                    )}
+                                                    title="Edit user"
+                                                >
+                                                    <HiPencil size={14} />
+                                                    Salary c
+                                                </button>
+                                                
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {users.length === 0 && (
+                        <div
+                            style={{
+                                textAlign: 'center',
+                                padding: '60px 20px',
+                                color: '#6b7280',
+                                fontSize: '15px',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontSize: '48px',
+                                    marginBottom: '16px',
+                                    opacity: 0.5,
+                                }}
+                            >
+                                👥
+                            </div>
+                            <p style={{ margin: 0, marginBottom: '8px' }}>
+                                No users found
+                            </p>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    )
+}
+
+const tableHeaderStyle = {
+    padding: '14px 12px',
+    textAlign: 'left' as const,
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#374151',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+}
+
+const tableCellStyle = {
+    padding: '14px 12px',
+    fontSize: '14px',
+    color: '#374151',
+}
+
+const actionButtonStyle = (bgColor: string, hoverColor: string) => ({
+    padding: '8px 12px',
+    backgroundColor: bgColor,
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '500',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    onMouseEnter: (e: any) =>
+        (e.currentTarget.style.backgroundColor = hoverColor),
+    onMouseLeave: (e: any) => (e.currentTarget.style.backgroundColor = bgColor),
+})
+
+export default SalaryCalculation

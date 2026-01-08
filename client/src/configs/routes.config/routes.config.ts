@@ -60,14 +60,14 @@ export const protectedRoutes: Routes = [
         ),
         authority: [],
     },
-    {
-        key: 'attendanceMenu.item2',
-        path: '/group-attendance-menu-item-2',
-        component: lazy(() =>
-            import('@/views/attendance/SalaryCalculation')
-        ),
-        authority: [],
-    },
+    // {
+    //     key: 'attendanceMenu.item2',
+    //     path: '/group-attendance-menu-item-2',
+    //     component: lazy(() =>
+    //         import('@/views/attendance/SalaryCalculation')
+    //     ),
+    //     authority: [],
+    // },
     
 ]
         // component: lazy(() => import('@/views/user-management/Create_User')),
