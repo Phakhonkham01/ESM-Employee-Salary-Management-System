@@ -67,14 +67,46 @@ const UserProfile = ({ user }: Props) => {
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ProfileField label="Email Address" value={user.email} icon={<MdEmail />} />
-                    <ProfileField label="Department" value={user.department_id?.department_name} icon={<PiBuildingOfficeLight />} />
-                    <ProfileField label="Position" value={user.position_id?.position_name} icon={<PiFinnTheHumanLight />} />
-                    <ProfileField label="Base Salary" value={`${user.base_salary?.toLocaleString()}₭`} icon={<PiMoneyFill />} />
-                    <ProfileField label="Full Name" value={`${user.first_name_en} ${user.last_name_en}`} icon={<PiTextAa />} />
-                    <ProfileField label="Nickname" value={user.nickname_en} icon={<MdOutlineDriveFileRenameOutline />} />
-                    <ProfileField label="Date of Birth" value={formatDate(user.date_of_birth)} icon={<MdCake />} />
-                    <ProfileField label="Gender" value={user.gender} icon={<PiGenderIntersex />} />
+                    <ProfileField
+                        label="Email Address"
+                        value={user.email}
+                        icon={<MdEmail />}
+                    />
+                    <ProfileField
+                        label="Department"
+                        value={user.department_id?.department_name}
+                        icon={<PiBuildingOfficeLight />}
+                    />
+                    <ProfileField
+                        label="Position"
+                        value={user.position_id?.position_name}
+                        icon={<PiFinnTheHumanLight />}
+                    />
+                    <ProfileField
+                        label="Base Salary"
+                        value={`${user.base_salary?.toLocaleString()}₭`}
+                        icon={<PiMoneyFill />}
+                    />
+                    <ProfileField
+                        label="Full Name"
+                        value={`${user.first_name_en} ${user.last_name_en}`}
+                        icon={<PiTextAa />}
+                    />
+                    <ProfileField
+                        label="Nickname"
+                        value={user.nickname_en}
+                        icon={<MdOutlineDriveFileRenameOutline />}
+                    />
+                    <ProfileField
+                        label="Date of Birth"
+                        value={formatDate(user.date_of_birth)}
+                        icon={<MdCake />}
+                    />
+                    <ProfileField
+                        label="Gender"
+                        value={user.gender}
+                        icon={<PiGenderIntersex />}
+                    />
                 </div>
             </div>
         </div>
