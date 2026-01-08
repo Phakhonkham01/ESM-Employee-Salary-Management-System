@@ -1,4 +1,8 @@
 import { UserData } from '@/services/User_Page/api'
+import { useState } from 'react'
+import OtModule from './OtModule'
+import PerDiemModule from './PerDiemModule'
+
 import { MdEmail, MdCake } from 'react-icons/md'
 import { PiGenderIntersex } from 'react-icons/pi'
 import {
@@ -15,6 +19,8 @@ type Props = {
 }
 
 const UserProfile = ({ user }: Props) => {
+    const [openOT, setOpenOT] = useState(false)
+    const [openPerDiem, setOpenPerDiem] = useState(false)
     return (
         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
             {/* Header */}
@@ -51,12 +57,24 @@ const UserProfile = ({ user }: Props) => {
                     </div>
 
                     <div className="flex gap-2 flex-wrap justify-end">
-                        <ActionButton label="ສົ່ງຄຳຂໍ OT" />
-                        <ActionButton label="ສົ່ງຄຳຂໍ ວຽກນອກ" />
+                        <ActionButton
+                            label="ສົ່ງຄຳຂໍ OT"
+                            onClick={() => setOpenOT(true)}
+                        />
+                        <ActionButton
+                            label="ສົ່ງຄຳຂໍ ວຽກນອກ"
+                            onClick={() => setOpenPerDiem(true)}
+                        />
                         {/* <ActionButton label="ສົ່ງຄຳຂໍ ມື້ພັກ" /> */}
                     </div>
                 </div>
             </div>
+            <OtModule open={openOT} onClose={() => setOpenOT(false)} />
+
+            <PerDiemModule
+                open={openPerDiem}
+                onClose={() => setOpenPerDiem(false)}
+            />
 
             {/* Info */}
             <div className="px-8 py-4">
