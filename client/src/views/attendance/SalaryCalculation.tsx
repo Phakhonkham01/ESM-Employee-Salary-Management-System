@@ -63,7 +63,7 @@ const SalaryCalculation: React.FC<UserListProps> = ({ onEdit }) => {
                         color: '#1f2937',
                     }}
                 >
-                    📋 Employee List ({users.length})
+                    📋 Users List ({users.length})
                 </h2>
                 <button
                     onClick={fetchUsers}
@@ -220,11 +220,15 @@ const SalaryCalculation: React.FC<UserListProps> = ({ onEdit }) => {
                                             {user.gender}
                                         </td>
                                         <td style={tableCellStyle}>
-                                            {user.position_id}
+                                            {user.position_id?.position_name ||
+                                                '-'}
                                         </td>
+
                                         <td style={tableCellStyle}>
-                                            {user.department_id}
+                                            {user.department_id
+                                                ?.department_name || '-'}
                                         </td>
+
                                         <td style={tableCellStyle}>
                                             <span
                                                 style={{
@@ -279,9 +283,9 @@ const SalaryCalculation: React.FC<UserListProps> = ({ onEdit }) => {
                                                     title="Edit user"
                                                 >
                                                     <HiPencil size={14} />
-                                                    Salary calculation
+                                                    Salary c
                                                 </button>
-                                               
+                                                
                                             </div>
                                         </td>
                                     </tr>
