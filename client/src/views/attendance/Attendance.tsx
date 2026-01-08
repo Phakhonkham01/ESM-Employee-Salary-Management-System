@@ -226,28 +226,9 @@ const Attendance: React.FC = () => {
     return (
         <div className="">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                        <Users className="text-indigo-600" />
-                        ລະບົບຈັດການພະນັກງານ
-                    </h1>
-                    <p className="text-gray-600 mt-2">Employee Management & Salary Calculation System</p>
-                </div>
-
                 {/* Navigation Tabs */}
                 <div className="bg-white rounded-lg shadow-lg mb-6">
                     <div className="flex border-b">
-                        <button
-                            onClick={() => setActiveTab('employees')}
-                            className={`flex-1 py-4 px-6 flex items-center justify-center gap-2 font-medium transition-colors ${activeTab === 'employees'
-                                    ? 'text-indigo-600 border-b-2 border-indigo-600'
-                                    : 'text-gray-600 hover:text-indigo-600'
-                                }`}
-                        >
-                            <Users size={20} />
-                            ຈັດການພະນັກງານ / Employees
-                        </button>
                         <button
                             onClick={() => setActiveTab('salary')}
                             className={`flex-1 py-4 px-6 flex items-center justify-center gap-2 font-medium transition-colors ${activeTab === 'salary'
