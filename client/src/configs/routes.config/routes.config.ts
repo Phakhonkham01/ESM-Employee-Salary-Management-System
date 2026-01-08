@@ -1,9 +1,7 @@
 import { lazy } from 'react'
 import authRoute from './authRoute'
 import type { Routes } from '@/@types/routes'
-
 export const publicRoutes: Routes = [...authRoute]
-
 export const protectedRoutes: Routes = [
     {
         key: 'home',
@@ -15,7 +13,7 @@ export const protectedRoutes: Routes = [
     {
         key: 'singleMenuItem',
         path: '/user-management',
-        component: lazy(() => import('@/views/user-management/MainComponent')),
+        component: lazy(() => import('@/views/user-management/MainComponent')) as any,
         authority: [],
     },
     {
@@ -55,10 +53,29 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'user',
-        path: '/user',
-        component: lazy(() => import('@/views/user-page/MainComponent')),
+        key: 'attendanceMenu.item1',
+        path: '/group-attendance-menu-item-1',
+        component: lazy(() =>
+            import('@/views/attendance/Attendance')
+        ),
         authority: [],
     },
+    {
+        key: 'attendanceMenu.item1',
+        path: '/user',
+        component: lazy(() =>
+            import('@/views/user-page/MainComponent')
+        ),
+        authority: [],
+    },
+    // {
+    //     key: 'attendanceMenu.item2',
+    //     path: '/group-attendance-menu-item-2',
+    //     component: lazy(() =>
+    //         import('@/views/attendance/SalaryCalculation')
+    //     ),
+    //     authority: [],
+    // },
+    
 ]
         // component: lazy(() => import('@/views/user-management/Create_User')),
