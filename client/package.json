@@ -14,6 +14,7 @@
     "format": "npm run prettier:fix && npm run lint:fix"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@floating-ui/react": "^0.27.2",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
@@ -62,6 +63,13 @@
     "yet-another-react-lightbox": "^3.21.7",
     "zod": "^3.23.8",
     "zustand": "^5.0.2"
+=======
+    "@tailwindcss/vite": "^4.1.18",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tailwindcss": "^4.1.18"
+>>>>>>> 638286203ab710108e5caa66f86f4a40affa62f5
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.4",
