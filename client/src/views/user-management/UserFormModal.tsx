@@ -16,7 +16,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     editingUser,
     onSuccess,
 }) => {
-    const [formData, setFormData] = useState<CreateUserData>({
+    // แก้ไข type ให้ base_salary เป็น number เท่านั้น
+    const [formData, setFormData] = useState<
+        Omit<CreateUserData, 'base_salary'> & { base_salary: number }
+    >({
         email: '',
         password: '',
         role: 'Employee',
@@ -33,6 +36,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         position_id: '',
         department_id: '',
         status: 'Active',
+        base_salary: 0, // กำหนดเป็น number
     })
 
     const [loading, setLoading] = useState(false)
@@ -43,6 +47,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
     useEffect(() => {
         if (editingUser && isOpen) {
+            // แก้ไขการแปลงค่า base_salary ให้เป็น number
+            const baseSalary = editingUser.base_salary
+            const salaryValue =
+                typeof baseSalary === 'string'
+                    ? parseFloat(baseSalary) || 0
+                    : typeof baseSalary === 'number'
+                      ? baseSalary
+                      : 0
+
             setFormData({
                 email: editingUser.email,
                 password: '', // ไม่ต้องใส่ password เวลา edit
@@ -60,6 +73,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 position_id: editingUser.position_id,
                 department_id: editingUser.department_id,
                 status: editingUser.status,
+                base_salary: salaryValue,
             })
         } else if (!editingUser && isOpen) {
             resetForm()
@@ -84,6 +98,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             position_id: '',
             department_id: '',
             status: 'Active',
+            base_salary: 0,
         })
         setMessage(null)
     }
@@ -97,10 +112,19 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
         const { name, value } = e.target
-        setFormData((prev) => ({
-            ...prev,
-            [name]: name === 'vacation_days' ? parseInt(value) || 0 : value,
-        }))
+
+        if (name === 'vacation_days' || name === 'base_salary') {
+            const numericValue = parseFloat(value) || 0
+            setFormData((prev) => ({
+                ...prev,
+                [name]: numericValue,
+            }))
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }))
+        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -109,7 +133,26 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         setMessage(null)
 
         try {
-            const submitData = { ...formData }
+            // สร้างข้อมูลสำหรับส่ง
+            const submitData: CreateUserData = {
+                email: formData.email,
+                password: formData.password,
+                role: formData.role,
+                first_name_en: formData.first_name_en,
+                last_name_en: formData.last_name_en,
+                nickname_en: formData.nickname_en,
+                first_name_la: formData.first_name_la,
+                last_name_la: formData.last_name_la,
+                nickname_la: formData.nickname_la,
+                date_of_birth: formData.date_of_birth,
+                start_work: formData.start_work,
+                vacation_days: formData.vacation_days,
+                gender: formData.gender,
+                position_id: formData.position_id,
+                department_id: formData.department_id,
+                status: formData.status,
+                base_salary: formData.base_salary,
+            }
 
             // ถ้าเป็น edit และไม่ได้กรอก password ให้ลบ password ออก
             if (editingUser && !submitData.password) {
@@ -146,6 +189,31 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         if (e.target === e.currentTarget) {
             handleClose()
         }
+    }
+
+    // ฟังก์ชันจัดรูปแบบตัวเลขเป็นสกุลเงิน
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }).format(value)
+    }
+
+    const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9.]/g, '')
+        const numericValue = parseFloat(value) || 0
+        setFormData((prev) => ({
+            ...prev,
+            base_salary: numericValue,
+        }))
+    }
+
+    // ฟังก์ชันสำหรับแสดงค่าใน input
+    const getSalaryDisplayValue = () => {
+        if (formData.base_salary === 0) {
+            return ''
+        }
+        return formData.base_salary.toString()
     }
 
     if (!isOpen) return null
@@ -327,6 +395,58 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 </select>
                             </div>
 
+                            {/* Salary Information */}
+                            <div>
+                                <label style={labelStyle}>
+                                    💰 Base Salary *
+                                </label>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="text"
+                                        name="base_salary"
+                                        value={getSalaryDisplayValue()}
+                                        onChange={handleSalaryChange}
+                                        required
+                                        placeholder="0.00"
+                                        style={{
+                                            ...inputStyle,
+                                            paddingLeft: '40px',
+                                        }}
+                                    />
+                                    <div
+                                        style={{
+                                            position: 'absolute',
+                                            left: '12px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            color: '#6b7280',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                        }}
+                                    >
+                                        ₭
+                                    </div>
+                                    {formData.base_salary > 0 && (
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                right: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: '#6b7280',
+                                                fontSize: '12px',
+                                                fontStyle: 'italic',
+                                            }}
+                                        >
+                                            {formatCurrency(
+                                                formData.base_salary,
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* English Name Section */}
                             <div>
                                 <label style={labelStyle}>
                                     First Name (EN) *
@@ -372,6 +492,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 />
                             </div>
 
+                            {/* Lao Name Section */}
                             <div>
                                 <label style={labelStyle}>
                                     First Name (LA) *
@@ -417,6 +538,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 />
                             </div>
 
+                            {/* Personal Information */}
                             <div>
                                 <label style={labelStyle}>Gender *</label>
                                 <select
@@ -460,6 +582,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 />
                             </div>
 
+                            {/* Work Information */}
                             <div>
                                 <label style={labelStyle}>Position ID *</label>
                                 <input

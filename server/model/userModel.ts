@@ -17,6 +17,7 @@ export interface IUser extends Document {
   position_id: string;
   department_id: string;
   status: "Active" | "Inactive" | "On Leave";
+  base_salary: number;  // เพิ่ม field นี้
   created_at: Date;
 }
 
@@ -72,6 +73,11 @@ const userSchema: Schema = new Schema({
   vacation_days: {
     type: Number,
     default: 0,
+  },
+  base_salary: {  // เพิ่ม field นี้
+    type: Number,
+    default: 0,
+    min: 0,
   },
   gender: {
     type: String,
