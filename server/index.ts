@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-const PORT: number = parseInt(process.env.PORT || "7000", 10);
+const PORT: number = parseInt(process.env.PORT || "8000", 10);
 const MONGOURL: string = process.env.MONGO_URL || process.env.MONGODB_URI || "mongodb://localhost:27017/esm_database";
 
 // Database connection
