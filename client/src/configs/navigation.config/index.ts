@@ -17,6 +17,7 @@ const navigationConfig: NavigationTree[] = [
         authority: [],
         subMenu: [],
     },
+  
     /** Example purpose only, please remove */
     {
         key: 'singleMenuItem',
@@ -110,6 +111,16 @@ const navigationConfig: NavigationTree[] = [
                 ],
             },
         ],
+    },
+      {
+        key: 'user',
+        path: '/user',
+        title: 'User',
+        translateKey: '',
+        icon: 'user',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
     },
 ]
 

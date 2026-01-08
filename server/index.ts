@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import userRoute from "./routes/userRoute.js";
 import loginRoutes from "./routes/loginRoutes.js";
+import departmentRoutes from  "./routes/departmentRoute.js";
+import positionRoutes from  "./routes/positionRoute.js";
 
 dotenv.config();
 
@@ -40,3 +42,5 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api", loginRoutes);  // Login route: POST /api/login
 app.use("/api", userRoute);     // User routes: GET/POST/PUT/DELETE /api/users
+app.use("/api/departments", departmentRoutes);
+app.use("/api/positions", positionRoutes);
