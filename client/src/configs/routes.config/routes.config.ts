@@ -70,3 +70,4 @@ export const protectedRoutes: Routes = [
     },
     
 ]
+        // component: lazy(() => import('@/views/user-management/Create_User')),

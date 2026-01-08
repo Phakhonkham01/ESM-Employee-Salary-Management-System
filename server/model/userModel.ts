@@ -14,10 +14,10 @@ export interface IUser extends Document {
   start_work: Date;
   vacation_days: number;
   gender: "Male" | "Female" | "Other";
-  position_id: string;
-  department_id: string;
+  position_id: mongoose.Types.ObjectId;
+  department_id: mongoose.Types.ObjectId;
   status: "Active" | "Inactive" | "On Leave";
-  base_salary: number;  // เพิ่ม field นี้
+  base_salary: number;
   created_at: Date;
 }
 
@@ -38,60 +38,40 @@ const userSchema: Schema = new Schema({
     enum: ["Supervisor", "Admin", "Employee"],
     default: "Employee",
   },
-  first_name_en: {
-    type: String,
-    required: true,
-  },
-  last_name_en: {
-    type: String,
-    required: true,
-  },
-  nickname_en: {
-    type: String,
-    required: true,
-  },
-  first_name_la: {
-    type: String,
-    required: true,
-  },
-  last_name_la: {
-    type: String,
-    required: true,
-  },
-  nickname_la: {
-    type: String,
-    required: true,
-  },
-  date_of_birth: {
-    type: Date,
-    required: true,
-  },
-  start_work: {
-    type: Date,
-    required: true,
-  },
-  vacation_days: {
-    type: Number,
-    default: 0,
-  },
-  base_salary: {  // เพิ่ม field นี้
+  first_name_en: { type: String, required: true },
+  last_name_en: { type: String, required: true },
+  nickname_en: { type: String, required: true },
+  first_name_la: { type: String, required: true },
+  last_name_la: { type: String, required: true },
+  nickname_la: { type: String, required: true },
+  date_of_birth: { type: Date, required: true },
+  start_work: { type: Date, required: true },
+  vacation_days: { type: Number, default: 0 },
+
+  base_salary: {
     type: Number,
     default: 0,
     min: 0,
   },
+
   gender: {
     type: String,
     enum: ["Male", "Female", "Other"],
     required: true,
   },
+
+
   position_id: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: "Position",
     required: true,
   },
   department_id: {
-    type: String,
+    type: Schema.Types.ObjectId,
+    ref: "Department",
     required: true,
   },
+
   status: {
     type: String,
     enum: ["Active", "Inactive", "On Leave"],

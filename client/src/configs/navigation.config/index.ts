@@ -17,6 +17,7 @@ const navigationConfig: NavigationTree[] = [
         authority: [],
         subMenu: [],
     },
+  
     /** Example purpose only, please remove */
     {
         key: 'singleMenuItem',
@@ -111,36 +112,15 @@ const navigationConfig: NavigationTree[] = [
             },
         ],
     },
-    {
-        key: 'attendanceMenu',
-        path: '',
-        title: 'Work Information & OT',
+      {
+        key: 'user',
+        path: '/user',
+        title: 'User',
         translateKey: '',
-        icon: 'collapseMenu',
-        type: NAV_ITEM_TYPE_COLLAPSE,
+        icon: 'user',
+        type: NAV_ITEM_TYPE_ITEM,
         authority: [],
-        subMenu: [
-            {
-                key: 'attendanceMenu.item1',
-                path: '/group-attendance-menu-item-1',
-                title: 'Salary calculation2',
-                translateKey: 'nav.attendanceMenu.item1',
-                icon: '',
-                type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
-                subMenu: [],
-            },
-            {
-                key: 'attendanceMenu.item2',
-                path: '/group-attendance-menu-item-2',
-                title: 'Salary calculation',
-                translateKey: 'nav.attendanceMenu.item2',
-                icon: '',
-                type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
-                subMenu: [],
-            },
-        ],
+        subMenu: [],
     },
 ]
 

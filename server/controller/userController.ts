@@ -69,31 +69,45 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 };
 
 // Get all users
-export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+export const getAllUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const users = await User.find().select("-password");
-    res.status(200).json({ users, count: users.length });
+    const users = await User.find()
+      .populate("position_id", "position_name")
+      .populate("department_id", "department_name");
+
+    res.status(200).json({ users });
   } catch (error: any) {
-    res.status(500).json({ message: "Error fetching users", error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 // Get user by ID
-export const getUserById = async (req: Request, res: Response): Promise<void> => {
+export const getUserById = async (
+  req: Request & { user?: { id: string; role: string } },
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id).select("-password");
-    
+
+const user = await User.findById(id)
+  .populate("department_id", "department_name")
+  .populate("position_id", "position_name")
+  .select("-password");
+
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;
     }
-    
+
     res.status(200).json({ user });
   } catch (error: any) {
-    res.status(500).json({ message: "Error fetching user", error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
+
 
 // Update user
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
@@ -181,3 +195,4 @@ export const getUsersByRole = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ message: "Error fetching users by role", error: error.message });
   }
 };
+

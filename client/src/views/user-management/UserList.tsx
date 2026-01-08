@@ -220,11 +220,15 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
                                             {user.gender}
                                         </td>
                                         <td style={tableCellStyle}>
-                                            {user.position_id}
+                                            {user.position_id?.position_name ||
+                                                '-'}
                                         </td>
+
                                         <td style={tableCellStyle}>
-                                            {user.department_id}
+                                            {user.department_id
+                                                ?.department_name || '-'}
                                         </td>
+
                                         <td style={tableCellStyle}>
                                             <span
                                                 style={{
