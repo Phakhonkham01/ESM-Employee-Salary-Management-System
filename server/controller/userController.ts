@@ -18,6 +18,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       date_of_birth,
       start_work,
       vacation_days,
+      base_salary,  // เพิ่ม field นี้
       gender,
       position_id,
       department_id,
@@ -45,6 +46,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       date_of_birth,
       start_work,
       vacation_days: vacation_days || 0,
+      base_salary: base_salary || 0,  // เพิ่ม field นี้
       gender,
       position_id,
       department_id,

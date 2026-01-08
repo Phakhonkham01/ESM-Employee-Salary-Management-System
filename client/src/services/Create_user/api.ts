@@ -14,6 +14,7 @@ export interface UserData {
   nickname_la: string;
   date_of_birth: string;
   start_work: string;
+  base_salary: string | number;  // ✅ Added this line
   vacation_days: number;
   gender: "Male" | "Female" | "Other";
   position_id: string;
@@ -24,7 +25,7 @@ export interface UserData {
 
 export interface CreateUserData {
   email: string;
-  password: string;
+  password?: string;  // ✅ Make password optional too
   role: "Supervisor" | "Admin" | "Employee";
   first_name_en: string;
   last_name_en: string;
@@ -34,12 +35,15 @@ export interface CreateUserData {
   nickname_la: string;
   date_of_birth: string;
   start_work: string;
+  base_salary?: string | number;  // ✅ Already optional
   vacation_days: number;
   gender: "Male" | "Female" | "Other";
   position_id: string;
   department_id: string;
   status?: "Active" | "Inactive" | "On Leave";
 }
+
+// ... rest of your API code remains the same
 
 export interface CreateUserResponse {
   message: string;
