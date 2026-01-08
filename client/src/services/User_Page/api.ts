@@ -36,7 +36,7 @@ export interface UserData {
   date_of_birth: string;
   start_work: string;
   vacation_days: number;
-
+  base_salary: string | number;
   gender: "Male" | "Female" | "Other";
 
   // 🔗 populated objects
