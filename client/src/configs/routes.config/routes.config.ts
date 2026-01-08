@@ -57,14 +57,11 @@ export const protectedRoutes: Routes = [
     {
         key: 'user',
         path: '/user',
-<<<<<<< HEAD
         component: lazy(() => 
-            import('@/views/user-page/UserProfile')
+            import('../../views/user-page/MainComponent')
     ),
-=======
-        component: lazy(() => import('@/views/user-page/MainComponent')),
->>>>>>> 06c68922351f7fcfd2288b812bee6d6e5b84c3a1
         authority: [],
     },
+
 ]
         // component: lazy(() => import('@/views/user-management/Create_User')),
