@@ -17,31 +17,40 @@ export interface UserData {
   base_salary: string | number;  // ✅ Added this line
   vacation_days: number;
   gender: "Male" | "Female" | "Other";
-  position_id: string;
-  department_id: string;
+ position_id: {
+  _id: string
+  position_name: string
+}
+
+department_id: {
+  _id: string
+  department_name: string
+}
+
   status: "Active" | "Inactive" | "On Leave";
   created_at: string;
 }
 
 export interface CreateUserData {
-  email: string;
-  password?: string;  // ✅ Make password optional too
-  role: "Supervisor" | "Admin" | "Employee";
-  first_name_en: string;
-  last_name_en: string;
-  nickname_en: string;
-  first_name_la: string;
-  last_name_la: string;
-  nickname_la: string;
-  date_of_birth: string;
-  start_work: string;
-  base_salary?: string | number;  // ✅ Already optional
-  vacation_days: number;
-  gender: "Male" | "Female" | "Other";
-  position_id: string;
-  department_id: string;
-  status?: "Active" | "Inactive" | "On Leave";
+  email: string
+  password?: string
+  role: "Supervisor" | "Admin" | "Employee"
+  first_name_en: string
+  last_name_en: string
+  nickname_en: string
+  first_name_la: string
+  last_name_la: string
+  nickname_la: string
+  date_of_birth: string
+  start_work: string
+  vacation_days: number
+  gender: "Male" | "Female" | "Other"
+  position_id: string
+  department_id: string
+  base_salary?: number
+  status?: "Active" | "Inactive" | "On Leave"
 }
+
 
 // ... rest of your API code remains the same
 

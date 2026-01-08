@@ -1,3 +1,4 @@
+import React from 'react'
 import {
     PiHouseLineDuotone,
     PiArrowsInDuotone,
@@ -7,7 +8,8 @@ import {
     PiBagSimpleDuotone,
 } from 'react-icons/pi'
 import { FaUserAlt } from 'react-icons/fa'
-export type NavigationIcons = Record<string, JSX.Element>
+
+export type NavigationIcons = Record<string, React.ReactNode>
 
 const navigationIcon: NavigationIcons = {
     user: <FaUserAlt />,
