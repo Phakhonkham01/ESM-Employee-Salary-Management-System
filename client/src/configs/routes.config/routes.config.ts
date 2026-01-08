@@ -60,6 +60,14 @@ export const protectedRoutes: Routes = [
         ),
         authority: [],
     },
+    {
+        key: 'attendanceMenu.item1',
+        path: '/user',
+        component: lazy(() =>
+            import('@/views/user-page/MainComponent')
+        ),
+        authority: [],
+    },
     // {
     //     key: 'attendanceMenu.item2',
     //     path: '/group-attendance-menu-item-2',
