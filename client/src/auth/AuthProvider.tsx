@@ -71,6 +71,9 @@ function AuthProvider({ children }: AuthProviderProps) {
         setToken('')
         setUser({})
         setSessionSignedIn(false)
+        
+    // ✅ CLEAR STORAGE
+    localStorage.removeItem('auth')
     }
 
     const signIn = async (values: SignInCredential): AuthResult => {
@@ -90,6 +93,14 @@ function AuthProvider({ children }: AuthProviderProps) {
                 // สร้าง mock token (หรือถ้า backend ส่ง token มาให้ใช้ token จริง)
                 const token = 'mock-token-' + resp.user._id
 
+                // ✅ SAVE LOGIN DATA
+            localStorage.setItem(
+                'auth',
+                JSON.stringify({
+                    token,
+                    user: resp.user, // full DB user (id, role, etc.)
+                })
+            )
                 handleSignIn({ accessToken: token }, userData)
                 redirect()
                 return {
