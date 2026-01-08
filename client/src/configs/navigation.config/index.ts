@@ -111,6 +111,37 @@ const navigationConfig: NavigationTree[] = [
             },
         ],
     },
+    {
+        key: 'attendanceMenu',
+        path: '',
+        title: 'Attendance',
+        translateKey: '',
+        icon: 'collapseMenu',
+        type: NAV_ITEM_TYPE_COLLAPSE,
+        authority: [],
+        subMenu: [
+            {
+                key: 'attendanceMenu.item1',
+                path: '/group-attendance-menu-item-1',
+                title: 'Collapse menu item 1',
+                translateKey: 'nav.attendanceMenu.item1',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'attendanceMenu.item2',
+                path: '/group-attendance-menu-item-2',
+                title: 'Collapse menu item 2',
+                translateKey: 'nav.attendanceMenu.item2',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+        ],
+    },
 ]
 
 export default navigationConfig

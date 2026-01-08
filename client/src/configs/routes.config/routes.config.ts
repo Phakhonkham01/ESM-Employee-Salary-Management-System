@@ -1,9 +1,7 @@
 import { lazy } from 'react'
 import authRoute from './authRoute'
 import type { Routes } from '@/@types/routes'
-
 export const publicRoutes: Routes = [...authRoute]
-
 export const protectedRoutes: Routes = [
     {
         key: 'home',
@@ -54,4 +52,12 @@ export const protectedRoutes: Routes = [
         ),
         authority: [],
     },
+    {
+        key: 'attendanceMenu.item1',
+        path: '/group-attendance-menu-item-1',
+        component: lazy(() =>
+            import('@/views/attendance/Attendance')
+        ),
+        authority: [],
+    }
 ]
