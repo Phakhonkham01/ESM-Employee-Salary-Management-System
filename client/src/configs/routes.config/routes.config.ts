@@ -13,7 +13,7 @@ export const protectedRoutes: Routes = [
     {
         key: 'singleMenuItem',
         path: '/user-management',
-        component: lazy(() => import('@/views/user-management/MainComponent')),
+        component: lazy(() => import('@/views/user-management/MainComponent')) as any,
         authority: [],
     },
     {
@@ -59,5 +59,14 @@ export const protectedRoutes: Routes = [
             import('@/views/attendance/Attendance')
         ),
         authority: [],
-    }
+    },
+    {
+        key: 'attendanceMenu.item2',
+        path: '/group-attendance-menu-item-2',
+        component: lazy(() =>
+            import('@/views/attendance/SalaryCalculation')
+        ),
+        authority: [],
+    },
+    
 ]

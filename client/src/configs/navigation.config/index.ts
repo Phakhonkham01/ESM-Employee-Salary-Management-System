@@ -123,7 +123,7 @@ const navigationConfig: NavigationTree[] = [
             {
                 key: 'attendanceMenu.item1',
                 path: '/group-attendance-menu-item-1',
-                title: 'Salary calculation',
+                title: 'Salary calculation2',
                 translateKey: 'nav.attendanceMenu.item1',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
@@ -133,7 +133,7 @@ const navigationConfig: NavigationTree[] = [
             {
                 key: 'attendanceMenu.item2',
                 path: '/group-attendance-menu-item-2',
-                title: 'Attendance Menu Item 2',
+                title: 'Salary calculation',
                 translateKey: 'nav.attendanceMenu.item2',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
