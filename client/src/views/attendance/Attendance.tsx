@@ -62,7 +62,7 @@ const Attendance: React.FC = () => {
     ]);
 
     const [history, setHistory] = useState<SalaryHistory[]>([]);
-    const [activeTab, setActiveTab] = useState<'employees' | 'salary' | 'history'>('employees');
+    const [activeTab, setActiveTab] = useState<'employees' | 'salary' | 'history'>('salary');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAddForm, setShowAddForm] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -93,16 +93,16 @@ const Attendance: React.FC = () => {
 
     // CRUD Operations
     const handleAdd = () => {
-        if (formData.name && formData.email && formData.baseSalary) {
+        if (formData.name && formData.email && formData.baseSalary !== undefined) {
             const newEmployee: Employee = {
                 id: Date.now().toString(),
                 name: formData.name,
                 email: formData.email,
-                baseSalary: formData.baseSalary,
-                otHours: formData.otHours || 0,
-                absentDays: formData.absentDays || 0,
-                leaveDays: formData.leaveDays || 0,
-                otRate: formData.otRate || 20000
+                baseSalary: Number(formData.baseSalary), // ensure number (was number | undefined)
+                otHours: Number(formData.otHours || 0),
+                absentDays: Number(formData.absentDays || 0),
+                leaveDays: Number(formData.leaveDays || 0),
+                otRate: Number(formData.otRate || 20000)
             };
             setEmployees([...employees, newEmployee]);
             setFormData({ name: '', email: '', baseSalary: 0, otHours: 0, absentDays: 0, leaveDays: 0, otRate: 20000 });
@@ -251,199 +251,6 @@ const Attendance: React.FC = () => {
                         </button>
                     </div>
                 </div>
-
-                {/* Employees Tab */}
-                {activeTab === 'employees' && (
-                    <div className="bg-white rounded-lg shadow-lg p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-gray-800">ຂໍ້ມູນພະນັກງານ</h2>
-                            <button
-                                onClick={() => {
-                                    setShowAddForm(true);
-                                    setEditingId(null);
-                                    setFormData({ name: '', email: '', baseSalary: 0, otHours: 0, absentDays: 0, leaveDays: 0, otRate: 20000 });
-                                }}
-                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition-colors"
-                            >
-                                <Plus size={20} />
-                                ເພີ່ມພະນັກງານ
-                            </button>
-                        </div>
-
-                        {/* Popup Modal for Add/Edit */}
-                        {showAddForm && (
-                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                                    <div className="sticky top-0 bg-indigo-600 text-white p-6 rounded-t-lg">
-                                        <h3 className="text-2xl font-bold">
-                                            {editingId ? '✏️ ແກ້ໄຂຂໍ້ມູນພະນັກງານ / Edit Employee' : '➕ ເພີ່ມພະນັກງານໃໝ່ / Add New Employee'}
-                                        </h3>
-                                    </div>
-
-                                    <div className="p-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ຊື່ພະນັກງານ / Name *
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="ກະລຸນາໃສ່ຊື່"
-                                                    value={formData.name}
-                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ອີເມວ / Email *
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    placeholder="example@email.com"
-                                                    value={formData.email}
-                                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ເງິນເດືອນພື້ນຖານ / Base Salary (LAK) *
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="3000000"
-                                                    value={formData.baseSalary || ''}
-                                                    onChange={(e) => setFormData({ ...formData, baseSalary: Number(e.target.value) })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ອັດຕາ OT ຕໍ່ຊົ່ວໂມງ / OT Rate/Hour (LAK)
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="20000"
-                                                    value={formData.otRate || ''}
-                                                    onChange={(e) => setFormData({ ...formData, otRate: Number(e.target.value) })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ຊົ່ວໂມງ OT / OT Hours
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={formData.otHours || ''}
-                                                    onChange={(e) => setFormData({ ...formData, otHours: Number(e.target.value) })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ວັນຂາດງານ / Absent Days
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={formData.absentDays || ''}
-                                                    onChange={(e) => setFormData({ ...formData, absentDays: Number(e.target.value) })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-
-                                            <div className="md:col-span-2">
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    ວັນລາພັກ / Leave Days
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={formData.leaveDays || ''}
-                                                    onChange={(e) => setFormData({ ...formData, leaveDays: Number(e.target.value) })}
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex gap-3 mt-6 pt-6 border-t">
-                                            <button
-                                                onClick={editingId ? handleUpdate : handleAdd}
-                                                className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
-                                            >
-                                                {editingId ? '💾 ອັບເດດ / Update' : '💾 ບັນທຶກ / Save'}
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setShowAddForm(false);
-                                                    setEditingId(null);
-                                                    setFormData({ name: '', email: '', baseSalary: 0, otHours: 0, absentDays: 0, leaveDays: 0, otRate: 20000 });
-                                                }}
-                                                className="flex-1 bg-gray-400 text-white px-6 py-3 rounded-lg hover:bg-gray-500 transition-colors font-medium"
-                                            >
-                                                ❌ ຍົກເລີກ / Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Employee List */}
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left">ຊື່ / Name</th>
-                                        <th className="px-4 py-3 text-left">ອີເມວ / Email</th>
-                                        <th className="px-4 py-3 text-right">ເງິນເດືອນ / Salary</th>
-                                        <th className="px-4 py-3 text-center">OT (ຊມ)</th>
-                                        <th className="px-4 py-3 text-center">ຂາດ (ມື້)</th>
-                                        <th className="px-4 py-3 text-center">ລາ (ມື້)</th>
-                                        <th className="px-4 py-3 text-center">ຈັດການ / Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {employees.map((emp) => (
-                                        <tr key={emp.id} className="border-b hover:bg-gray-50">
-                                            <td className="px-4 py-3">{emp.name}</td>
-                                            <td className="px-4 py-3">{emp.email}</td>
-                                            <td className="px-4 py-3 text-right">{emp.baseSalary.toLocaleString()} ກີບ</td>
-                                            <td className="px-4 py-3 text-center">{emp.otHours}</td>
-                                            <td className="px-4 py-3 text-center">{emp.absentDays}</td>
-                                            <td className="px-4 py-3 text-center">{emp.leaveDays}</td>
-                                            <td className="px-4 py-3">
-                                                <div className="flex justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEdit(emp.id)}
-                                                        className="text-blue-600 hover:text-blue-800"
-                                                    >
-                                                        <Edit2 size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(emp.id)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
                 {/* Salary Tab */}
                 {activeTab === 'salary' && (
                     <div className="bg-white rounded-lg shadow-lg p-6">
