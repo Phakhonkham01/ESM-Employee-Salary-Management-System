@@ -69,12 +69,18 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 };
 
 // Get all users
-export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+export const getAllUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const users = await User.find().select("-password");
-    res.status(200).json({ users, count: users.length });
+    const users = await User.find()
+      .populate("position_id", "position_name")
+      .populate("department_id", "department_name");
+
+    res.status(200).json({ users });
   } catch (error: any) {
-    res.status(500).json({ message: "Error fetching users", error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

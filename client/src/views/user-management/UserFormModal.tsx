@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { createUser, updateUser } from '../../services/Create_user/api'
+import {
+    getAllDepartments,
+    getAllPositions,
+    getPositionsByDepartment,
+} from '../../services/departments/api'
 import type { CreateUserData, UserData } from '../../services/Create_user/api'
-import { HiUserAdd, HiPencil, HiX } from 'react-icons/hi'
+import type {
+    DepartmentData,
+    PositionData,
+} from '../../services/departments/api'
+import { HiUserAdd, HiPencil, HiX, HiPlus } from 'react-icons/hi'
+import DepartmentModal from './Department_Position/DepartmentModal'
+import PositionModal from './Department_Position/PositionModal'
 
 interface UserFormModalProps {
     isOpen: boolean
@@ -16,7 +27,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     editingUser,
     onSuccess,
 }) => {
-    // แก้ไข type ให้ base_salary เป็น number เท่านั้น
+    // State
     const [formData, setFormData] = useState<
         Omit<CreateUserData, 'base_salary'> & { base_salary: number }
     >({
@@ -36,78 +47,162 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         position_id: '',
         department_id: '',
         status: 'Active',
-        base_salary: 0, // กำหนดเป็น number
+        base_salary: 0,
     })
 
+    // State สำหรับ Departments และ Positions
+    const [departments, setDepartments] = useState<DepartmentData[]>([])
+    const [positions, setPositions] = useState<PositionData[]>([])
+    const [filteredPositions, setFilteredPositions] = useState<PositionData[]>(
+        [],
+    )
+
+    // State สำหรับ Modals
+    const [departmentModalOpen, setDepartmentModalOpen] = useState(false)
+    const [positionModalOpen, setPositionModalOpen] = useState(false)
+
     const [loading, setLoading] = useState(false)
+    const [loadingDepartments, setLoadingDepartments] = useState(false)
+    const [loadingPositions, setLoadingPositions] = useState(false)
     const [message, setMessage] = useState<{
         type: 'success' | 'error'
         text: string
     } | null>(null)
 
+    // โหลด Departments และ Positions เมื่อ Modal เปิด
     useEffect(() => {
-        if (editingUser && isOpen) {
-            // แก้ไขการแปลงค่า base_salary ให้เป็น number
-            const baseSalary = editingUser.base_salary
-            const salaryValue =
-                typeof baseSalary === 'string'
-                    ? parseFloat(baseSalary) || 0
-                    : typeof baseSalary === 'number'
-                      ? baseSalary
-                      : 0
+        if (isOpen) {
+            fetchDepartments()
+            fetchAllPositions()
 
-            setFormData({
-                email: editingUser.email,
-                password: '', // ไม่ต้องใส่ password เวลา edit
-                role: editingUser.role,
-                first_name_en: editingUser.first_name_en,
-                last_name_en: editingUser.last_name_en,
-                nickname_en: editingUser.nickname_en,
-                first_name_la: editingUser.first_name_la,
-                last_name_la: editingUser.last_name_la,
-                nickname_la: editingUser.nickname_la,
-                date_of_birth: editingUser.date_of_birth.split('T')[0],
-                start_work: editingUser.start_work.split('T')[0],
-                vacation_days: editingUser.vacation_days,
-                gender: editingUser.gender,
-                position_id: editingUser.position_id,
-                department_id: editingUser.department_id,
-                status: editingUser.status,
-                base_salary: salaryValue,
-            })
-        } else if (!editingUser && isOpen) {
-            resetForm()
+            // ตั้งค่า form data ถ้ากำลังแก้ไข user
+            if (editingUser && isOpen) {
+                // แก้ไขการแปลงค่า base_salary ให้เป็น number
+                const baseSalary = editingUser.base_salary
+                const salaryValue =
+                    typeof baseSalary === 'string'
+                        ? parseFloat(baseSalary) || 0
+                        : typeof baseSalary === 'number'
+                          ? baseSalary
+                          : 0
+
+                setFormData({
+                    email: editingUser.email,
+                    password: '',
+                    role: editingUser.role,
+                    first_name_en: editingUser.first_name_en,
+                    last_name_en: editingUser.last_name_en,
+                    nickname_en: editingUser.nickname_en,
+                    first_name_la: editingUser.first_name_la,
+                    last_name_la: editingUser.last_name_la,
+                    nickname_la: editingUser.nickname_la,
+                    date_of_birth: editingUser.date_of_birth.split('T')[0],
+                    start_work: editingUser.start_work.split('T')[0],
+                    vacation_days: editingUser.vacation_days,
+                    gender: editingUser.gender,
+
+                    // ✅ สำคัญมาก
+                    position_id:
+                        typeof editingUser.position_id === 'string'
+                            ? editingUser.position_id
+                            : editingUser.position_id?._id,
+
+                    department_id:
+                        typeof editingUser.department_id === 'string'
+                            ? editingUser.department_id
+                            : editingUser.department_id?._id,
+
+                    status: editingUser.status,
+                    base_salary: salaryValue,
+                })
+            } else if (!editingUser && isOpen) {
+                resetForm()
+            }
         }
-    }, [editingUser, isOpen])
+    }, [isOpen, editingUser])
 
-    const resetForm = () => {
-        setFormData({
-            email: '',
-            password: '',
-            role: 'Employee',
-            first_name_en: '',
-            last_name_en: '',
-            nickname_en: '',
-            first_name_la: '',
-            last_name_la: '',
-            nickname_la: '',
-            date_of_birth: '',
-            start_work: '',
-            vacation_days: 0,
-            gender: 'Male',
-            position_id: '',
-            department_id: '',
-            status: 'Active',
-            base_salary: 0,
-        })
-        setMessage(null)
+    // เมื่อเลือก Department ให้ดึง Positions ของ Department นั้น
+    useEffect(() => {
+        if (formData.department_id) {
+            fetchPositionsByDepartment(formData.department_id)
+
+            // ถ้าเป็น edit mode และ user มี position_id อยู่แล้ว
+            // ให้ตรวจสอบว่า position_id นี้อยู่ใน department นี้หรือไม่
+            if (editingUser && formData.position_id) {
+                const positionExists = positions.some(
+                    (pos) =>
+                        pos._id === formData.position_id &&
+                        pos.department_id === formData.department_id,
+                )
+                if (!positionExists) {
+                    setFormData((prev) => ({ ...prev, position_id: '' }))
+                }
+            }
+        } else {
+            setFilteredPositions([])
+            setFormData((prev) => ({ ...prev, position_id: '' }))
+        }
+    }, [formData.department_id, editingUser])
+
+    // ดึงข้อมูล Departments
+    const fetchDepartments = async () => {
+        try {
+            setLoadingDepartments(true)
+            const response = await getAllDepartments()
+            setDepartments(response.departments || [])
+        } catch (error) {
+            console.error('Error fetching departments:', error)
+            setMessage({ type: 'error', text: 'Failed to load departments' })
+        } finally {
+            setLoadingDepartments(false)
+        }
     }
 
-    const showMessage = (type: 'success' | 'error', text: string) => {
-        setMessage({ type, text })
-        setTimeout(() => setMessage(null), 5000)
+    // ดึงข้อมูล Positions ทั้งหมด (ใช้สำหรับตรวจสอบ)
+    const fetchAllPositions = async () => {
+        try {
+            setLoadingPositions(true)
+            const response = await getAllPositions()
+            setPositions(response.positions || [])
+        } catch (error) {
+            console.error('Error fetching positions:', error)
+        } finally {
+            setLoadingPositions(false)
+        }
     }
 
+    // ดึง Positions ตาม Department ที่เลือก
+    const fetchPositionsByDepartment = async (departmentId: string) => {
+        try {
+            setLoadingPositions(true)
+            const response = await getPositionsByDepartment(departmentId)
+            setFilteredPositions(response.positions || [])
+
+            // ถ้าไม่มี positions ใน department นี้ ให้เคลียร์ position_id
+            if (response.positions.length === 0) {
+                setFormData((prev) => ({ ...prev, position_id: '' }))
+            }
+        } catch (error) {
+            console.error('Error fetching positions by department:', error)
+            setFilteredPositions([])
+        } finally {
+            setLoadingPositions(false)
+        }
+    }
+
+    // Handle Department Change
+    const handleDepartmentChange = async (
+        e: React.ChangeEvent<HTMLSelectElement>,
+    ) => {
+        const departmentId = e.target.value
+        setFormData((prev) => ({
+            ...prev,
+            department_id: departmentId,
+            position_id: '', // เคลียร์ position เมื่อเปลี่ยน department
+        }))
+    }
+
+    // Handle Input Change (ทั่วไป)
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
@@ -119,6 +214,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 ...prev,
                 [name]: numericValue,
             }))
+        } else if (name === 'department_id') {
+            handleDepartmentChange(e as React.ChangeEvent<HTMLSelectElement>)
         } else {
             setFormData((prev) => ({
                 ...prev,
@@ -127,6 +224,24 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
+    const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value.replace(/[^0-9.]/g, '')
+        const numericValue = parseFloat(value) || 0
+        setFormData((prev) => ({
+            ...prev,
+            base_salary: numericValue,
+        }))
+    }
+
+    // ฟังก์ชันสำหรับแสดงค่าใน input
+    const getSalaryDisplayValue = () => {
+        if (formData.base_salary === 0) {
+            return ''
+        }
+        return formData.base_salary.toString()
+    }
+
+    // Handle Submit Form (User)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -161,10 +276,16 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
             if (editingUser) {
                 await updateUser(editingUser._id, submitData)
-                showMessage('success', 'User updated successfully!')
+                setMessage({
+                    type: 'success',
+                    text: 'User updated successfully!',
+                })
             } else {
                 await createUser(submitData)
-                showMessage('success', 'User created successfully!')
+                setMessage({
+                    type: 'success',
+                    text: 'User created successfully!',
+                })
             }
 
             // รอสักครู่ให้เห็นข้อความ success ก่อนปิด
@@ -174,20 +295,61 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 onClose()
             }, 1000)
         } catch (error: any) {
-            showMessage('error', error.message || 'Something went wrong!')
+            setMessage({
+                type: 'error',
+                text: error.message || 'Something went wrong!',
+            })
         } finally {
             setLoading(false)
         }
     }
 
+    // Reset Form
+    const resetForm = () => {
+        setFormData({
+            email: '',
+            password: '',
+            role: 'Employee',
+            first_name_en: '',
+            last_name_en: '',
+            nickname_en: '',
+            first_name_la: '',
+            last_name_la: '',
+            nickname_la: '',
+            date_of_birth: '',
+            start_work: '',
+            vacation_days: 0,
+            gender: 'Male',
+            position_id: '',
+            department_id: '',
+            status: 'Active',
+            base_salary: 0,
+        })
+        setMessage(null)
+    }
+
+    // Handle Close Modal
     const handleClose = () => {
         resetForm()
         onClose()
     }
 
+    // Handle Backdrop Click
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
             handleClose()
+        }
+    }
+
+    // เพิ่มฟังก์ชันสำหรับ Department และ Position
+    const handleDepartmentSuccess = () => {
+        fetchDepartments()
+    }
+
+    const handlePositionSuccess = () => {
+        fetchAllPositions()
+        if (formData.department_id) {
+            fetchPositionsByDepartment(formData.department_id)
         }
     }
 
@@ -197,23 +359,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         }).format(value)
-    }
-
-    const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.replace(/[^0-9.]/g, '')
-        const numericValue = parseFloat(value) || 0
-        setFormData((prev) => ({
-            ...prev,
-            base_salary: numericValue,
-        }))
-    }
-
-    // ฟังก์ชันสำหรับแสดงค่าใน input
-    const getSalaryDisplayValue = () => {
-        if (formData.base_salary === 0) {
-            return ''
-        }
-        return formData.base_salary.toString()
     }
 
     if (!isOpen) return null
@@ -582,35 +727,193 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 />
                             </div>
 
-                            {/* Work Information */}
-                            <div>
-                                <label style={labelStyle}>Position ID *</label>
-                                <input
-                                    type="text"
-                                    name="position_id"
-                                    value={formData.position_id}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="IT001"
-                                    style={inputStyle}
-                                />
+                            {/* Work Information Section */}
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <h3
+                                    style={{
+                                        margin: '20px 0 10px 0',
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: '#374151',
+                                        borderBottom: '2px solid #e5e7eb',
+                                        paddingBottom: '8px',
+                                    }}
+                                >
+                                    💼 Work Information
+                                </h3>
                             </div>
 
+                            {/* Department Input with Add Button */}
                             <div>
-                                <label style={labelStyle}>
-                                    Department ID *
-                                </label>
-                                <input
-                                    type="text"
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        marginBottom: '8px',
+                                    }}
+                                >
+                                    <label style={labelStyle}>
+                                        Department *
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setDepartmentModalOpen(true)
+                                        }
+                                        style={{
+                                            marginLeft: 'auto',
+                                            padding: '6px 12px',
+                                            backgroundColor: '#10b981',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            fontWeight: '500',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                        }}
+                                        title="Add new department"
+                                    >
+                                        <HiPlus size={12} />
+                                        Add
+                                    </button>
+                                </div>
+                                <select
                                     name="department_id"
                                     value={formData.department_id}
                                     onChange={handleInputChange}
                                     required
-                                    placeholder="CX001"
-                                    style={inputStyle}
-                                />
+                                    disabled={loadingDepartments}
+                                    style={{
+                                        ...inputStyle,
+                                        cursor: loadingDepartments
+                                            ? 'wait'
+                                            : 'pointer',
+                                        backgroundColor: loadingDepartments
+                                            ? '#f9fafb'
+                                            : 'white',
+                                    }}
+                                >
+                                    <option value="">
+                                        {loadingDepartments
+                                            ? 'Loading...'
+                                            : 'Select Department'}
+                                    </option>
+                                    {departments.map((dept) => (
+                                        <option key={dept._id} value={dept._id}>
+                                            {dept.department_name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
+                            {/* Position Input with Add Button */}
+                            <div>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        marginBottom: '8px',
+                                    }}
+                                >
+                                    <label style={labelStyle}>Position *</label>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setPositionModalOpen(true)
+                                        }
+                                        disabled={
+                                            !formData.department_id ||
+                                            loadingPositions
+                                        }
+                                        style={{
+                                            marginLeft: 'auto',
+                                            padding: '6px 12px',
+                                            backgroundColor:
+                                                formData.department_id &&
+                                                !loadingPositions
+                                                    ? '#10b981'
+                                                    : '#9ca3af',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor:
+                                                formData.department_id &&
+                                                !loadingPositions
+                                                    ? 'pointer'
+                                                    : 'not-allowed',
+                                            fontSize: '12px',
+                                            fontWeight: '500',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                        }}
+                                        title={
+                                            formData.department_id
+                                                ? 'Add new position'
+                                                : 'Select department first'
+                                        }
+                                    >
+                                        <HiPlus size={12} />
+                                        Add
+                                    </button>
+                                </div>
+                                <select
+                                    name="position_id"
+                                    value={formData.position_id}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={
+                                        !formData.department_id ||
+                                        loadingPositions
+                                    }
+                                    style={{
+                                        ...inputStyle,
+                                        cursor:
+                                            formData.department_id &&
+                                            !loadingPositions
+                                                ? 'pointer'
+                                                : 'not-allowed',
+                                        backgroundColor:
+                                            !formData.department_id ||
+                                            loadingPositions
+                                                ? '#f9fafb'
+                                                : 'white',
+                                    }}
+                                >
+                                    <option value="">
+                                        {loadingPositions
+                                            ? 'Loading positions...'
+                                            : !formData.department_id
+                                              ? 'Select department first'
+                                              : filteredPositions.length === 0
+                                                ? 'No positions found'
+                                                : 'Select Position'}
+                                    </option>
+                                    {filteredPositions.map((pos) => (
+                                        <option key={pos._id} value={pos._id}>
+                                            {pos.position_name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {formData.department_id &&
+                                    filteredPositions.length > 0 && (
+                                        <div
+                                            style={{
+                                                fontSize: '12px',
+                                                color: '#6b7280',
+                                                marginTop: '4px',
+                                            }}
+                                        >
+                                            Found {filteredPositions.length}{' '}
+                                            position(s)
+                                        </div>
+                                    )}
+                            </div>
+
+                            {/* Vacation Days และ Status */}
                             <div>
                                 <label style={labelStyle}>Vacation Days</label>
                                 <input
@@ -716,6 +1019,25 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     </form>
                 </div>
             </div>
+
+            {/* Department Modal */}
+            <DepartmentModal
+                isOpen={departmentModalOpen}
+                onClose={() => setDepartmentModalOpen(false)}
+                onSuccess={handleDepartmentSuccess}
+            />
+
+            {/* Position Modal */}
+            <PositionModal
+                isOpen={positionModalOpen}
+                onClose={() => setPositionModalOpen(false)}
+                onSuccess={handlePositionSuccess}
+                selectedDepartmentId={
+                    typeof formData.department_id === 'string'
+                        ? formData.department_id
+                        : ''
+                }
+            />
         </div>
     )
 }
