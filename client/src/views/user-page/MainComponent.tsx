@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getUserById, UserData } from '@/services/User_Page/api'
+import { getUserById, UserData } from '@/services/User_Page/user_api'
 import UserProfile from './UserProfile'
 
 const MainComponent = () => {

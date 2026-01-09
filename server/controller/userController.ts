@@ -196,3 +196,26 @@ export const getUsersByRole = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// Get only Supervisors
+export const getSupervisors = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const supervisors = await User.find({
+      role: "Supervisor",
+      status: "Active",
+    })
+      .select("_id first_name_en last_name_en first_name_la last_name_la");
+
+    res.status(200).json({
+      supervisors,
+      count: supervisors.length,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      message: "Error fetching supervisors",
+      error: error.message,
+    });
+  }
+};

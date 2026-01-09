@@ -1,8 +1,18 @@
-const ActionButton = ({ label }: { label: string }) => (
-  <button className="px-4 py-2 rounded-lg bg-green-500 text-white font-semibold shadow-sm hover:bg-green-600 hover:shadow-md transition">
+type ActionButtonProps = {
+  label: string
+  onClick?: () => void
+}
+
+const ActionButton = ({ label, onClick }: ActionButtonProps) => (
+  <button
+    onClick={onClick}
+    className="px-4 py-2 rounded-lg bg-green-500 text-white font-semibold
+               shadow-sm hover:bg-green-600 hover:shadow-md transition"
+  >
     {label}
   </button>
 )
+
 const formatDate = (dateString?: string) => {
   if (!dateString) return undefined
   return new Date(dateString).toLocaleDateString('en-GB', {
@@ -32,5 +42,7 @@ const ProfileField = ({
     </div>
   </div>
 )
-
-export { ActionButton, ProfileField, formatDate }
+ const toDecimalHour = (hour: number, minute: number) => {
+    return hour + minute / 60
+  }
+export { ActionButton, ProfileField, formatDate, toDecimalHour }

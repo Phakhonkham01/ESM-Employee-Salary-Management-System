@@ -1,10 +1,14 @@
-import { UserData } from '@/services/User_Page/api'
+import { UserData } from '@/services/User_Page/user_api'
+import { useState } from 'react'
+
+import RequestModule from './module/RequestModule'
+
 import { MdEmail, MdCake } from 'react-icons/md'
 import { PiGenderIntersex } from 'react-icons/pi'
 import {
     PiBuildingOfficeLight,
     PiFinnTheHumanLight,
-    PiMoneyFill,
+    PiMoneyFill, 
     PiTextAa,
 } from 'react-icons/pi'
 import { MdOutlineDriveFileRenameOutline } from 'react-icons/md'
@@ -15,8 +19,12 @@ type Props = {
 }
 
 const UserProfile = ({ user }: Props) => {
+    const [openRequest, setOpenRequest] = useState(false)
+    const [requestType, setRequestType] =
+        useState<'OT' | 'FIELD_WORK'>('OT')
+
     return (
-        <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-white/80 rounded-2xl shadow-xl overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-24 relative">
                 <div className="absolute -bottom-16 left-8">
@@ -50,22 +58,37 @@ const UserProfile = ({ user }: Props) => {
                         </div>
                     </div>
 
+                    {/* Action Buttons */}
                     <div className="flex gap-2 flex-wrap justify-end">
-                        <ActionButton label="ສົ່ງຄຳຂໍ OT" />
-                        <ActionButton label="ສົ່ງຄຳຂໍ ວຽກນອກ" />
-                        {/* <ActionButton label="ສົ່ງຄຳຂໍ ມື້ພັກ" /> */}
+                        <ActionButton
+                            label="ສົ່ງຄຳຂໍ OT"
+                            onClick={() => {
+                                setRequestType('OT')
+                                setOpenRequest(true)
+                            }}
+                        />
+                        <ActionButton
+                            label="ສົ່ງຄຳຂໍ ວຽກນອກ"
+                            onClick={() => {
+                                setRequestType('FIELD_WORK')
+                                setOpenRequest(true)
+                            }}
+                        />
                     </div>
                 </div>
             </div>
 
+            {/* One unified request module */}
+            <RequestModule
+                open={openRequest}
+                type={requestType}
+                onClose={() => setOpenRequest(false)}
+            />
+
             {/* Info */}
             <div className="px-8 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <ProfileField
-                        label="Email"
-                        value={user.email}
-                        icon={<MdEmail />}
-                    />
+                    <ProfileField label="Email" value={user.email} icon={<MdEmail />} />
                     <ProfileField
                         label="Department"
                         value={user.department_id?.department_name}
