@@ -42,5 +42,7 @@ const ProfileField = ({
     </div>
   </div>
 )
-
-export { ActionButton, ProfileField, formatDate }
+ const toDecimalHour = (hour: number, minute: number) => {
+    return hour + minute / 60
+  }
+export { ActionButton, ProfileField, formatDate, toDecimalHour }

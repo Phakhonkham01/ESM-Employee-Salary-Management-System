@@ -11,6 +11,7 @@ export const createRequest = async (
   try {
     const {
       user_id,
+      supervisor_id,
       date,
       title,
       start_hour,
@@ -18,19 +19,20 @@ export const createRequest = async (
       reason,
     } = req.body;
 
-    if (!user_id || !date || !title || start_hour == null || end_hour == null) {
+    if (!user_id ||!supervisor_id || !date || !title || start_hour == null || end_hour == null) {
       res.status(400).json({ message: "Missing required fields" });
       return;
     }
 
     const newRequest = await RequestModel.create({
       user_id,
+      supervisor_id,     
       date,
       title,
       start_hour,
       end_hour,
       reason: reason || "",
-      status: "ລໍຖ້າ",
+      status: "Pending",
     });
 
     res.status(201).json({
@@ -73,7 +75,7 @@ export const updateRequestStatus = async (
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!["ລໍຖ້າ", "ອະນຸມັດ", "ປະຕິເສດ"].includes(status)) {
+    if (!["Pending", "Accept", "Reject"].includes(status)) {
       res.status(400).json({ message: "Invalid status" });
       return;
     }

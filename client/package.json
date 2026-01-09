@@ -14,11 +14,30 @@
         "format": "npm run prettier:fix && npm run lint:fix"
     },
     "dependencies": {
+        "@floating-ui/react": "^0.27.16",
+        "@hookform/resolvers": "^5.2.2",
         "@tailwindcss/vite": "^4.1.18",
+        "axios": "^1.13.2",
+        "axios-mock-adapter": "^2.1.0",
+        "classnames": "^2.5.1",
+        "dayjs": "^1.11.19",
+        "framer-motion": "^12.24.12",
+        "i18next": "^25.7.4",
+        "js-cookie": "^3.0.5",
+        "lodash": "^4.17.21",
         "lucide-react": "^0.562.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "tailwindcss": "^4.1.18"
+        "react-hook-form": "^7.70.0",
+        "react-i18next": "^16.5.1",
+        "react-icons": "^5.5.0",
+        "react-modal": "^3.16.3",
+        "react-router-dom": "^7.12.0",
+        "simplebar-react": "^3.3.2",
+        "tailwind-merge": "^3.4.0",
+        "tailwindcss": "^4.1.18",
+        "zod": "^4.3.5",
+        "zustand": "^5.0.9"
     },
     "devDependencies": {
         "@eslint/compat": "^1.2.4",
