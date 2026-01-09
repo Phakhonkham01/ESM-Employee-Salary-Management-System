@@ -2,26 +2,28 @@ import { UserData } from '@/services/User_Page/user_api'
 import { useState } from 'react'
 
 import RequestModule from './module/RequestModule'
+import DayOffModule from './module/DayOffModule'
 
 import { MdEmail, MdCake } from 'react-icons/md'
 import { PiGenderIntersex } from 'react-icons/pi'
 import {
     PiBuildingOfficeLight,
     PiFinnTheHumanLight,
-    PiMoneyFill, 
+    PiMoneyFill,
     PiTextAa,
 } from 'react-icons/pi'
 import { MdOutlineDriveFileRenameOutline } from 'react-icons/md'
-import { ActionButton, ProfileField, formatDate } from './HelperCompents'
+import { ActionButton, ProfileField, formatDate } from './HelperComponents'
 
 type Props = {
     user: UserData
 }
 
 const UserProfile = ({ user }: Props) => {
+    const [openDayOff, setOpenDayOff] = useState(false)
+
     const [openRequest, setOpenRequest] = useState(false)
-    const [requestType, setRequestType] =
-        useState<'OT' | 'FIELD_WORK'>('OT')
+    const [requestType, setRequestType] = useState<'OT' | 'FIELD_WORK'>('OT')
 
     return (
         <div className="bg-white/80 rounded-2xl shadow-xl overflow-hidden">
@@ -74,6 +76,10 @@ const UserProfile = ({ user }: Props) => {
                                 setOpenRequest(true)
                             }}
                         />
+                        <ActionButton
+                            label="ຂໍລາພັກ (Day Off)"
+                            onClick={() => setOpenDayOff(true)}
+                        />
                     </div>
                 </div>
             </div>
@@ -84,11 +90,19 @@ const UserProfile = ({ user }: Props) => {
                 type={requestType}
                 onClose={() => setOpenRequest(false)}
             />
+            <DayOffModule
+                open={openDayOff}
+                onClose={() => setOpenDayOff(false)}
+            />
 
             {/* Info */}
             <div className="px-8 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <ProfileField label="Email" value={user.email} icon={<MdEmail />} />
+                    <ProfileField
+                        label="Email"
+                        value={user.email}
+                        icon={<MdEmail />}
+                    />
                     <ProfileField
                         label="Department"
                         value={user.department_id?.department_name}

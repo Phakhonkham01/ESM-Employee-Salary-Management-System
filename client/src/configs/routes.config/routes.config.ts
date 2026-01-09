@@ -53,7 +53,7 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'attendanceMenu.item1',
+        key: 'attendanceMenu',
         path: '/group-attendance-menu-item-1',
         component: lazy(() =>
             import('@/views/attendance/Attendance')
@@ -68,9 +68,15 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'user.requests',
-        path: '/user-requests',
-        component: lazy(() =>  import('@/views/user-page/user-requests/MainComponent')),
+        key: 'user.ot.fieldwork.requests',
+        path: '/user-ot-fieldwork-requests',
+        component: lazy(() =>  import('@/views/user-page/user-ot-fieldwork-requests/MainComponent')),
+        authority: [],
+    },
+     {
+        key: 'user.dayoff.requests',
+        path: '/user-dayoff-requests',
+        component: lazy(() =>  import('@/views/user-page/user-dayoff-requests/MainComponent')),
         authority: [],
     },
     // {
