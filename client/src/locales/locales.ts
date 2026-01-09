@@ -20,7 +20,7 @@ i18n.use(initReactI18next).init({
 })
 
 export const dateLocales: {
-    [key: string]: () => Promise<ILocale>
+    [key: string]: () => Promise<any>
 } = {
     en: () => import('dayjs/locale/en'),
 }

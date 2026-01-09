@@ -11,7 +11,7 @@ const ProtectedRoute = () => {
     const { pathname } = useLocation()
 
     const getPathName =
-        pathname === '/' ? '' : `?${REDIRECT_URL_KEY}=${location.pathname}`
+        pathname === '/' ? '' : `?${REDIRECT_URL_KEY}=${pathname}`
 
     if (!authenticated) {
         return (
