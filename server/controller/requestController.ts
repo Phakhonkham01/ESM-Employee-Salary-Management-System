@@ -2,6 +2,22 @@ import { Request, Response } from "express";
 import RequestModel from "../model/requestModel.js";
 
 /**
+ * Helpers
+ */
+
+// Allow 00:00 → 23:59 and special case 24:00
+const isValidTime = (time: string): boolean => {
+  if (time === "24:00") return true;
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  return timeRegex.test(time);
+};
+
+const toMinutes = (time: string): number => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+
+/**
  * Create OT / Field Work Request
  */
 export const createRequest = async (
@@ -19,19 +35,41 @@ export const createRequest = async (
       reason,
     } = req.body;
 
-    if (!user_id ||!supervisor_id || !date || !title || start_hour == null || end_hour == null) {
+    // Required fields
+    if (
+      !user_id ||
+      !supervisor_id ||
+      !date ||
+      !title ||
+      !start_hour ||
+      !end_hour
+    ) {
       res.status(400).json({ message: "Missing required fields" });
+      return;
+    }
+
+    // Time format validation
+    if (!isValidTime(start_hour) || !isValidTime(end_hour)) {
+      res.status(400).json({ message: "Invalid time format (HH:mm)" });
+      return;
+    }
+
+    // Time order validation
+    if (toMinutes(end_hour) <= toMinutes(start_hour)) {
+      res.status(400).json({
+        message: "End time must be later than start time",
+      });
       return;
     }
 
     const newRequest = await RequestModel.create({
       user_id,
-      supervisor_id,     
+      supervisor_id,
       date,
       title,
-      start_hour,
-      end_hour,
-      reason: reason || "",
+      start_hour, // "08:00"
+      end_hour,   // "17:00"
+      reason,
       status: "Pending",
     });
 
@@ -39,8 +77,15 @@ export const createRequest = async (
       message: "Request submitted successfully",
       request: newRequest,
     });
-  } catch (error) {
-    console.error(error);
+  } catch (error: any) {
+    console.error("CREATE REQUEST ERROR:", error);
+
+    // Return validation errors properly
+    if (error.name === "ValidationError") {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 };
