@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { getAllUsers, deleteUser } from '../../services/Create_user/api'
 import type { UserData } from '../../services/Create_user/api'
-import { HiPencil, HiTrash, HiRefresh } from 'react-icons/hi'
+import { HiPencil, HiTrash, HiUserAdd } from 'react-icons/hi'
+import UserFormModal from './UserFormModal'
 
 interface UserListProps {
     onEdit: (user: UserData) => void
@@ -10,10 +11,13 @@ interface UserListProps {
 const UserList: React.FC<UserListProps> = ({ onEdit }) => {
     const [users, setUsers] = useState<UserData[]>([])
     const [loading, setLoading] = useState(false)
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [editingUser, setEditingUser] = useState<UserData | null>(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     useEffect(() => {
         fetchUsers()
-    }, [])
+    }, [refreshTrigger])
 
     const fetchUsers = async () => {
         try {
@@ -27,346 +31,250 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
         }
     }
 
+    const handleCreateUser = () => {
+        setEditingUser(null)
+        setIsModalOpen(true)
+    }
+
+    const handleEditUser = (user: UserData) => {
+        setEditingUser(user)
+        setIsModalOpen(true)
+    }
+
+    const handleModalClose = () => {
+        setIsModalOpen(false)
+        setEditingUser(null)
+    }
+
+    const handleSuccess = () => {
+        setRefreshTrigger((prev) => prev + 1)
+        setIsModalOpen(false)
+        setEditingUser(null)
+    }
+
     const handleDelete = async (id: string) => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
                 await deleteUser(id)
-                fetchUsers()
+                setRefreshTrigger((prev) => prev + 1)
             } catch (error: any) {
                 console.error('Error deleting user:', error)
             }
         }
     }
 
+    const getRoleBadgeClass = (role: string) => {
+        switch (role) {
+            case 'Admin':
+                return 'bg-blue-100 text-blue-800'
+            case 'Supervisor':
+                return 'bg-amber-100 text-amber-800'
+            default:
+                return 'bg-indigo-100 text-indigo-800'
+        }
+    }
+
+    const getStatusBadgeClass = (status: string) => {
+        switch (status) {
+            case 'Active':
+                return 'bg-green-100 text-green-800'
+            case 'Inactive':
+                return 'bg-red-100 text-red-800'
+            default:
+                return 'bg-amber-100 text-amber-800'
+        }
+    }
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'Active':
+                return '✅'
+            case 'Inactive':
+                return '❌'
+            case 'On Leave':
+                return '🏖️'
+            default:
+                return ''
+        }
+    }
+
+    const getGenderIcon = (gender: string) => {
+        switch (gender) {
+            case 'Male':
+                return '♂️'
+            case 'Female':
+                return '♀️'
+            default:
+                return '⚧'
+        }
+    }
+
     return (
-        <div
-            style={{
-                backgroundColor: 'white',
-                borderRadius: '12px',
-                padding: '30px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '20px',
-                }}
-            >
-                <h2
-                    style={{
-                        margin: 0,
-                        fontSize: '20px',
-                        fontWeight: '600',
-                        color: '#1f2937',
-                    }}
-                >
-                    📋 Users List ({users.length})
-                </h2>
-                <button
-                    onClick={fetchUsers}
-                    disabled={loading}
-                    style={{
-                        padding: '8px 16px',
-                        backgroundColor: '#3b82f6',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        transition: 'all 0.3s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                    }}
-                    onMouseEnter={(e) =>
-                        !loading &&
-                        (e.currentTarget.style.backgroundColor = '#2563eb')
-                    }
-                    onMouseLeave={(e) =>
-                        !loading &&
-                        (e.currentTarget.style.backgroundColor = '#3b82f6')
-                    }
-                >
-                    <HiRefresh size={14} />
-                    {loading ? 'Loading...' : 'Refresh'}
-                </button>
-            </div>
-
-            {loading ? (
-                <div
-                    style={{
-                        textAlign: 'center',
-                        padding: '40px',
-                        color: '#6b7280',
-                        fontSize: '14px',
-                    }}
-                >
-                    Loading users...
+        <div className="px-5">
+            <div className="bg-white rounded-xl p-8 shadow-sm">
+                {/* Header */}
+                <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-xl font-semibold text-gray-800 m-0">
+                        📋 Users List ({users.length})
+                    </h2>
+                    <button
+                        onClick={handleCreateUser}
+                        className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2"
+                    >
+                        <HiUserAdd size={18} />
+                        Create New User
+                    </button>
                 </div>
-            ) : (
-                <>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table
-                            style={{
-                                width: '100%',
-                                borderCollapse: 'collapse',
-                            }}
-                        >
-                            <thead>
-                                <tr
-                                    style={{
-                                        backgroundColor: '#f3f4f6',
-                                        borderBottom: '2px solid #e5e7eb',
-                                    }}
-                                >
-                                    <th style={tableHeaderStyle}>Name (EN)</th>
-                                    <th style={tableHeaderStyle}>Name (LA)</th>
-                                    <th style={tableHeaderStyle}>Email</th>
-                                    <th style={tableHeaderStyle}>Role</th>
-                                    <th style={tableHeaderStyle}>Gender</th>
-                                    <th style={tableHeaderStyle}>Position</th>
-                                    <th style={tableHeaderStyle}>Department</th>
-                                    <th style={tableHeaderStyle}>Status</th>
-                                    <th style={tableHeaderStyle}>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {users.map((user) => (
-                                    <tr
-                                        key={user._id}
-                                        style={{
-                                            borderBottom: '1px solid #e5e7eb',
-                                            transition:
-                                                'background-color 0.2s ease',
-                                        }}
-                                        onMouseEnter={(e) =>
-                                            (e.currentTarget.style.backgroundColor =
-                                                '#f9fafb')
-                                        }
-                                        onMouseLeave={(e) =>
-                                            (e.currentTarget.style.backgroundColor =
-                                                'white')
-                                        }
-                                    >
-                                        <td style={tableCellStyle}>
-                                            <div style={{ fontWeight: '500' }}>
-                                                {user.first_name_en}{' '}
-                                                {user.last_name_en}
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: '12px',
-                                                    color: '#6b7280',
-                                                    marginTop: '2px',
-                                                }}
-                                            >
-                                                ({user.nickname_en})
-                                            </div>
-                                        </td>
-                                        <td style={tableCellStyle}>
-                                            <div style={{ fontWeight: '500' }}>
-                                                {user.first_name_la}{' '}
-                                                {user.last_name_la}
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: '12px',
-                                                    color: '#6b7280',
-                                                    marginTop: '2px',
-                                                }}
-                                            >
-                                                ({user.nickname_la})
-                                            </div>
-                                        </td>
-                                        <td style={tableCellStyle}>
-                                            {user.email}
-                                        </td>
-                                        <td style={tableCellStyle}>
-                                            <span
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500',
-                                                    backgroundColor:
-                                                        user.role === 'Admin'
-                                                            ? '#dbeafe'
-                                                            : user.role ===
-                                                                'Supervisor'
-                                                              ? '#fef3c7'
-                                                              : '#e0e7ff',
-                                                    color:
-                                                        user.role === 'Admin'
-                                                            ? '#1e40af'
-                                                            : user.role ===
-                                                                'Supervisor'
-                                                              ? '#92400e'
-                                                              : '#3730a3',
-                                                }}
-                                            >
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td style={tableCellStyle}>
-                                            {user.gender === 'Male'
-                                                ? '♂️'
-                                                : user.gender === 'Female'
-                                                  ? '♀️'
-                                                  : '⚧'}{' '}
-                                            {user.gender}
-                                        </td>
-                                        <td style={tableCellStyle}>
-                                            {user.position_id?.position_name ||
-                                                '-'}
-                                        </td>
 
-                                        <td style={tableCellStyle}>
-                                            {user.department_id
-                                                ?.department_name || '-'}
-                                        </td>
-
-                                        <td style={tableCellStyle}>
-                                            <span
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '500',
-                                                    backgroundColor:
-                                                        user.status === 'Active'
-                                                            ? '#d1fae5'
-                                                            : user.status ===
-                                                                'Inactive'
-                                                              ? '#fee2e2'
-                                                              : '#fef3c7',
-                                                    color:
-                                                        user.status === 'Active'
-                                                            ? '#065f46'
-                                                            : user.status ===
-                                                                'Inactive'
-                                                              ? '#991b1b'
-                                                              : '#92400e',
-                                                }}
-                                            >
-                                                {user.status === 'Active' &&
-                                                    '✅'}
-                                                {user.status === 'Inactive' &&
-                                                    '❌'}
-                                                {user.status === 'On Leave' &&
-                                                    '🏖️'}{' '}
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                        <td
-                                            style={{
-                                                ...tableCellStyle,
-                                                textAlign: 'center',
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    display: 'flex',
-                                                    gap: '8px',
-                                                    justifyContent: 'center',
-                                                }}
-                                            >
-                                                <button
-                                                    onClick={() => onEdit(user)}
-                                                    style={actionButtonStyle(
-                                                        '#3b82f6',
-                                                        '#2563eb',
-                                                    )}
-                                                    title="Edit user"
-                                                >
-                                                    <HiPencil size={14} />
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(user._id)
-                                                    }
-                                                    style={actionButtonStyle(
-                                                        '#ef4444',
-                                                        '#dc2626',
-                                                    )}
-                                                    title="Delete user"
-                                                >
-                                                    <HiTrash size={14} />
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                {/* Loading State */}
+                {loading ? (
+                    <div className="text-center py-10 text-gray-500 text-sm">
+                        Loading users...
                     </div>
-
-                    {users.length === 0 && (
-                        <div
-                            style={{
-                                textAlign: 'center',
-                                padding: '60px 20px',
-                                color: '#6b7280',
-                                fontSize: '15px',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: '48px',
-                                    marginBottom: '16px',
-                                    opacity: 0.5,
-                                }}
-                            >
-                                👥
-                            </div>
-                            <p style={{ margin: 0, marginBottom: '8px' }}>
-                                No users found
-                            </p>
+                ) : (
+                    <>
+                        {/* Users Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-100 border-b-2 border-gray-200">
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Name (EN)
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Name (LA)
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Email
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Role
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Gender
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Position
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Department
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Status
+                                        </th>
+                                        <th className="px-3 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map((user) => (
+                                        <tr
+                                            key={user._id}
+                                            className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200"
+                                        >
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                <div className="font-medium">
+                                                    {user.first_name_en}{' '}
+                                                    {user.last_name_en}
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                    ({user.nickname_en})
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                <div className="font-medium">
+                                                    {user.first_name_la}{' '}
+                                                    {user.last_name_la}
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                    ({user.nickname_la})
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                {user.email}
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                <span
+                                                    className={`px-2.5 py-1 rounded-md text-xs font-medium ${getRoleBadgeClass(user.role)}`}
+                                                >
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                {getGenderIcon(user.gender)}{' '}
+                                                {user.gender}
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                {user.position_id
+                                                    ?.position_name || '-'}
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                {user.department_id
+                                                    ?.department_name || '-'}
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700">
+                                                <span
+                                                    className={`px-2.5 py-1 rounded-md text-xs font-medium ${getStatusBadgeClass(user.status)}`}
+                                                >
+                                                    {getStatusIcon(user.status)}{' '}
+                                                    {user.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-3.5 text-sm text-gray-700 text-center">
+                                                <div className="flex gap-2 justify-center">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEditUser(user)
+                                                        }
+                                                        className="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-medium transition-all duration-300 flex items-center gap-1"
+                                                        title="Edit user"
+                                                    >
+                                                        <HiPencil size={14} />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                user._id,
+                                                            )
+                                                        }
+                                                        className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium transition-all duration-300 flex items-center gap-1"
+                                                        title="Delete user"
+                                                    >
+                                                        <HiTrash size={14} />
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
-                </>
-            )}
+
+                        {/* Empty State */}
+                        {users.length === 0 && (
+                            <div className="text-center py-15 px-5 text-gray-500 text-sm">
+                                <div className="text-5xl mb-4 opacity-50">
+                                    👥
+                                </div>
+                                <p className="m-0 mb-2">No users found</p>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* User Form Modal */}
+                <UserFormModal
+                    isOpen={isModalOpen}
+                    onClose={handleModalClose}
+                    editingUser={editingUser}
+                    onSuccess={handleSuccess}
+                />
+            </div>
         </div>
     )
 }
-
-const tableHeaderStyle = {
-    padding: '14px 12px',
-    textAlign: 'left' as const,
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#374151',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-}
-
-const tableCellStyle = {
-    padding: '14px 12px',
-    fontSize: '14px',
-    color: '#374151',
-}
-
-const actionButtonStyle = (bgColor: string, hoverColor: string) => ({
-    padding: '8px 12px',
-    backgroundColor: bgColor,
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '500',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    onMouseEnter: (e: any) =>
-        (e.currentTarget.style.backgroundColor = hoverColor),
-    onMouseLeave: (e: any) => (e.currentTarget.style.backgroundColor = bgColor),
-})
 
 export default UserList

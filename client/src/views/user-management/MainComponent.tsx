@@ -29,15 +29,7 @@ const MainComponent: React.FC = () => {
     }
 
     return (
-        <div
-            style={{
-                padding: '30px',
-                maxWidth: '1400px',
-                margin: '0 auto',
-                backgroundColor: '#f9fafb',
-                minHeight: '100vh',
-            }}
-        >
+        <div style={{}}>
             {/* Header */}
             <div
                 style={{
@@ -51,8 +43,6 @@ const MainComponent: React.FC = () => {
                     style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '5px',
                     }}
                 >
                     <h1
@@ -66,7 +56,7 @@ const MainComponent: React.FC = () => {
                             gap: '5px',
                         }}
                     ></h1>
-                    <button
+                    {/* <button
                         onClick={handleCreateUser}
                         style={{
                             padding: '10px 20px',
@@ -91,7 +81,7 @@ const MainComponent: React.FC = () => {
                     >
                         <HiUserAdd size={18} />
                         Create New User
-                    </button>
+                    </button> */}
                 </div>
             </div>
 
