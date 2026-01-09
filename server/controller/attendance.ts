@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import AttendanceSummary from "../model/AttendanceSummary.js";
-import User from "../model/userModel";
+import User from "../model/userModel.js";
 
 
 // Create summary
 export const createSummary = async (req: Request, res: Response) => {
   try {
-    const { user_id, year, month, ot_hours, working_hours, attendance_days, leave_days } = req.body;
+    const { user_id, year, month, ot_hours, leave_days } = req.body;
 
     if (!user_id || year === undefined || month === undefined) {
       return res.status(400).json({ message: "user_id, year and month are required" });
@@ -32,9 +32,8 @@ export const createSummary = async (req: Request, res: Response) => {
       year: Number(year),
       month: Number(month),
       ot_hours: Number(ot_hours || 0),
-      working_hours: Number(working_hours || 0),
-      attendance_days: Number(attendance_days || 0),
-      leave_days: Number(leave_days || 0)
+      leave_days: Number(leave_days || 0),
+      attendence_days: Number(leave_days || 0)
     });
 
     await summary.save();

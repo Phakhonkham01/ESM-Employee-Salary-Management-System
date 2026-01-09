@@ -6,20 +6,20 @@ import {
   getSummaryByUser,
   updateSummary,
   deleteSummary
-} from "../controller/attendanceSummary.controller.js";
+} from "../controller/attendance.js";
 
 const router = Router();
 
 // Create
-router.post("/attendanceSummary", createSummary);
+router.post("/attendance", createSummary);
 // Read all
-router.get("/attendanceSummary", getAllSummaries);
+router.get("/attendance", getAllSummaries);
 // Read by user (keep before /:id to avoid route conflicts)
 router.get("/user/:userId", getSummaryByUser);
 // Read by id
-router.get("/attendanceSummary/:id", getSummaryById);
+router.get("/attendance/:id", getSummaryById);
 // Update
-router.put("/attendanceSummary/:id", updateSummary);
+router.put("/attendance/:id", updateSummary);
 // Delete
-router.delete("/attendanceSummary/:id", deleteSummary);
+router.delete("/attendance/:id", deleteSummary);
 export default router;
