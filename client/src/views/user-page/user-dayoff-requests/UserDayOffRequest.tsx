@@ -40,35 +40,41 @@ const ActionButton = ({
   color,
   hoverColor,
   onClick,
+  disabled,
   children,
 }: {
   color: string
   hoverColor: string
   onClick: () => void
+  disabled?: boolean
   children: React.ReactNode
 }) => (
   <button
-    onClick={onClick}
+    onClick={disabled ? undefined : onClick}
+    disabled={disabled}
     style={{
       padding: "8px 12px",
-      backgroundColor: color,
-      color: "white",
+      backgroundColor: disabled ? "#d1d5db" : color,
+      color: disabled ? "#6b7280" : "white",
       border: "none",
       borderRadius: "6px",
-      cursor: "pointer",
+      cursor: disabled ? "not-allowed" : "pointer",
       fontSize: "12px",
       fontWeight: "500",
-      transition: "background-color 0.2s ease",
       display: "flex",
       alignItems: "center",
       gap: "4px",
+      opacity: disabled ? 0.6 : 1,
+      transition: "background-color 0.2s ease",
     }}
-    onMouseEnter={(e) =>
-      (e.currentTarget.style.backgroundColor = hoverColor)
-    }
-    onMouseLeave={(e) =>
-      (e.currentTarget.style.backgroundColor = color)
-    }
+    onMouseEnter={(e) => {
+      if (!disabled)
+        e.currentTarget.style.backgroundColor = hoverColor
+    }}
+    onMouseLeave={(e) => {
+      if (!disabled)
+        e.currentTarget.style.backgroundColor = color
+    }}
   >
     {children}
   </button>
@@ -87,7 +93,6 @@ const UserDayOffRequests: React.FC<Props> = ({
 
       <Section title="🏖 Day Off Requests">
         <table style={{ ...tableStyle, width: "100%" }}>
-          {/* 🔹 AUTO WIDTH COLUMNS (default behavior) */}
           <thead>
             <tr>
               <th style={{ ...th, textAlign: "left" }}>Type</th>
@@ -101,39 +106,37 @@ const UserDayOffRequests: React.FC<Props> = ({
           </thead>
 
           <tbody>
-            {dayOffs.map((d) => (
-              <tr key={d._id} style={tr}>
-                <td style={{ ...td, textAlign: "left" }}>
-                  {d.day_off_type}
-                </td>
-                <td style={{ ...td, textAlign: "left" }}>
-                  {formatDate(d.start_date_time)}
-                </td>
-                <td style={{ ...td, textAlign: "left" }}>
-                  {formatDate(d.end_date_time)}
-                </td>
-                <td style={{ ...td, textAlign: "left" }}>
-                  {d.date_off_number}
-                </td>
-                <td style={{ ...td, textAlign: "left" }}>
-                  {d.reason}
-                </td>
-                <td style={{ ...td, textAlign: "left" }}>
-                  {statusBadge(d.status)}
-                </td>
+            {dayOffs.map((d) => {
+              const isPending = d.status === "Pending"
 
-                {/* ACTIONS */}
-                <td style={{ ...td, textAlign: "left" }}>
-                  {d.status === "Pending" ? (
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                      }}
-                    >
+              return (
+                <tr key={d._id} style={tr}>
+                  <td style={{ ...td, textAlign: "left" }}>
+                    {d.day_off_type}
+                  </td>
+                  <td style={{ ...td, textAlign: "left" }}>
+                    {formatDate(d.start_date_time)}
+                  </td>
+                  <td style={{ ...td, textAlign: "left" }}>
+                    {formatDate(d.end_date_time)}
+                  </td>
+                  <td style={{ ...td, textAlign: "left" }}>
+                    {d.date_off_number}
+                  </td>
+                  <td style={{ ...td, textAlign: "left" }}>
+                    {d.reason}
+                  </td>
+                  <td style={{ ...td, textAlign: "left" }}>
+                    {statusBadge(d.status)}
+                  </td>
+
+                  {/* ACTIONS (VISIBLE BUT DISABLED WHEN NOT PENDING) */}
+                  <td style={{ ...td, textAlign: "left" }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
                       <ActionButton
                         color="#3b82f6"
                         hoverColor="#2563eb"
+                        disabled={!isPending}
                         onClick={() => onEdit(d)}
                       >
                         <HiPencil size={14} />
@@ -143,10 +146,11 @@ const UserDayOffRequests: React.FC<Props> = ({
                       <ActionButton
                         color="#ef4444"
                         hoverColor="#dc2626"
+                        disabled={!isPending}
                         onClick={() => {
                           if (
                             window.confirm(
-                              "Are you sure you want to delete this request?"
+                              "Are you sure you want to cancel this request?"
                             )
                           ) {
                             onDelete(d._id)
@@ -154,17 +158,13 @@ const UserDayOffRequests: React.FC<Props> = ({
                         }}
                       >
                         <HiTrash size={14} />
-                        Delete
+                        Cancel
                       </ActionButton>
                     </div>
-                  ) : (
-                    <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                      —
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              )
+            })}
 
             {dayOffs.length === 0 && <EmptyRow colSpan={7} />}
           </tbody>

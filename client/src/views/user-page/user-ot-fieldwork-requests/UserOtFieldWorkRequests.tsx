@@ -54,8 +54,8 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({ requests }) => {
               <th style={th}>Type</th>
               <th style={th}>Date</th>
               <th style={th}>Time</th>
-              <th style={th}>Status</th>
               <th style={th}>Reason</th>
+              <th style={th}>Status</th>
             </tr>
           </thead>
 
@@ -67,8 +67,8 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({ requests }) => {
                 <td style={td}>
                   {r.start_hour} – {r.end_hour}
                 </td>
-                <td style={td}>{statusBadge(r.status)}</td>
                 <td style={td}>{r.reason}</td>
+                <td style={td}>{statusBadge(r.status)}</td>
               </tr>
             ))}
 
@@ -79,5 +79,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({ requests }) => {
     </div>
   )
 }
+
 
 export default UserOtFieldWorkRequests
