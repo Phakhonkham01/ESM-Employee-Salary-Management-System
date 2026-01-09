@@ -1,19 +1,34 @@
+// ==================== requestRoutes.ts ====================
 import express from "express";
 import {
   createRequest,
+  getAllRequests,
   getRequestsByUser,
+  getRequestsBySupervisor,
+  getRequestById,
   updateRequestStatus,
-} from "../controller/requestController.js";
+  updateRequest,
+  deleteRequest,
+  getRequestStats,
+} from "../controller/requestController";
 
 const router = express.Router();
 
-// POST /api/requests
+// CREATE
 router.post("/", createRequest);
 
-// GET /api/requests/user/:userId
+// READ
+router.get("/", getAllRequests);
 router.get("/user/:userId", getRequestsByUser);
+router.get("/supervisor/:supervisorId", getRequestsBySupervisor);
+router.get("/analytics/stats", getRequestStats);
+router.get("/:id", getRequestById);
 
-// PATCH /api/requests/:id/status
-router.patch("/:id/status", updateRequestStatus);
+// UPDATE
+router.put("/:id/status", updateRequestStatus);
+router.put("/:id", updateRequest);
+
+// DELETE
+router.delete("/:id", deleteRequest);
 
 export default router;
