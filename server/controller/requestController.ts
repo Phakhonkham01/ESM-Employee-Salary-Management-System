@@ -4,8 +4,28 @@ import RequestModel from "../model/requestModel.js";
 import mongoose from "mongoose";
 
 /**
+<<<<<<< HEAD
  * CREATE - Submit new OT/Field Work request
  * POST /api/requests
+=======
+ * Helpers
+ */
+
+// Allow 00:00 → 23:59 and special case 24:00
+const isValidTime = (time: string): boolean => {
+  if (time === "24:00") return true;
+  const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  return timeRegex.test(time);
+};
+
+const toMinutes = (time: string): number => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+
+/**
+ * Create OT / Field Work Request
+>>>>>>> 66da7a12d6d36407fcc2c6607ab7233e5f97c8e7
  */
 export const createRequest = async (
   req: Request,
@@ -22,6 +42,7 @@ export const createRequest = async (
       reason,
     } = req.body;
 
+<<<<<<< HEAD
     // Validation
     if (!user_id || !supervisor_id || !date || !title || start_hour == null || end_hour == null) {
       res.status(400).json({ 
@@ -55,6 +76,32 @@ export const createRequest = async (
         message: "Invalid start_hour or end_hour",
         requests: []
       });
+=======
+    // Required fields
+    if (
+      !user_id ||
+      !supervisor_id ||
+      !date ||
+      !title ||
+      !start_hour ||
+      !end_hour
+    ) {
+      res.status(400).json({ message: "Missing required fields" });
+>>>>>>> 66da7a12d6d36407fcc2c6607ab7233e5f97c8e7
+      return;
+    }
+
+    // Time format validation
+    if (!isValidTime(start_hour) || !isValidTime(end_hour)) {
+      res.status(400).json({ message: "Invalid time format (HH:mm)" });
+      return;
+    }
+
+    // Time order validation
+    if (toMinutes(end_hour) <= toMinutes(start_hour)) {
+      res.status(400).json({
+        message: "End time must be later than start time",
+      });
       return;
     }
 
@@ -63,9 +110,9 @@ export const createRequest = async (
       supervisor_id,
       date,
       title,
-      start_hour,
-      end_hour,
-      reason: reason || "",
+      start_hour, // "08:00"
+      end_hour,   // "17:00"
+      reason,
       status: "Pending",
     });
 
@@ -84,6 +131,19 @@ export const createRequest = async (
       error: error.message,
       requests: []
     });
+<<<<<<< HEAD
+=======
+  } catch (error: any) {
+    console.error("CREATE REQUEST ERROR:", error);
+
+    // Return validation errors properly
+    if (error.name === "ValidationError") {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+
+    res.status(500).json({ message: "Server error" });
+>>>>>>> 66da7a12d6d36407fcc2c6607ab7233e5f97c8e7
   }
 };
 

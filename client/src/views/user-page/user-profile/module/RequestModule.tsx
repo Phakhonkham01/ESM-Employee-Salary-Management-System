@@ -12,13 +12,13 @@ type Props = {
 
 const RequestModule = ({ open, type, onClose }: Props) => {
     /* =====================
-     State
-  ===================== */
+       State
+    ===================== */
     const [date, setDate] = useState('')
     const [startHour, setStartHour] = useState('08')
-    const [startMinute, setStartMinute] = useState('0')
+    const [startMinute, setStartMinute] = useState('00')
     const [endHour, setEndHour] = useState('17')
-    const [endMinute, setEndMinute] = useState('0')
+    const [endMinute, setEndMinute] = useState('00')
     const [reason, setReason] = useState('')
 
     const [supervisors, setSupervisors] = useState<Supervisor[]>([])
@@ -28,8 +28,8 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     const loggedUser = auth?.user
 
     /* =====================
-     Load supervisors
-  ===================== */
+       Load supervisors
+    ===================== */
     useEffect(() => {
         if (!open) return
 
@@ -39,14 +39,20 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     }, [open])
 
     /* =====================
-     Helpers
-  ===================== */
-    const toDecimalHour = (hour: string, minute: string) =>
-        Number(hour) + Number(minute) / 60
+       Helpers
+    ===================== */
+    const toTimeString = (hour: string, minute: string) => {
+        const hh = hour.padStart(2, '0')
+        const mm = minute.padStart(2, '0')
+        return `${hh}:${mm}`
+    }
+
+    const toMinutes = (hour: string, minute: string) =>
+        Number(hour) * 60 + Number(minute)
 
     /* =====================
-     Submit
-  ===================== */
+       Submit
+    ===================== */
     const handleSubmit = async () => {
         if (!loggedUser?._id) {
             alert('User not logged in')
@@ -64,23 +70,19 @@ const RequestModule = ({ open, type, onClose }: Props) => {
         const em = Number(endMinute)
 
         if (
-            sh < 0 ||
-            sh > 23 ||
-            eh < 0 ||
-            eh > 23 ||
-            sm < 0 ||
-            sm > 60 ||
-            em < 0 ||
-            em > 60
+            sh < 0 || sh > 24 ||
+            eh < 0 || eh > 24 ||
+            sm < 0 || sm > 60 ||
+            em < 0 || em > 60
         ) {
             alert('Invalid time input')
             return
         }
 
-        const start = toDecimalHour(startHour, startMinute)
-        const end = toDecimalHour(endHour, endMinute)
+        const startMinutes = toMinutes(startHour, startMinute)
+        const endMinutes = toMinutes(endHour, endMinute)
 
-        if (end <= start) {
+        if (endMinutes <= startMinutes) {
             alert('End time must be later than start time')
             return
         }
@@ -91,8 +93,8 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                 supervisor_id: supervisorId,
                 date,
                 title: type,
-                start_hour: start,
-                end_hour: end,
+                start_hour: toTimeString(startHour, startMinute),
+                end_hour: toTimeString(endHour, endMinute),
                 reason,
             })
 
@@ -104,8 +106,8 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     }
 
     /* =====================
-     Render
-  ===================== */
+       Render
+    ===================== */
     if (!open) return null
 
     return (
@@ -148,11 +150,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                                 onChange={(e) => {
                                     const value = e.target.value
                                     const num = Number(value)
-
-                                    if (
-                                        value === '' ||
-                                        (num >= 0 && num <= 24)
-                                    ) {
+                                    if (value === '' || (num >= 0 && num <= 24)) {
                                         setStartHour(value)
                                     }
                                 }}
@@ -168,11 +166,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                                 onChange={(e) => {
                                     const value = e.target.value
                                     const num = Number(value)
-
-                                    if (
-                                        value === '' ||
-                                        (num >= 0 && num <= 60)
-                                    ) {
+                                    if (value === '' || (num >= 0 && num <= 60)) {
                                         setStartMinute(value)
                                     }
                                 }}
@@ -196,11 +190,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                                 onChange={(e) => {
                                     const value = e.target.value
                                     const num = Number(value)
-
-                                    if (
-                                        value === '' ||
-                                        (num >= 0 && num <= 24)
-                                    ) {
+                                    if (value === '' || (num >= 0 && num <= 24)) {
                                         setEndHour(value)
                                     }
                                 }}
@@ -216,11 +206,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                                 onChange={(e) => {
                                     const value = e.target.value
                                     const num = Number(value)
-
-                                    if (
-                                        value === '' ||
-                                        (num >= 0 && num <= 60)
-                                    ) {
+                                    if (value === '' || (num >= 0 && num <= 60)) {
                                         setEndMinute(value)
                                     }
                                 }}

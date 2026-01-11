@@ -13,8 +13,8 @@ export interface CreateRequestPayload {
   supervisor_id: string
   date: string
   title: RequestType
-  start_hour: number
-  end_hour: number
+  start_hour: string   
+  end_hour: string   
   reason?: string
 }
 
@@ -24,8 +24,8 @@ export interface RequestItem {
   supervisor_id: string
   date: string
   title: RequestType
-  start_hour: number
-  end_hour: number
+  start_hour: string   
+  end_hour: string   
   reason?: string
   status: RequestStatus
   created_at: string
