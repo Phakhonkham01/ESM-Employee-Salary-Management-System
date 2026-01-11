@@ -1,6 +1,7 @@
 import type { FC, ReactElement } from 'react'
 import { useState, useEffect } from 'react'
 import { HiCheck, HiX, HiClock, HiCalendar, HiFilter } from 'react-icons/hi'
+import { useFullUser } from '@/components/template/useFullUser' // ✅ Use the hook
 import {
     getRequestsBySupervisor,
     updateRequestStatus,
@@ -59,104 +60,65 @@ const getTitleBadgeClass = (title: string): string => {
 
 // ==================== Main Component ====================
 const SupervisorRequests: FC = () => {
+    // ✅ Use the hook to get user data
+    const { fullUser, userId, role } = useFullUser()
+
     // State Management
     const [requests, setRequests] = useState<RequestData[]>([])
     const [loading, setLoading] = useState<boolean>(false)
     const [selectedMonth, setSelectedMonth] = useState<string>('')
     const [selectedStatus, setSelectedStatus] = useState<string>('all')
-    const [supervisorId, setSupervisorId] = useState<string>('')
     const [error, setError] = useState<string>('')
-    const [userRole, setUserRole] = useState<string>('')
 
-    // Initialize supervisor ID from localStorage
-    // Initialize supervisor ID from localStorage
+    // Check if user is supervisor
+    const isSupervisor = role === 'Supervisor'
+    const supervisorId = isSupervisor ? userId : null
+
+    // ✅ Check authorization on mount
     useEffect(() => {
-        console.log('🔄 Initializing supervisor ID...')
-        const authData = localStorage.getItem('auth') // Changed from 'user' to 'auth'
+        console.log('🔄 Checking user authorization...')
+        console.log('👤 User ID:', userId)
+        console.log('👔 User Role:', role)
+        console.log('✅ Is Supervisor:', isSupervisor)
 
-        if (authData) {
-            try {
-                const auth = JSON.parse(authData)
-                console.log('🔑 Full Auth data from localStorage:', auth) // DEBUG
-
-                // Now extract the user from the auth object
-                const user = auth.user
-                console.log('👤 User data:', user)
-                console.log('🆔 User ID:', user._id)
-                console.log('👔 User Role:', user.role)
-                console.log(
-                    '👤 User Name:',
-                    `${user.first_name_en} ${user.last_name_en}`,
-                )
-
-                // ตรวจสอบว่า user มี role เป็น Supervisor หรือไม่
-                setUserRole(user.role || '')
-
-                if (user.role !== 'Supervisor') {
-                    console.warn('⚠️ User is not a Supervisor:', user.role)
-                    setError(
-                        'Access denied. Only supervisors can view this page.',
-                    )
-                    setSupervisorId('') // เคลียร์ supervisorId
-                } else if (user._id) {
-                    console.log('✅ Setting supervisor ID:', user._id)
-                    setSupervisorId(user._id)
-                } else {
-                    console.error('❌ User has no _id field')
-                    setError('User data is invalid: Missing _id')
-                }
-            } catch (error) {
-                console.error('❌ Error parsing auth data:', error)
-                console.error('❌ Raw authData:', authData)
-                setError('Failed to load user data')
-            }
-        } else {
-            console.warn('⚠️ No auth data in localStorage')
-            console.log(
-                '📦 Available localStorage items:',
-                Object.keys(localStorage),
-            )
+        if (!userId) {
             setError('Please login to access this page')
+            return
         }
-    }, [])
 
-    // Fetch requests when supervisor ID is available
+        if (!isSupervisor) {
+            setError('Access denied. Only supervisors can view this page.')
+            return
+        }
+
+        // Clear any previous errors if user is authorized
+        setError('')
+    }, [userId, role, isSupervisor])
+
+    // ✅ Fetch requests when supervisor ID is available
     useEffect(() => {
-        console.log('📊 supervisorId changed:', supervisorId)
-        console.log('📊 supervisorId length:', supervisorId.length)
-        console.log(
-            '📊 Is supervisorId valid?',
-            supervisorId && supervisorId.length > 0,
-        )
-
-        if (supervisorId && supervisorId.length > 0) {
+        if (supervisorId) {
             console.log('✅ Supervisor ID available:', supervisorId)
-            console.log('✅ Fetching requests...')
             fetchRequests()
-        } else {
-            console.log('⏸️ Supervisor ID not available yet')
         }
     }, [supervisorId])
 
     // API Functions
     const fetchRequests = async (): Promise<void> => {
+        if (!supervisorId) {
+            console.warn('⚠️ Cannot fetch: No supervisor ID')
+            return
+        }
+
         try {
             setLoading(true)
             setError('')
             console.log('📡 Fetching requests for supervisor:', supervisorId)
 
-            // ตรวจสอบว่า supervisorId ไม่ว่าง
-            if (!supervisorId || supervisorId.trim().length === 0) {
-                console.error('❌ supervisorId is empty!')
-                setError('Supervisor ID is not available. Please login again.')
-                return
-            }
-
             const response: ApiResponse<RequestData[]> =
                 await getRequestsBySupervisor(supervisorId)
             console.log('📥 API Response:', response)
 
-            // Handle response structure
             if (response && response.requests) {
                 console.log('📊 Requests found:', response.requests.length)
                 setRequests(response.requests)
@@ -167,7 +129,6 @@ const SupervisorRequests: FC = () => {
         } catch (error: any) {
             console.error('❌ Error fetching requests:', error)
 
-            // แสดง error ที่ละเอียดขึ้น
             if (error.message.includes('Network Error')) {
                 setError(
                     'Cannot connect to server. Please check if backend is running.',
@@ -200,7 +161,6 @@ const SupervisorRequests: FC = () => {
 
         try {
             await updateRequestStatus(requestId, newStatus)
-            // Refresh the list after successful update
             await fetchRequests()
         } catch (error: any) {
             console.error('Error updating status:', error)
@@ -254,17 +214,22 @@ const SupervisorRequests: FC = () => {
                     </h2>
 
                     <div className="flex items-center gap-4">
-                        {/* Show user role badge */}
-                        {userRole && (
-                            <span
-                                className={`px-3 py-1 rounded-lg text-xs font-medium ${
-                                    userRole === 'Supervisor'
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-gray-100 text-gray-800'
-                                }`}
-                            >
-                                {userRole}
-                            </span>
+                        {/* Show user info */}
+                        {fullUser && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-600">
+                                    {fullUser.first_name_en} {fullUser.last_name_en}
+                                </span>
+                                <span
+                                    className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                                        role === 'Supervisor'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-gray-100 text-gray-800'
+                                    }`}
+                                >
+                                    {role}
+                                </span>
+                            </div>
                         )}
 
                         <button
@@ -284,63 +249,36 @@ const SupervisorRequests: FC = () => {
                 {/* Error Message */}
                 {error && (
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                        <div className="font-semibold mb-2">Error</div>
+                        <div className="font-semibold mb-2">⚠️ Error</div>
                         <div>{error}</div>
-                        {!supervisorId && (
-                            <div className="mt-2 text-xs">
-                                Please check that you are logged in as a
-                                Supervisor.
-                            </div>
-                        )}
                     </div>
                 )}
 
-                {/* Debug Info - Remove in production */}
-                <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <strong>Supervisor ID:</strong>
-                            <div className="text-xs font-mono break-all">
-                                {supervisorId || 'Not set'}
-                            </div>
-                        </div>
-                        <div>
-                            <strong>User Role:</strong> {userRole || 'Unknown'}
-                        </div>
-                        <div>
-                            <strong>Total Requests:</strong> {requests.length}
-                        </div>
-                        <div>
-                            <strong>Filtered:</strong> {filteredRequests.length}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ถ้ายังไม่มี supervisorId */}
-                {!supervisorId && !loading && (
+                {/* Not Authorized */}
+                {!userId ? (
                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
                         <div className="font-semibold mb-2">
-                            ⚠️ Not Logged In as Supervisor
+                            ⚠️ Not Logged In
                         </div>
-                        <p>
-                            Please login with a Supervisor account to view
-                            requests.
-                        </p>
+                        <p>Please login to view this page.</p>
                         <button
-                            onClick={() => {
-                                // Redirect to login or refresh page
-                                window.location.href = '/login'
-                            }}
+                            onClick={() => window.location.href = '/sign-in'}
                             className="mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm"
                         >
                             Go to Login
                         </button>
                     </div>
-                )}
-
-                {/* Filters Section */}
-                {supervisorId && (
+                ) : !isSupervisor ? (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                        <div className="font-semibold mb-2">
+                            🚫 Access Denied
+                        </div>
+                        <p>Only supervisors can access this page.</p>
+                        <p className="text-xs mt-2">Your role: <strong>{role}</strong></p>
+                    </div>
+                ) : (
                     <>
+                        {/* Filters Section */}
                         <div className="flex gap-4 mb-6 flex-wrap">
                             {/* Status Filter */}
                             <div className="flex items-center gap-2">
@@ -500,7 +438,6 @@ interface RequestRowProps {
 }
 
 const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
-    // Check if user_id is populated or is just an ID string
     const getUserName = (): string => {
         if (typeof request.user_id === 'object' && request.user_id !== null) {
             const user = request.user_id as User

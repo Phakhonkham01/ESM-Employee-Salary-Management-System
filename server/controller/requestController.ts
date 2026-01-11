@@ -4,10 +4,8 @@ import RequestModel from "../model/requestModel.js";
 import mongoose from "mongoose";
 
 /**
-<<<<<<< HEAD
  * CREATE - Submit new OT/Field Work request
  * POST /api/requests
-=======
  * Helpers
  */
 
@@ -25,7 +23,6 @@ const toMinutes = (time: string): number => {
 
 /**
  * Create OT / Field Work Request
->>>>>>> 66da7a12d6d36407fcc2c6607ab7233e5f97c8e7
  */
 export const createRequest = async (
   req: Request,
@@ -42,9 +39,15 @@ export const createRequest = async (
       reason,
     } = req.body;
 
-<<<<<<< HEAD
-    // Validation
-    if (!user_id || !supervisor_id || !date || !title || start_hour == null || end_hour == null) {
+    // Required fields validation
+    if (
+      !user_id ||
+      !supervisor_id ||
+      !date ||
+      !title ||
+      !start_hour ||
+      !end_hour
+    ) {
       res.status(400).json({ 
         message: "Missing required fields",
         requests: []
@@ -70,30 +73,12 @@ export const createRequest = async (
       return;
     }
 
-    // Validate hours
-    if (start_hour < 0 || end_hour < 0 || start_hour >= end_hour) {
-      res.status(400).json({ 
-        message: "Invalid start_hour or end_hour",
-        requests: []
-      });
-=======
-    // Required fields
-    if (
-      !user_id ||
-      !supervisor_id ||
-      !date ||
-      !title ||
-      !start_hour ||
-      !end_hour
-    ) {
-      res.status(400).json({ message: "Missing required fields" });
->>>>>>> 66da7a12d6d36407fcc2c6607ab7233e5f97c8e7
-      return;
-    }
-
     // Time format validation
     if (!isValidTime(start_hour) || !isValidTime(end_hour)) {
-      res.status(400).json({ message: "Invalid time format (HH:mm)" });
+      res.status(400).json({ 
+        message: "Invalid time format (HH:mm)",
+        requests: []
+      });
       return;
     }
 
@@ -101,6 +86,7 @@ export const createRequest = async (
     if (toMinutes(end_hour) <= toMinutes(start_hour)) {
       res.status(400).json({
         message: "End time must be later than start time",
+        requests: []
       });
       return;
     }
@@ -125,25 +111,21 @@ export const createRequest = async (
       request: populatedRequest,
     });
   } catch (error: any) {
-    console.error("Error creating request:", error);
-    res.status(500).json({ 
-      message: "Server error", 
-      error: error.message,
-      requests: []
-    });
-<<<<<<< HEAD
-=======
-  } catch (error: any) {
     console.error("CREATE REQUEST ERROR:", error);
 
-    // Return validation errors properly
     if (error.name === "ValidationError") {
-      res.status(400).json({ message: error.message });
+      res.status(400).json({ 
+        message: error.message,
+        requests: []
+      });
       return;
     }
 
-    res.status(500).json({ message: "Server error" });
->>>>>>> 66da7a12d6d36407fcc2c6607ab7233e5f97c8e7
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+      requests: []
+    });
   }
 };
 
@@ -426,17 +408,26 @@ export const updateRequest = async (
     const updateData: any = {};
     if (date) updateData.date = date;
     if (title && ["OT", "FIELD_WORK"].includes(title)) updateData.title = title;
-    if (start_hour != null) updateData.start_hour = start_hour;
-    if (end_hour != null) updateData.end_hour = end_hour;
+    if (start_hour) updateData.start_hour = start_hour;
+    if (end_hour) updateData.end_hour = end_hour;
     if (reason !== undefined) updateData.reason = reason;
 
-    // Validate hours if provided
-    const newStartHour = start_hour ?? existingRequest.start_hour;
-    const newEndHour = end_hour ?? existingRequest.end_hour;
+    // Validate time format if hours are provided
+    const newStartHour = start_hour || existingRequest.start_hour;
+    const newEndHour = end_hour || existingRequest.end_hour;
 
-    if (newStartHour < 0 || newEndHour < 0 || newStartHour >= newEndHour) {
+    if ((start_hour && !isValidTime(start_hour)) || (end_hour && !isValidTime(end_hour))) {
       res.status(400).json({ 
-        message: "Invalid start_hour or end_hour",
+        message: "Invalid time format (HH:mm)",
+        requests: []
+      });
+      return;
+    }
+
+    // Validate time order
+    if (toMinutes(newEndHour) <= toMinutes(newStartHour)) {
+      res.status(400).json({ 
+        message: "End time must be later than start time",
         requests: []
       });
       return;
