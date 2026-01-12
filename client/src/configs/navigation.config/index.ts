@@ -124,13 +124,34 @@ const navigationConfig: NavigationTree[] = [
     },
     {
         key: 'attendanceMenu',
-        path: '/group-attendance-menu-item-1',
-        title: 'Attendance & OT',
+        path: '/attendance',
+        title: 'Attendance',
         translateKey: '',
-        icon: 'collapseMenu',
-        type: NAV_ITEM_TYPE_ITEM,
+        icon: 'groupCollapseMenu',
+        type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [],
-        subMenu: [],
+        subMenu: [
+            {
+                key: 'attendance.records',
+                path: '/attendance-records',
+                title: 'Attendance Records',
+                translateKey: 'nav.Attendance.item1',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'dayoff.requests',
+                path: '/dayoff-requests',
+                title: 'Day off Requests',
+                translateKey: 'nav.Attendance.item2',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            }
+        ],
     },
   
      {
