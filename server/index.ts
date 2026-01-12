@@ -8,6 +8,7 @@ import loginRoutes from "./routes/loginRoutes.js";
 import departmentRoutes from  "./routes/departmentRoute.js";
 import positionRoutes from  "./routes/positionRoute.js";
 import requestRoutes from "./routes/requestRoutes.js";
+import dayOffRequestRoutes from "./routes/dayOffRequestRoutes.js";
 
 dotenv.config();
 
@@ -46,4 +47,6 @@ app.use("/api", userRoute);     // User routes: GET/POST/PUT/DELETE /api/users
 app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/requests", requestRoutes);
+app.use("/api/day-off-requests", dayOffRequestRoutes);
+
 

@@ -132,15 +132,47 @@ const navigationConfig: NavigationTree[] = [
         authority: [],
         subMenu: [],
     },
-    {
-        key: 'user',
+  
+     {
+        key: 'User', 
         path: '/user',
         title: 'User',
         translateKey: '',
         icon: 'user',
-        type: NAV_ITEM_TYPE_ITEM,
+        type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [],
-        subMenu: [],
+        subMenu: [
+            {
+                key: 'user.profile',
+                path: '/user-profile',
+                title: 'User Profile',
+                translateKey: 'nav.UserProfile.item1',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'user.ot.fieldwork.requests',
+                path: '/user-ot-fieldwork-requests',
+                title: 'User OT/Field Work Requests',
+                translateKey: 'nav.UserProfile.item2',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'user.dayoff.requests',
+                path: '/user-dayoff-requests',
+                title: 'User Day Off Requests',
+                translateKey: 'nav.UserProfile.item2',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+        ],
     },
 ]
 

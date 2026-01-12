@@ -2,7 +2,21 @@
 import { Request, Response } from "express";
 import RequestModel from "../model/requestModel.js";
 import mongoose from "mongoose";
+/**
+ * Helper function to validate time format (HH:mm)
+ */
+const isValidTime = (time: string): boolean => {
+  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  return timeRegex.test(time);
+};
 
+/**
+ * Helper function to convert time string (HH:mm) to minutes
+ */
+const toMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
 /**
  * CREATE - Submit new OT/Field Work request
  * POST /api/requests
@@ -58,14 +72,28 @@ export const createRequest = async (
       return;
     }
 
+    // Time format validation
+    if (!isValidTime(start_hour) || !isValidTime(end_hour)) {
+      res.status(400).json({ message: "Invalid time format (HH:mm)" });
+      return;
+    }
+
+    // Time order validation
+    if (toMinutes(end_hour) <= toMinutes(start_hour)) {
+      res.status(400).json({
+        message: "End time must be later than start time",
+      });
+      return;
+    }
+
     const newRequest = await RequestModel.create({
       user_id,
       supervisor_id,
       date,
       title,
-      start_hour,
-      end_hour,
-      reason: reason || "",
+      start_hour, // "08:00"
+      end_hour,   // "17:00"
+      reason,
       status: "Pending",
     });
 
