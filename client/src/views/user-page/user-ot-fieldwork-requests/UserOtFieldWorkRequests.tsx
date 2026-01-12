@@ -22,6 +22,7 @@ export interface RequestItem {
   title: "OT" | "FIELD_WORK"
   start_hour: string
   end_hour: string
+  fuel: number            // ✅ fuel price
   reason: string
   status: RequestStatus
 }
@@ -68,12 +69,10 @@ const ActionButton = ({
       transition: "background-color 0.2s ease",
     }}
     onMouseEnter={(e) => {
-      if (!disabled)
-        e.currentTarget.style.backgroundColor = hoverColor
+      if (!disabled) e.currentTarget.style.backgroundColor = hoverColor
     }}
     onMouseLeave={(e) => {
-      if (!disabled)
-        e.currentTarget.style.backgroundColor = color
+      if (!disabled) e.currentTarget.style.backgroundColor = color
     }}
   >
     {children}
@@ -87,6 +86,10 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
   onEdit,
   onDelete,
 }) => {
+  const showFuelColumn = requests.some(
+    (r) => r.title === "FIELD_WORK" && r.fuel > 0
+  )
+
   return (
     <div style={containerStyle}>
       <h2 style={titleStyle}>📄 My Requests</h2>
@@ -97,6 +100,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             <col />
             <col />
             <col />
+            {showFuelColumn && <col />}
             <col />
             <col />
             <col />
@@ -107,6 +111,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               <th style={th}>Type</th>
               <th style={th}>Date</th>
               <th style={th}>Time</th>
+              {showFuelColumn && <th style={th}>Fuel</th>}
               <th style={th}>Reason</th>
               <th style={th}>Status</th>
               <th style={th}>Actions</th>
@@ -124,6 +129,15 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                   <td style={td}>
                     {r.start_hour} – {r.end_hour}
                   </td>
+
+                  {showFuelColumn && (
+                    <td style={td}>
+                      {r.title === "FIELD_WORK" && r.fuel > 0
+                        ? r.fuel.toLocaleString()
+                        : "-"}
+                    </td>
+                  )}
+
                   <td style={td}>{r.reason}</td>
                   <td style={td}>{statusBadge(r.status)}</td>
 
@@ -163,7 +177,9 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               )
             })}
 
-            {requests.length === 0 && <EmptyRow colSpan={6} />}
+            {requests.length === 0 && (
+              <EmptyRow colSpan={showFuelColumn ? 7 : 6} />
+            )}
           </tbody>
         </table>
       </Section>

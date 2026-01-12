@@ -5,8 +5,10 @@ export interface IRequest extends Document {
   supervisor_id: Types.ObjectId;
   date: Date;
   title: "OT" | "FIELD_WORK";
-  start_hour: string;   // ✅ "08:00"
-  end_hour: string;     // ✅ "17:30"
+  start_hour: string; // ✅ "08:00"
+  end_hour: string; // ✅ "17:30"
+   fuel?: number;   // ✅ fuel price (money)
+
   reason: string;
   status: "Pending" | "Accept" | "Reject";
   created_at: Date;
@@ -47,7 +49,11 @@ const requestSchema = new Schema<IRequest>({
     type: String,
     required: true,
   },
-
+  fuel: {
+    type: Number,
+    min: [0, "Fuel price must be >= 0"],
+    default: 0,
+  },
   reason: {
     type: String,
     required: [true, "Reason is required"],

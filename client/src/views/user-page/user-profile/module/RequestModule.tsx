@@ -20,6 +20,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     const [endHour, setEndHour] = useState('17')
     const [endMinute, setEndMinute] = useState('00')
     const [reason, setReason] = useState('')
+    const [fuel, setFuel] = useState('') // ✅ fuel price
 
     const [supervisors, setSupervisors] = useState<Supervisor[]>([])
     const [supervisorId, setSupervisorId] = useState('')
@@ -64,16 +65,21 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             return
         }
 
+        if (!date) {
+            alert('Please select a date')
+            return
+        }
+
         const sh = Number(startHour)
         const sm = Number(startMinute)
         const eh = Number(endHour)
         const em = Number(endMinute)
 
         if (
-            sh < 0 || sh > 24 ||
-            eh < 0 || eh > 24 ||
-            sm < 0 || sm > 60 ||
-            em < 0 || em > 60
+            sh < 0 || sh > 23 ||
+            eh < 0 || eh > 23 ||
+            sm < 0 || sm > 59 ||
+            em < 0 || em > 59
         ) {
             alert('Invalid time input')
             return
@@ -87,6 +93,15 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             return
         }
 
+        // Fuel validation (FIELD_WORK only)
+        if (type === 'FIELD_WORK') {
+            const fuelNumber = Number(fuel)
+            if (!fuel || isNaN(fuelNumber) || fuelNumber <= 0) {
+                alert('Please enter a valid fuel price')
+                return
+            }
+        }
+
         try {
             await createRequest({
                 user_id: loggedUser._id,
@@ -95,6 +110,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                 title: type,
                 start_hour: toTimeString(startHour, startMinute),
                 end_hour: toTimeString(endHour, endMinute),
+                fuel: type === 'FIELD_WORK' ? Number(fuel) : 0,
                 reason,
             })
 
@@ -145,15 +161,9 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                             <input
                                 type="number"
                                 min={0}
-                                max={24}
+                                max={23}
                                 value={startHour}
-                                onChange={(e) => {
-                                    const value = e.target.value
-                                    const num = Number(value)
-                                    if (value === '' || (num >= 0 && num <= 24)) {
-                                        setStartHour(value)
-                                    }
-                                }}
+                                onChange={(e) => setStartHour(e.target.value)}
                                 className="w-20 border rounded-lg px-2 py-2"
                                 placeholder="HH"
                             />
@@ -161,15 +171,9 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                             <input
                                 type="number"
                                 min={0}
-                                max={60}
+                                max={59}
                                 value={startMinute}
-                                onChange={(e) => {
-                                    const value = e.target.value
-                                    const num = Number(value)
-                                    if (value === '' || (num >= 0 && num <= 60)) {
-                                        setStartMinute(value)
-                                    }
-                                }}
+                                onChange={(e) => setStartMinute(e.target.value)}
                                 className="w-20 border rounded-lg px-2 py-2"
                                 placeholder="MM"
                             />
@@ -185,15 +189,9 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                             <input
                                 type="number"
                                 min={0}
-                                max={24}
+                                max={23}
                                 value={endHour}
-                                onChange={(e) => {
-                                    const value = e.target.value
-                                    const num = Number(value)
-                                    if (value === '' || (num >= 0 && num <= 24)) {
-                                        setEndHour(value)
-                                    }
-                                }}
+                                onChange={(e) => setEndHour(e.target.value)}
                                 className="w-20 border rounded-lg px-2 py-2"
                                 placeholder="HH"
                             />
@@ -201,20 +199,31 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                             <input
                                 type="number"
                                 min={0}
-                                max={60}
+                                max={59}
                                 value={endMinute}
-                                onChange={(e) => {
-                                    const value = e.target.value
-                                    const num = Number(value)
-                                    if (value === '' || (num >= 0 && num <= 60)) {
-                                        setEndMinute(value)
-                                    }
-                                }}
+                                onChange={(e) => setEndMinute(e.target.value)}
                                 className="w-20 border rounded-lg px-2 py-2"
                                 placeholder="MM"
                             />
                         </div>
                     </div>
+
+                    {/* Fuel price (FIELD_WORK only) */}
+                    {type === 'FIELD_WORK' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Fuel Price
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={fuel}
+                                onChange={(e) => setFuel(e.target.value)}
+                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                                placeholder="Enter fuel price"
+                            />
+                        </div>
+                    )}
 
                     {/* Supervisor */}
                     <div>
