@@ -117,8 +117,9 @@ export const getDayOffRequestsByUser = async (
       return
     }
 
+    // ✅ FIX: query by employee_id, not user_id
     const requests = await DayOffRequestModel.find({
-      user_id: userId,
+      employee_id: userId,
     }).sort({ created_at: -1 })
 
     res.status(200).json({ requests })
@@ -127,6 +128,7 @@ export const getDayOffRequestsByUser = async (
     res.status(500).json({ message: "Server error" })
   }
 }
+
 
 /**
  * ======================================================

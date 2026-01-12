@@ -18,13 +18,16 @@ import {
 
 export interface DayOffItem {
   _id: string
-  user_id: string                // ✅ ADD
-  supervisor_id: string          // ✅ ADD
+
+  user_id: string           // actor (admin / employee)
+  employee_id: string       // target employee ✅ ADD
+  supervisor_id: string
+
   day_off_type: "FULL_DAY" | "HALF_DAY"
   start_date_time: string
   end_date_time: string
   date_off_number: number
-  reason: string
+  title: string
   status: RequestStatus
 }
 
@@ -89,14 +92,24 @@ const UserDayOffRequests: React.FC<Props> = ({
   onEdit,
   onDelete,
 }) => {
+  const auth = JSON.parse(localStorage.getItem("auth") || "null")
+  const role = auth?.user?.role // "Admin" | "Employee"
+
   return (
     <div style={containerStyle}>
-      <h2 style={titleStyle}>📄 My Requests</h2>
+      <h2 style={titleStyle}>
+        {role === "Admin" ? "📄 Day Off Requests" : "📄 My Requests"}
+      </h2>
 
       <Section title="🏖 Day Off Requests">
         <table style={{ ...tableStyle, width: "100%" }}>
           <thead>
             <tr>
+              {role === "Admin" && (
+                <th style={{ ...th, textAlign: "left" }}>
+                  Employee ID
+                </th>
+              )}
               <th style={{ ...th, textAlign: "left" }}>Type</th>
               <th style={{ ...th, textAlign: "left" }}>Start date</th>
               <th style={{ ...th, textAlign: "left" }}>End date</th>
@@ -113,6 +126,10 @@ const UserDayOffRequests: React.FC<Props> = ({
 
               return (
                 <tr key={d._id} style={tr}>
+                  {role === "Admin" && (
+                    <td style={{ ...td }}>{d.employee_id}</td>
+                  )}
+
                   <td style={{ ...td }}>{d.day_off_type}</td>
                   <td style={{ ...td }}>
                     {formatDate(d.start_date_time)}
@@ -121,7 +138,7 @@ const UserDayOffRequests: React.FC<Props> = ({
                     {formatDate(d.end_date_time)}
                   </td>
                   <td style={{ ...td }}>{d.date_off_number}</td>
-                  <td style={{ ...td }}>{d.reason}</td>
+                  <td style={{ ...td }}>{d.title}</td>
                   <td style={{ ...td }}>{statusBadge(d.status)}</td>
 
                   <td style={{ ...td }}>
@@ -159,7 +176,7 @@ const UserDayOffRequests: React.FC<Props> = ({
               )
             })}
 
-            {dayOffs.length === 0 && <EmptyRow colSpan={7} />}
+            {dayOffs.length === 0 && <EmptyRow colSpan={role === "Admin" ? 8 : 7} />}
           </tbody>
         </table>
       </Section>

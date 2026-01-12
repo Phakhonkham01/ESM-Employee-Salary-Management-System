@@ -16,13 +16,17 @@ const DayOffModule = ({ open, onClose }: Props) => {
     )
     const [startDateTime, setStartDateTime] = useState('')
     const [endDateTime, setEndDateTime] = useState('')
-    const [reason, setReason] = useState('')
+    const [title, setTitle] = useState('') // ✅ changed
 
     const [supervisors, setSupervisors] = useState<Supervisor[]>([])
     const [supervisorId, setSupervisorId] = useState('')
 
+    // ✅ For admin case
+    const [employeeId, setEmployeeId] = useState('')
+
     const auth = JSON.parse(localStorage.getItem('auth') || 'null')
     const loggedUser = auth?.user
+    const role = loggedUser?.role // "Admin" | "Employee"
 
     /* =====================
        Load supervisors
@@ -59,14 +63,29 @@ const DayOffModule = ({ open, onClose }: Props) => {
             return
         }
 
+        if (!title.trim()) {
+            alert('Please enter a reason')
+            return
+        }
+
+        // 🔐 Decide employee_id
+        const targetEmployeeId =
+            role === 'Admin' ? employeeId : loggedUser._id
+
+        if (!targetEmployeeId) {
+            alert('Please select an employee')
+            return
+        }
+
         try {
             await createDayOffRequest({
-                user_id: loggedUser._id,
+                user_id: loggedUser._id,        // actor
+                employee_id: targetEmployeeId,  // target employee
                 supervisor_id: supervisorId,
                 day_off_type: dayOffType,
                 start_date_time: startDateTime,
                 end_date_time: endDateTime,
-                reason,
+                title,                          // ✅ changed
             })
 
             onClose()
@@ -145,6 +164,24 @@ const DayOffModule = ({ open, onClose }: Props) => {
                         />
                     </div>
 
+                    {/* Employee (Admin only) */}
+                    {role === 'Admin' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Employee
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Select employee (ID or dropdown)"
+                                value={employeeId}
+                                onChange={(e) =>
+                                    setEmployeeId(e.target.value)
+                                }
+                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                            />
+                        </div>
+                    )}
+
                     {/* Supervisor */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -166,15 +203,15 @@ const DayOffModule = ({ open, onClose }: Props) => {
                         </select>
                     </div>
 
-                    {/* Reason */}
+                    {/* Title (Reason) */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                             Reason
                         </label>
                         <textarea
                             rows={3}
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
                     </div>

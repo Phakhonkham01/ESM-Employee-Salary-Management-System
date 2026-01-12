@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getSupervisors, Supervisor } from '@/services/User_Page/user_api'
 import { updateDayOffRequest } from '@/services/User_Page/day_off_request_api'
-import { DayOffItem } from './UserDayOffRequest'
+import { DayOffItem } from './UserDayOffRequest'  
 
 type Props = {
     open: boolean
@@ -9,6 +9,7 @@ type Props = {
     onClose: () => void
     onSaved: () => void
 }
+
 
 const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     /* =====================
@@ -19,7 +20,7 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     )
     const [startDateTime, setStartDateTime] = useState('')
     const [endDateTime, setEndDateTime] = useState('')
-    const [reason, setReason] = useState('')
+    const [title, setTitle] = useState('') // ✅ renamed
 
     const [supervisors, setSupervisors] = useState<Supervisor[]>([])
     const [supervisorId, setSupervisorId] = useState('')
@@ -44,7 +45,7 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
         setDayOffType(item.day_off_type)
         setStartDateTime(item.start_date_time.slice(0, 16))
         setEndDateTime(item.end_date_time.slice(0, 16))
-        setReason(item.reason)
+        setTitle(item.title)            // ✅ changed
         setSupervisorId(item.supervisor_id)
     }, [item])
 
@@ -69,13 +70,18 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
             return
         }
 
+        if (!title.trim()) {
+            alert('Please enter a reason')
+            return
+        }
+
         try {
             await updateDayOffRequest(item._id, {
                 supervisor_id: supervisorId,
                 day_off_type: dayOffType,
                 start_date_time: startDateTime,
                 end_date_time: endDateTime,
-                reason,
+                title, // ✅ changed
             })
 
             onSaved()
@@ -176,15 +182,15 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                         </select>
                     </div>
 
-                    {/* Reason */}
+                    {/* Title (Reason) */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                             Reason
                         </label>
                         <textarea
                             rows={3}
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
                     </div>

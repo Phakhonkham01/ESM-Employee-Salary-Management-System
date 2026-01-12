@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import axios from "axios"
+import EditDayOffModal from "./EditDayOffModal"
 
 import UserDayOffRequest, {
   DayOffItem,
@@ -69,15 +70,22 @@ const handleEdit = (item: DayOffItem) => {
     )
   }
 
-  return (
+return (
+  <>
     <UserDayOffRequest
       dayOffs={dayOffs}
       onEdit={handleEdit}
       onDelete={handleDelete}
-      
     />
-    
-  )
+
+    <EditDayOffModal
+      open={openEdit}
+      item={editingItem}
+      onClose={() => setOpenEdit(false)}
+      onSaved={fetchDayOffs}
+    />
+  </>
+)
 }
 
 export default MainComponent

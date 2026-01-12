@@ -8,40 +8,57 @@ import ApiService from '@/services/ApiService'
 export type DayOffType = 'FULL_DAY' | 'HALF_DAY'
 export type RequestStatus = 'Pending' | 'Accept' | 'Reject'
 
+/**
+ * =========================
+ * CREATE PAYLOAD
+ * =========================
+ * user_id     → who performs the action (admin / employee)
+ * employee_id → who the leave is for
+ */
 export interface DayOffRequestPayload {
   user_id: string
+  employee_id: string
   supervisor_id: string
   day_off_type: DayOffType
   start_date_time: string
   end_date_time: string
-  reason: string
+  title: string           // ✅ CHANGED (was reason)
 }
 
 /**
- * Used for UPDATE (no user_id change)
+ * =========================
+ * UPDATE PAYLOAD
+ * =========================
+ * employee_id is NOT editable after creation
  */
 export interface UpdateDayOffRequestPayload {
   supervisor_id: string
   day_off_type: DayOffType
   start_date_time: string
   end_date_time: string
-  reason: string
+  title: string           // ✅ CHANGED (was reason)
 }
 
 /**
- * Response type (from backend)
+ * =========================
+ * RESPONSE TYPE
+ * =========================
  */
 export interface DayOffRequest {
   _id: string
-  user_id: string
+
+  user_id: string           // actor
+  employee_id: string       // target employee
   supervisor_id: string
+
   day_off_type: DayOffType
   start_date_time: string
   end_date_time: string
   date_off_number: number
-  title: 'DAY_OFF'
-  reason: string
+
+  title: string             // ✅ already correct
   status: RequestStatus
+
   created_at: string
 }
 
@@ -66,7 +83,7 @@ export const createDayOffRequest = (
 
 /**
  * =========================
- * GET BY USER
+ * GET BY USER (ACTOR)
  * GET /api/day-off-requests/user/:userId
  * =========================
  */
@@ -82,7 +99,7 @@ export const getDayOffRequestsByUser = (userId: string) => {
 
 /**
  * =========================
- * UPDATE STATUS (Supervisor/Admin)
+ * UPDATE STATUS (Supervisor / Admin)
  * PATCH /api/day-off-requests/:id/status
  * =========================
  */
@@ -102,7 +119,7 @@ export const updateDayOffRequestStatus = (
 
 /**
  * =========================
- * UPDATE REQUEST (Edit – only Pending)
+ * UPDATE REQUEST (ONLY WHEN PENDING)
  * PUT /api/day-off-requests/:id
  * =========================
  */
@@ -122,7 +139,7 @@ export const updateDayOffRequest = (
 
 /**
  * =========================
- * DELETE REQUEST (only Pending)
+ * DELETE REQUEST (ONLY WHEN PENDING)
  * DELETE /api/day-off-requests/:id
  * =========================
  */
