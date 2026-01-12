@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createDayOffRequest,
+  getDayOffRequestsAllUser,
   getDayOffRequestsByUser,
   updateDayOffRequestStatus,
   updateDayOffRequest,
@@ -11,6 +12,9 @@ const router = express.Router();
 
 // POST /api/day-off-requests
 router.post("/", createDayOffRequest);
+
+// GET /api/day-off-requests/user/:userId
+router.get("/allusers", getDayOffRequestsAllUser);
 
 // GET /api/day-off-requests/user/:userId
 router.get("/user/:userId", getDayOffRequestsByUser);

@@ -102,6 +102,27 @@ export const createDayOffRequest = async (
 
 /**
  * ======================================================
+ * GET DAY OFF REQUESTS ALL USER
+ * ======================================================
+ */
+export const getDayOffRequestsAllUser = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const requests = await DayOffRequestModel
+      .find({})
+      .sort({ created_at: -1 })
+
+    res.status(200).json({ requests })
+  } catch (error) {
+    console.error("GET DAY OFF REQUESTS ERROR:", error)
+    res.status(500).json({ message: "Server error" })
+  }
+}
+
+/**
+ * ======================================================
  * GET DAY OFF REQUESTS BY USER
  * ======================================================
  */
