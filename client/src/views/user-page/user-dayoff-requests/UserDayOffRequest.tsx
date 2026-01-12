@@ -18,6 +18,8 @@ import {
 
 export interface DayOffItem {
   _id: string
+  user_id: string                // ✅ ADD
+  supervisor_id: string          // ✅ ADD
   day_off_type: "FULL_DAY" | "HALF_DAY"
   start_date_time: string
   end_date_time: string
@@ -111,28 +113,19 @@ const UserDayOffRequests: React.FC<Props> = ({
 
               return (
                 <tr key={d._id} style={tr}>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {d.day_off_type}
-                  </td>
-                  <td style={{ ...td, textAlign: "left" }}>
+                  <td style={{ ...td }}>{d.day_off_type}</td>
+                  <td style={{ ...td }}>
                     {formatDate(d.start_date_time)}
                   </td>
-                  <td style={{ ...td, textAlign: "left" }}>
+                  <td style={{ ...td }}>
                     {formatDate(d.end_date_time)}
                   </td>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {d.date_off_number}
-                  </td>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {d.reason}
-                  </td>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {statusBadge(d.status)}
-                  </td>
+                  <td style={{ ...td }}>{d.date_off_number}</td>
+                  <td style={{ ...td }}>{d.reason}</td>
+                  <td style={{ ...td }}>{statusBadge(d.status)}</td>
 
-                  {/* ACTIONS (VISIBLE BUT DISABLED WHEN NOT PENDING) */}
-                  <td style={{ ...td, textAlign: "left" }}>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                  <td style={{ ...td }}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       <ActionButton
                         color="#3b82f6"
                         hoverColor="#2563eb"

@@ -46,7 +46,6 @@ const dayOffRequestSchema = new Schema<IDayOffRequest>({
     type: Number,
     required: true,
     min: 0.5,
-    immutable: true, // ✅ STRONGLY RECOMMENDED
   },
 
   title: {

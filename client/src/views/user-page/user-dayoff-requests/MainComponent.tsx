@@ -12,6 +12,9 @@ const MainComponent: React.FC = () => {
 
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const userId = auth?.user?._id
+  const [editingItem, setEditingItem] = useState<DayOffItem | null>(null)
+const [openEdit, setOpenEdit] = useState(false)
+
 
   /* ================= FETCH ================= */
 
@@ -48,14 +51,13 @@ const MainComponent: React.FC = () => {
   }
 
   /* ================= EDIT ================= */
-  // For now just log – usually opens modal
-  const handleEdit = (item: DayOffItem) => {
-    console.log("Edit day off request:", item)
+const handleEdit = (item: DayOffItem) => {
+      console.log("Edit day off request:", item)
 
-    // 👉 Later:
-    // setSelected(item)
-    // setOpenEditModal(true)
-  }
+  setEditingItem(item)
+  setOpenEdit(true)
+}
+
 
   /* ================= UI ================= */
 
@@ -72,7 +74,9 @@ const MainComponent: React.FC = () => {
       dayOffs={dayOffs}
       onEdit={handleEdit}
       onDelete={handleDelete}
+      
     />
+    
   )
 }
 
