@@ -8,11 +8,13 @@ import {
     PiBagSimpleDuotone,
 } from 'react-icons/pi'
 import { FaUserAlt } from 'react-icons/fa'
-
+import { RiKakaoTalkFill } from 'react-icons/ri'
+import { GiReceiveMoney } from 'react-icons/gi'
 export type NavigationIcons = Record<string, React.ReactNode>
 
 const navigationIcon: NavigationIcons = {
     user: <FaUserAlt />,
+    request: <GiReceiveMoney />,
     home: <PiHouseLineDuotone />,
     singleMenu: <PiAcornDuotone />,
     collapseMenu: <PiArrowsInDuotone />,

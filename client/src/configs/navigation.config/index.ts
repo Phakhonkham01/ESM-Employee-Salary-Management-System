@@ -9,8 +9,8 @@ import type { NavigationTree } from '@/@types/navigation'
 const navigationConfig: NavigationTree[] = [
     {
         key: 'home',
-        path: '/home',
-        title: 'Home',
+        path: '/salary-management',
+        title: 'Salary Management',
         translateKey: '',
         icon: 'home',
         type: NAV_ITEM_TYPE_ITEM,
@@ -25,6 +25,16 @@ const navigationConfig: NavigationTree[] = [
         title: "User Management",
         translateKey: '',
         icon: 'user',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
+    },
+    {
+        key: 'RequestManagement',
+        path: '/request-management',
+        title: "Request Management",
+        translateKey: '',
+        icon: 'request',
         type: NAV_ITEM_TYPE_ITEM,
         authority: [],
         subMenu: [],
@@ -114,13 +124,34 @@ const navigationConfig: NavigationTree[] = [
     },
     {
         key: 'attendanceMenu',
-        path: '/group-attendance-menu-item-1',
-        title: 'Attendance & OT',
+        path: '/attendance',
+        title: 'Attendance',
         translateKey: '',
-        icon: 'collapseMenu',
-        type: NAV_ITEM_TYPE_ITEM,
+        icon: 'groupCollapseMenu',
+        type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [],
-        subMenu: [],
+        subMenu: [
+            {
+                key: 'attendance.records',
+                path: '/attendance-records',
+                title: 'Attendance Records',
+                translateKey: 'nav.Attendance.item1',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
+            {
+                key: 'dayoff.requests',
+                path: '/dayoff-requests',
+                title: 'Day off Requests',
+                translateKey: 'nav.Attendance.item2',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            }
+        ],
     },
   
      {

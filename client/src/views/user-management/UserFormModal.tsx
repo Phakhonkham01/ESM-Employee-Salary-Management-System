@@ -10,7 +10,14 @@ import type {
     DepartmentData,
     PositionData,
 } from '../../services/departments/api'
-import { HiUserAdd, HiPencil, HiX, HiPlus } from 'react-icons/hi'
+import {
+    HiUserAdd,
+    HiPencil,
+    HiX,
+    HiPlus,
+    HiCheckCircle,
+    HiXCircle,
+} from 'react-icons/hi'
 import DepartmentModal from './Department_Position/DepartmentModal'
 import PositionModal from './Department_Position/PositionModal'
 
@@ -27,7 +34,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     editingUser,
     onSuccess,
 }) => {
-    // State
     const [formData, setFormData] = useState<
         Omit<CreateUserData, 'base_salary'> & { base_salary: number }
     >({
@@ -50,17 +56,13 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         base_salary: 0,
     })
 
-    // State สำหรับ Departments และ Positions
     const [departments, setDepartments] = useState<DepartmentData[]>([])
     const [positions, setPositions] = useState<PositionData[]>([])
     const [filteredPositions, setFilteredPositions] = useState<PositionData[]>(
         [],
     )
-
-    // State สำหรับ Modals
     const [departmentModalOpen, setDepartmentModalOpen] = useState(false)
     const [positionModalOpen, setPositionModalOpen] = useState(false)
-
     const [loading, setLoading] = useState(false)
     const [loadingDepartments, setLoadingDepartments] = useState(false)
     const [loadingPositions, setLoadingPositions] = useState(false)
@@ -69,15 +71,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         text: string
     } | null>(null)
 
-    // โหลด Departments และ Positions เมื่อ Modal เปิด
     useEffect(() => {
         if (isOpen) {
             fetchDepartments()
             fetchAllPositions()
 
-            // ตั้งค่า form data ถ้ากำลังแก้ไข user
             if (editingUser && isOpen) {
-                // แก้ไขการแปลงค่า base_salary ให้เป็น number
                 const baseSalary = editingUser.base_salary
                 const salaryValue =
                     typeof baseSalary === 'string'
@@ -100,18 +99,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     start_work: editingUser.start_work.split('T')[0],
                     vacation_days: editingUser.vacation_days,
                     gender: editingUser.gender,
-
-                    // ✅ สำคัญมาก
                     position_id:
                         typeof editingUser.position_id === 'string'
                             ? editingUser.position_id
                             : editingUser.position_id?._id,
-
                     department_id:
                         typeof editingUser.department_id === 'string'
                             ? editingUser.department_id
                             : editingUser.department_id?._id,
-
                     status: editingUser.status,
                     base_salary: salaryValue,
                 })
@@ -121,13 +116,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }, [isOpen, editingUser])
 
-    // เมื่อเลือก Department ให้ดึง Positions ของ Department นั้น
     useEffect(() => {
         if (formData.department_id) {
             fetchPositionsByDepartment(formData.department_id)
 
-            // ถ้าเป็น edit mode และ user มี position_id อยู่แล้ว
-            // ให้ตรวจสอบว่า position_id นี้อยู่ใน department นี้หรือไม่
             if (editingUser && formData.position_id) {
                 const positionExists = positions.some(
                     (pos) =>
@@ -144,7 +136,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }, [formData.department_id, editingUser])
 
-    // ดึงข้อมูล Departments
     const fetchDepartments = async () => {
         try {
             setLoadingDepartments(true)
@@ -158,7 +149,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // ดึงข้อมูล Positions ทั้งหมด (ใช้สำหรับตรวจสอบ)
     const fetchAllPositions = async () => {
         try {
             setLoadingPositions(true)
@@ -171,14 +161,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // ดึง Positions ตาม Department ที่เลือก
     const fetchPositionsByDepartment = async (departmentId: string) => {
         try {
             setLoadingPositions(true)
             const response = await getPositionsByDepartment(departmentId)
             setFilteredPositions(response.positions || [])
 
-            // ถ้าไม่มี positions ใน department นี้ ให้เคลียร์ position_id
             if (response.positions.length === 0) {
                 setFormData((prev) => ({ ...prev, position_id: '' }))
             }
@@ -190,7 +178,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // Handle Department Change
     const handleDepartmentChange = async (
         e: React.ChangeEvent<HTMLSelectElement>,
     ) => {
@@ -198,11 +185,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         setFormData((prev) => ({
             ...prev,
             department_id: departmentId,
-            position_id: '', // เคลียร์ position เมื่อเปลี่ยน department
+            position_id: '',
         }))
     }
 
-    // Handle Input Change (ทั่วไป)
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
@@ -233,7 +219,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }))
     }
 
-    // ฟังก์ชันสำหรับแสดงค่าใน input
     const getSalaryDisplayValue = () => {
         if (formData.base_salary === 0) {
             return ''
@@ -241,14 +226,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         return formData.base_salary.toString()
     }
 
-    // Handle Submit Form (User)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setMessage(null)
 
         try {
-            // สร้างข้อมูลสำหรับส่ง
             const submitData: CreateUserData = {
                 email: formData.email,
                 password: formData.password,
@@ -269,7 +252,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 base_salary: formData.base_salary,
             }
 
-            // ถ้าเป็น edit และไม่ได้กรอก password ให้ลบ password ออก
             if (editingUser && !submitData.password) {
                 delete submitData.password
             }
@@ -288,7 +270,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 })
             }
 
-            // รอสักครู่ให้เห็นข้อความ success ก่อนปิด
             setTimeout(() => {
                 onSuccess()
                 resetForm()
@@ -304,7 +285,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // Reset Form
     const resetForm = () => {
         setFormData({
             email: '',
@@ -328,20 +308,17 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         setMessage(null)
     }
 
-    // Handle Close Modal
     const handleClose = () => {
         resetForm()
         onClose()
     }
 
-    // Handle Backdrop Click
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
             handleClose()
         }
     }
 
-    // เพิ่มฟังก์ชันสำหรับ Department และ Position
     const handleDepartmentSuccess = () => {
         fetchDepartments()
     }
@@ -353,7 +330,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // ฟังก์ชันจัดรูปแบบตัวเลขเป็นสกุลเงิน
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('en-US', {
             minimumFractionDigits: 2,
@@ -365,669 +341,543 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
     return (
         <div
-            style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-                padding: '20px',
-            }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
             onClick={handleBackdropClick}
         >
-            <div
-                style={{
-                    backgroundColor: 'white',
-                    borderRadius: '12px',
-                    width: '100%',
-                    maxWidth: '900px',
-                    maxHeight: '90vh',
-                    overflow: 'auto',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-                }}
-            >
-                {/* Modal Header */}
-                <div
-                    style={{
-                        padding: '20px 24px',
-                        borderBottom: '1px solid #e5e7eb',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        position: 'sticky',
-                        top: 0,
-                        backgroundColor: 'white',
-                        zIndex: 10,
-                    }}
-                >
-                    <h2
-                        style={{
-                            margin: 0,
-                            fontSize: '20px',
-                            fontWeight: '600',
-                            color: '#1f2937',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                        }}
-                    >
+            <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl animate-slideUp">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-white">
                         {editingUser ? (
                             <>
-                                <HiPencil size={24} color="#3b82f6" />
-                                Edit User: {editingUser.first_name_en}{' '}
-                                {editingUser.last_name_en}
+                                <div className="bg-white/20 p-2 rounded-lg">
+                                    <HiPencil className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-semibold">
+                                        Edit User
+                                    </h2>
+                                    <p className="text-blue-100 text-sm">
+                                        {editingUser.first_name_en}{' '}
+                                        {editingUser.last_name_en}
+                                    </p>
+                                </div>
                             </>
                         ) : (
                             <>
-                                <HiUserAdd size={24} color="#3b82f6" />
-                                Create New User
+                                <div className="bg-white/20 p-2 rounded-lg">
+                                    <HiUserAdd className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-semibold">
+                                        Create New User
+                                    </h2>
+                                    <p className="text-blue-100 text-sm">
+                                        Add a new team member
+                                    </p>
+                                </div>
                             </>
                         )}
-                    </h2>
+                    </div>
                     <button
                         onClick={handleClose}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            fontSize: '24px',
-                            cursor: 'pointer',
-                            color: '#6b7280',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                        onMouseEnter={(e) =>
-                            (e.currentTarget.style.color = '#374151')
-                        }
-                        onMouseLeave={(e) =>
-                            (e.currentTarget.style.color = '#6b7280')
-                        }
+                        className="text-white hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
                     >
-                        <HiX />
+                        <HiX className="w-6 h-6" />
                     </button>
                 </div>
 
-                {/* Modal Body */}
-                <div style={{ padding: '24px' }}>
+                {/* Body */}
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
                     {message && (
                         <div
-                            style={{
-                                padding: '12px 16px',
-                                marginBottom: '20px',
-                                borderRadius: '8px',
-                                backgroundColor:
-                                    message.type === 'success'
-                                        ? '#d1fae5'
-                                        : '#fee2e2',
-                                color:
-                                    message.type === 'success'
-                                        ? '#065f46'
-                                        : '#991b1b',
-                                border: `1px solid ${message.type === 'success' ? '#6ee7b7' : '#fca5a5'}`,
-                                fontSize: '14px',
-                                fontWeight: '500',
-                            }}
+                            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+                                message.type === 'success'
+                                    ? 'bg-green-50 border border-green-200 text-green-800'
+                                    : 'bg-red-50 border border-red-200 text-red-800'
+                            }`}
                         >
-                            {message.text}
+                            {message.type === 'success' ? (
+                                <HiCheckCircle className="w-5 h-5 flex-shrink-0" />
+                            ) : (
+                                <HiXCircle className="w-5 h-5 flex-shrink-0" />
+                            )}
+                            <span className="font-medium">{message.text}</span>
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit}>
-                        <div
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns:
-                                    'repeat(auto-fit, minmax(250px, 1fr))',
-                                gap: '16px',
-                                marginBottom: '24px',
-                            }}
-                        >
-                            {/* Account Information */}
-                            <div>
-                                <label style={labelStyle}>Email *</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="user@example.com"
-                                    style={inputStyle}
-                                />
-                            </div>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Account Section */}
+                        <div className="bg-gray-50 rounded-lg p-5">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-5 bg-blue-600 rounded"></span>
+                                Account Information
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Email{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="user@example.com"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
 
-                            <div>
-                                <label style={labelStyle}>
-                                    Password{' '}
-                                    {editingUser &&
-                                        '(leave blank to keep current)'}{' '}
-                                    *
-                                </label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleInputChange}
-                                    required={!editingUser}
-                                    placeholder="••••••••"
-                                    style={inputStyle}
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Password {editingUser && '(optional)'}{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                        required={!editingUser}
+                                        placeholder="••••••••"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
 
-                            <div>
-                                <label style={labelStyle}>Role *</label>
-                                <select
-                                    name="role"
-                                    value={formData.role}
-                                    onChange={handleInputChange}
-                                    required
-                                    style={{ ...inputStyle, cursor: 'pointer' }}
-                                >
-                                    <option value="Employee">
-                                        👤 Employee
-                                    </option>
-                                    <option value="Supervisor">
-                                        👥 Supervisor
-                                    </option>
-                                    <option value="Admin">⚙️ Admin</option>
-                                </select>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Role{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        name="role"
+                                        value={formData.role}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer"
+                                    >
+                                        <option value="Employee">
+                                            👤 Employee
+                                        </option>
+                                        <option value="Supervisor">
+                                            👥 Supervisor
+                                        </option>
+                                        <option value="Admin">⚙️ Admin</option>
+                                    </select>
+                                </div>
                             </div>
+                        </div>
 
-                            {/* Salary Information */}
-                            <div>
-                                <label style={labelStyle}>
-                                    💰 Base Salary *
-                                </label>
-                                <div style={{ position: 'relative' }}>
+                        {/* Personal Information - English */}
+                        <div className="bg-gray-50 rounded-lg p-5">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-5 bg-green-600 rounded"></span>
+                                Personal Information (English)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        First Name{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
                                     <input
                                         type="text"
-                                        name="base_salary"
-                                        value={getSalaryDisplayValue()}
-                                        onChange={handleSalaryChange}
+                                        name="first_name_en"
+                                        value={formData.first_name_en}
+                                        onChange={handleInputChange}
                                         required
-                                        placeholder="0.00"
-                                        style={{
-                                            ...inputStyle,
-                                            paddingLeft: '40px',
-                                        }}
+                                        placeholder="John"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                                     />
-                                    <div
-                                        style={{
-                                            position: 'absolute',
-                                            left: '12px',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            color: '#6b7280',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                        }}
-                                    >
-                                        ₭
-                                    </div>
-                                    {formData.base_salary > 0 && (
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                right: '12px',
-                                                top: '50%',
-                                                transform: 'translateY(-50%)',
-                                                color: '#6b7280',
-                                                fontSize: '12px',
-                                                fontStyle: 'italic',
-                                            }}
-                                        >
-                                            {formatCurrency(
-                                                formData.base_salary,
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
 
-                            {/* English Name Section */}
-                            <div>
-                                <label style={labelStyle}>
-                                    First Name (EN) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="first_name_en"
-                                    value={formData.first_name_en}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="John"
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>
-                                    Last Name (EN) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="last_name_en"
-                                    value={formData.last_name_en}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="Doe"
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>
-                                    Nickname (EN) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="nickname_en"
-                                    value={formData.nickname_en}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="Johnny"
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            {/* Lao Name Section */}
-                            <div>
-                                <label style={labelStyle}>
-                                    First Name (LA) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="first_name_la"
-                                    value={formData.first_name_la}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="ຈອນ"
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>
-                                    Last Name (LA) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="last_name_la"
-                                    value={formData.last_name_la}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="ໂດ"
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>
-                                    Nickname (LA) *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="nickname_la"
-                                    value={formData.nickname_la}
-                                    onChange={handleInputChange}
-                                    required
-                                    placeholder="ຈອນນີ"
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            {/* Personal Information */}
-                            <div>
-                                <label style={labelStyle}>Gender *</label>
-                                <select
-                                    name="gender"
-                                    value={formData.gender}
-                                    onChange={handleInputChange}
-                                    required
-                                    style={{ ...inputStyle, cursor: 'pointer' }}
-                                >
-                                    <option value="Male">♂️ Male</option>
-                                    <option value="Female">♀️ Female</option>
-                                    <option value="Other">⚧ Other</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>
-                                    Date of Birth *
-                                </label>
-                                <input
-                                    type="date"
-                                    name="date_of_birth"
-                                    value={formData.date_of_birth}
-                                    onChange={handleInputChange}
-                                    required
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            <div>
-                                <label style={labelStyle}>
-                                    Start Work Date *
-                                </label>
-                                <input
-                                    type="date"
-                                    name="start_work"
-                                    value={formData.start_work}
-                                    onChange={handleInputChange}
-                                    required
-                                    style={inputStyle}
-                                />
-                            </div>
-
-                            {/* Work Information Section */}
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <h3
-                                    style={{
-                                        margin: '20px 0 10px 0',
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        color: '#374151',
-                                        borderBottom: '2px solid #e5e7eb',
-                                        paddingBottom: '8px',
-                                    }}
-                                >
-                                    💼 Work Information
-                                </h3>
-                            </div>
-
-                            {/* Department Input with Add Button */}
-                            <div>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        marginBottom: '8px',
-                                    }}
-                                >
-                                    <label style={labelStyle}>
-                                        Department *
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Last Name{' '}
+                                        <span className="text-red-500">*</span>
                                     </label>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setDepartmentModalOpen(true)
-                                        }
-                                        style={{
-                                            marginLeft: 'auto',
-                                            padding: '6px 12px',
-                                            backgroundColor: '#10b981',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '12px',
-                                            fontWeight: '500',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '4px',
-                                        }}
-                                        title="Add new department"
-                                    >
-                                        <HiPlus size={12} />
-                                        Add
-                                    </button>
+                                    <input
+                                        type="text"
+                                        name="last_name_en"
+                                        value={formData.last_name_en}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="Doe"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
                                 </div>
-                                <select
-                                    name="department_id"
-                                    value={formData.department_id}
-                                    onChange={handleInputChange}
-                                    required
-                                    disabled={loadingDepartments}
-                                    style={{
-                                        ...inputStyle,
-                                        cursor: loadingDepartments
-                                            ? 'wait'
-                                            : 'pointer',
-                                        backgroundColor: loadingDepartments
-                                            ? '#f9fafb'
-                                            : 'white',
-                                    }}
-                                >
-                                    <option value="">
-                                        {loadingDepartments
-                                            ? 'Loading...'
-                                            : 'Select Department'}
-                                    </option>
-                                    {departments.map((dept) => (
-                                        <option key={dept._id} value={dept._id}>
-                                            {dept.department_name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
 
-                            {/* Position Input with Add Button */}
-                            <div>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        marginBottom: '8px',
-                                    }}
-                                >
-                                    <label style={labelStyle}>Position *</label>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setPositionModalOpen(true)
-                                        }
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nickname{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="nickname_en"
+                                        value={formData.nickname_en}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="Johnny"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Personal Information - Lao */}
+                        <div className="bg-gray-50 rounded-lg p-5">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-5 bg-purple-600 rounded"></span>
+                                Personal Information (Lao)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        First Name{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="first_name_la"
+                                        value={formData.first_name_la}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="ຈອນ"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Last Name{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="last_name_la"
+                                        value={formData.last_name_la}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="ໂດ"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nickname{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="nickname_la"
+                                        value={formData.nickname_la}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="ຈອນນີ"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Additional Details */}
+                        <div className="bg-gray-50 rounded-lg p-5">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-5 bg-orange-600 rounded"></span>
+                                Additional Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Gender{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        name="gender"
+                                        value={formData.gender}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer"
+                                    >
+                                        <option value="Male">♂️ Male</option>
+                                        <option value="Female">
+                                            ♀️ Female
+                                        </option>
+                                        <option value="Other">⚧ Other</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Date of Birth{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="date_of_birth"
+                                        value={formData.date_of_birth}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Start Work Date{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="start_work"
+                                        value={formData.start_work}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Work Information */}
+                        <div className="bg-gray-50 rounded-lg p-5">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span className="w-1 h-5 bg-indigo-600 rounded"></span>
+                                Work Information
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Department{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setDepartmentModalOpen(true)
+                                            }
+                                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors"
+                                        >
+                                            <HiPlus className="w-3 h-3" />
+                                            Add
+                                        </button>
+                                    </div>
+                                    <select
+                                        name="department_id"
+                                        value={formData.department_id}
+                                        onChange={handleInputChange}
+                                        required
+                                        disabled={loadingDepartments}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="">
+                                            {loadingDepartments
+                                                ? 'Loading...'
+                                                : 'Select Department'}
+                                        </option>
+                                        {departments.map((dept) => (
+                                            <option
+                                                key={dept._id}
+                                                value={dept._id}
+                                            >
+                                                {dept.department_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Position{' '}
+                                            <span className="text-red-500">
+                                                *
+                                            </span>
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setPositionModalOpen(true)
+                                            }
+                                            disabled={
+                                                !formData.department_id ||
+                                                loadingPositions
+                                            }
+                                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                        >
+                                            <HiPlus className="w-3 h-3" />
+                                            Add
+                                        </button>
+                                    </div>
+                                    <select
+                                        name="position_id"
+                                        value={formData.position_id}
+                                        onChange={handleInputChange}
+                                        required
                                         disabled={
                                             !formData.department_id ||
                                             loadingPositions
                                         }
-                                        style={{
-                                            marginLeft: 'auto',
-                                            padding: '6px 12px',
-                                            backgroundColor:
-                                                formData.department_id &&
-                                                !loadingPositions
-                                                    ? '#10b981'
-                                                    : '#9ca3af',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '6px',
-                                            cursor:
-                                                formData.department_id &&
-                                                !loadingPositions
-                                                    ? 'pointer'
-                                                    : 'not-allowed',
-                                            fontSize: '12px',
-                                            fontWeight: '500',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '4px',
-                                        }}
-                                        title={
-                                            formData.department_id
-                                                ? 'Add new position'
-                                                : 'Select department first'
-                                        }
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     >
-                                        <HiPlus size={12} />
-                                        Add
-                                    </button>
-                                </div>
-                                <select
-                                    name="position_id"
-                                    value={formData.position_id}
-                                    onChange={handleInputChange}
-                                    required
-                                    disabled={
-                                        !formData.department_id ||
-                                        loadingPositions
-                                    }
-                                    style={{
-                                        ...inputStyle,
-                                        cursor:
-                                            formData.department_id &&
-                                            !loadingPositions
-                                                ? 'pointer'
-                                                : 'not-allowed',
-                                        backgroundColor:
-                                            !formData.department_id ||
-                                            loadingPositions
-                                                ? '#f9fafb'
-                                                : 'white',
-                                    }}
-                                >
-                                    <option value="">
-                                        {loadingPositions
-                                            ? 'Loading positions...'
-                                            : !formData.department_id
-                                              ? 'Select department first'
-                                              : filteredPositions.length === 0
-                                                ? 'No positions found'
-                                                : 'Select Position'}
-                                    </option>
-                                    {filteredPositions.map((pos) => (
-                                        <option key={pos._id} value={pos._id}>
-                                            {pos.position_name}
+                                        <option value="">
+                                            {loadingPositions
+                                                ? 'Loading positions...'
+                                                : !formData.department_id
+                                                  ? 'Select department first'
+                                                  : filteredPositions.length ===
+                                                      0
+                                                    ? 'No positions found'
+                                                    : 'Select Position'}
                                         </option>
-                                    ))}
-                                </select>
-                                {formData.department_id &&
-                                    filteredPositions.length > 0 && (
-                                        <div
-                                            style={{
-                                                fontSize: '12px',
-                                                color: '#6b7280',
-                                                marginTop: '4px',
-                                            }}
-                                        >
-                                            Found {filteredPositions.length}{' '}
-                                            position(s)
-                                        </div>
-                                    )}
-                            </div>
+                                        {filteredPositions.map((pos) => (
+                                            <option
+                                                key={pos._id}
+                                                value={pos._id}
+                                            >
+                                                {pos.position_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {formData.department_id &&
+                                        filteredPositions.length > 0 && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Found {filteredPositions.length}{' '}
+                                                position(s)
+                                            </p>
+                                        )}
+                                </div>
 
-                            {/* Vacation Days และ Status */}
-                            <div>
-                                <label style={labelStyle}>Vacation Days</label>
-                                <input
-                                    type="number"
-                                    name="vacation_days"
-                                    value={formData.vacation_days}
-                                    onChange={handleInputChange}
-                                    min="0"
-                                    placeholder="0"
-                                    style={inputStyle}
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        💰 Base Salary{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                                            ₭
+                                        </span>
+                                        <input
+                                            type="text"
+                                            name="base_salary"
+                                            value={getSalaryDisplayValue()}
+                                            onChange={handleSalaryChange}
+                                            required
+                                            placeholder="0.00"
+                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        />
+                                        {formData.base_salary > 0 && (
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500 italic">
+                                                {formatCurrency(
+                                                    formData.base_salary,
+                                                )}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
 
-                            <div>
-                                <label style={labelStyle}>Status *</label>
-                                <select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleInputChange}
-                                    required
-                                    style={{ ...inputStyle, cursor: 'pointer' }}
-                                >
-                                    <option value="Active">✅ Active</option>
-                                    <option value="Inactive">
-                                        ❌ Inactive
-                                    </option>
-                                    <option value="On Leave">
-                                        🏖️ On Leave
-                                    </option>
-                                </select>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Vacation Days
+                                    </label>
+                                    <input
+                                        type="number"
+                                        name="vacation_days"
+                                        value={formData.vacation_days}
+                                        onChange={handleInputChange}
+                                        min="0"
+                                        placeholder="0"
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Status{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleInputChange}
+                                        required
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer"
+                                    >
+                                        <option value="Active">
+                                            ✅ Active
+                                        </option>
+                                        <option value="Inactive">
+                                            ❌ Inactive
+                                        </option>
+                                        <option value="On Leave">
+                                            🏖️ On Leave
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Modal Footer */}
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '12px',
-                                paddingTop: '20px',
-                                borderTop: '1px solid #e5e7eb',
-                            }}
-                        >
+                        {/* Footer Actions */}
+                        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
                             <button
                                 type="button"
                                 onClick={handleClose}
-                                style={{
-                                    padding: '10px 20px',
-                                    backgroundColor: '#6b7280',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    transition: 'all 0.3s ease',
-                                }}
-                                onMouseEnter={(e) =>
-                                    (e.currentTarget.style.backgroundColor =
-                                        '#4b5563')
-                                }
-                                onMouseLeave={(e) =>
-                                    (e.currentTarget.style.backgroundColor =
-                                        '#6b7280')
-                                }
+                                className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                style={{
-                                    padding: '10px 20px',
-                                    backgroundColor: loading
-                                        ? '#9ca3af'
-                                        : '#3b82f6',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    fontSize: '14px',
-                                    fontWeight: '500',
-                                    transition: 'all 0.3s ease',
-                                }}
-                                onMouseEnter={(e) =>
-                                    !loading &&
-                                    (e.currentTarget.style.backgroundColor =
-                                        '#2563eb')
-                                }
-                                onMouseLeave={(e) =>
-                                    !loading &&
-                                    (e.currentTarget.style.backgroundColor =
-                                        '#3b82f6')
-                                }
+                                className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
                             >
-                                {loading
-                                    ? 'Processing...'
-                                    : editingUser
-                                      ? 'Update User'
-                                      : 'Create User'}
+                                {loading ? (
+                                    <>
+                                        <svg
+                                            className="animate-spin h-4 w-4"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                                fill="none"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            />
+                                        </svg>
+                                        Processing...
+                                    </>
+                                ) : editingUser ? (
+                                    'Update User'
+                                ) : (
+                                    'Create User'
+                                )}
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
 
-            {/* Department Modal */}
             <DepartmentModal
                 isOpen={departmentModalOpen}
                 onClose={() => setDepartmentModalOpen(false)}
                 onSuccess={handleDepartmentSuccess}
             />
 
-            {/* Position Modal */}
             <PositionModal
                 isOpen={positionModalOpen}
                 onClose={() => setPositionModalOpen(false)}
@@ -1038,26 +888,31 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                         : ''
                 }
             />
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.2s ease-out;
+                }
+                .animate-slideUp {
+                    animation: slideUp 0.3s ease-out;
+                }
+            `}</style>
         </div>
     )
-}
-
-const inputStyle = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: '8px',
-    border: '1px solid #e0e0e0',
-    fontSize: '14px',
-    transition: 'all 0.3s ease',
-    outline: 'none',
-}
-
-const labelStyle = {
-    display: 'block',
-    marginBottom: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
 }
 
 export default UserFormModal
