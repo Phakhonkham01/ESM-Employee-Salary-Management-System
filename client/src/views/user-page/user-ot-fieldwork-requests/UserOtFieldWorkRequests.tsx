@@ -88,11 +88,12 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 }) => {
   /* ================= FILTER STATE ================= */
 
-  const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
-  const [selectedMonth, setSelectedMonth] = React.useState<string>("")
-  const [selectedType, setSelectedType] = React.useState<
-    "all" | "OT" | "FIELD_WORK"
-  >("all")
+  const [selectedStatus, setSelectedStatus] =
+    React.useState<string>("all")
+  const [selectedMonth, setSelectedMonth] =
+    React.useState<string>("")
+  const [selectedType, setSelectedType] =
+    React.useState<"all" | "OT" | "FIELD_WORK">("all")
 
   /* ================= FILTER LOGIC ================= */
 
@@ -113,31 +114,18 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
     return true
   })
 
-  /* ================= MONTH OPTIONS (CHRONOLOGICAL) ================= */
+  /* ================= MONTH OPTIONS ================= */
 
   const availableMonths = Array.from(
     new Set(
       requests
-        .map((r) => {
-          try {
-            return new Date(r.date).toISOString().slice(0, 7)
-          } catch {
-            return ""
-          }
-        })
+        .map((r) => new Date(r.date).toISOString().slice(0, 7))
         .filter(Boolean)
     )
-  ).sort((a, b) => {
-    return (
+  ).sort(
+    (a, b) =>
       new Date(a + "-01").getTime() -
       new Date(b + "-01").getTime()
-    )
-  })
-
-  /* ================= FIXED FUEL COLUMN LOGIC ================= */
-
-  const showFuelColumn = requests.some(
-    (r) => r.title === "FIELD_WORK"
   )
 
   /* ================= RENDER ================= */
@@ -156,7 +144,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             flexWrap: "wrap",
           }}
         >
-          {/* TYPE FILTER */}
           <select
             value={selectedType}
             onChange={(e) =>
@@ -176,7 +163,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             <option value="FIELD_WORK">Field Work</option>
           </select>
 
-          {/* STATUS FILTER */}
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
@@ -193,7 +179,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             <option value="Reject">Rejected</option>
           </select>
 
-          {/* MONTH FILTER */}
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -217,15 +202,21 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
         </div>
 
         {/* TABLE */}
-        <table style={{ ...tableStyle, width: "100%" }}>
+        <table
+          style={{
+            ...tableStyle,
+            width: "100%",
+            tableLayout: "fixed",
+          }}
+        >
           <colgroup>
-            <col />
-            <col />
-            <col />
-            {showFuelColumn && <col />}
-            <col />
-            <col />
-            <col />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "130px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "100px" }} />
+            <col style={{ width: "160px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "180px" }} />
           </colgroup>
 
           <thead>
@@ -233,7 +224,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               <th style={th}>Type</th>
               <th style={th}>Date</th>
               <th style={th}>Time</th>
-              {showFuelColumn && <th style={th}>Fuel</th>}
+              <th style={th}>Fuel</th>
               <th style={th}>Reason</th>
               <th style={th}>Status</th>
               <th style={th}>Actions</th>
@@ -251,18 +242,22 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                   <td style={td}>
                     {r.start_hour} – {r.end_hour}
                   </td>
-
-                  {showFuelColumn && (
-                    <td style={td}>
-                      {r.title === "FIELD_WORK"
-                        ? r.fuel.toLocaleString()
-                        : "-"}
-                    </td>
-                  )}
-
-                  <td style={td}>{r.reason}</td>
+                  <td style={td}>
+                    {r.title === "FIELD_WORK"
+                      ? r.fuel.toLocaleString()
+                      : "-"}
+                  </td>
+                  <td
+                    style={{
+                      ...td,
+                      whiteSpace: "normal",
+                      wordBreak: "break-word",
+                      lineHeight: "1.4",
+                    }}
+                  >
+                    {r.reason}
+                  </td>
                   <td style={td}>{statusBadge(r.status)}</td>
-
                   <td style={td}>
                     <div style={{ display: "flex", gap: "8px" }}>
                       <ActionButton
@@ -299,7 +294,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             })}
 
             {filteredRequests.length === 0 && (
-              <EmptyRow colSpan={showFuelColumn ? 7 : 6} />
+              <EmptyRow colSpan={7} />
             )}
           </tbody>
         </table>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import EditDayOffModal from './EditDayOff'
+import EditDayOffModal from "./EditDayOffModal"
 
 import UserDayOffRequest, { DayOffItem } from './UserDayOffRequest'
 import { loadingStyle } from './HelperComponents'
