@@ -5,8 +5,14 @@ export const publicRoutes: Routes = [...authRoute]
 export const protectedRoutes: Routes = [
     {
         key: 'home',
-        path: '/salary-management',
-        component: lazy(() => import('@/views/Home')),
+        path: '/home',
+        component: lazy(() => import('@/views/home')),
+        authority: [],
+    },
+    {
+        key: 'Salary_Calculator',
+        path: '/salary-calculator',
+        component: lazy(() => import('@/views/salary-management/Salary_List_User')),
         authority: [],
     },
     /** Example purpose only, please remove */
@@ -30,8 +36,8 @@ export const protectedRoutes: Routes = [
     },
     {
         key: 'collapseMenu.item2',
-        path: '/collapse-menu-item-view-2',
-        component: lazy(() => import('@/views/demo/CollapseMenuItemView2')),
+        path: '/salary-report',
+        component: lazy(() => import('@/views/salary-management/SalaryHistory')),
         authority: [],
     },
     {

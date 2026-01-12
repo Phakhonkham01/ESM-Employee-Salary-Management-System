@@ -8,9 +8,9 @@ import type { NavigationTree } from '@/@types/navigation'
 
 const navigationConfig: NavigationTree[] = [
     {
-        key: 'home',
+        key: 'Salary_Calculator',
         path: '/salary-management',
-        title: 'Salary Management',
+        title: 'Home',
         translateKey: '',
         icon: 'home',
         type: NAV_ITEM_TYPE_ITEM,
@@ -42,17 +42,17 @@ const navigationConfig: NavigationTree[] = [
     {
         key: 'collapseMenu',
         path: '',
-        title: 'BBBBB',
+        title: 'Salary Management',
         translateKey: '',
         icon: 'collapseMenu',
         type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [],
         subMenu: [
             {
-                key: 'collapseMenu.item1',
-                path: '/collapse-menu-item-view-1',
-                title: 'Collapse menu item 1',
-                translateKey: 'nav.collapseMenu.item1',
+                key: 'Salary_Calculator',
+                path: '/salary-calculator',
+                title: 'Salary Calculator',
+                translateKey: '',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
                 authority: [],
@@ -60,9 +60,9 @@ const navigationConfig: NavigationTree[] = [
             },
             {
                 key: 'collapseMenu.item2',
-                path: '/collapse-menu-item-view-2',
-                title: 'Collapse menu item 2',
-                translateKey: 'nav.collapseMenu.item2',
+                path: '/salary-report',
+                title: 'Salary Reports',
+                translateKey: '',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
                 authority: [],
