@@ -4,11 +4,13 @@ import axios from "axios"
 import UserOtFieldWorkRequests, {
   RequestItem,
 } from "./UserOtFieldWorkRequests"
+import EditRequestModule from "./EdiRequest"
 import { loadingStyle } from "./HelperComponents"
 
 const MainComponent: React.FC = () => {
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+  const [editing, setEditing] = useState<RequestItem | null>(null)
 
   /* ================= FETCH DATA ================= */
 
@@ -35,12 +37,7 @@ const MainComponent: React.FC = () => {
   /* ================= ACTION HANDLERS ================= */
 
   const handleEdit = (item: RequestItem) => {
-    // 🔹 Later you can open a modal instead
-    console.log("Edit request:", item)
-
-    // example:
-    // setSelectedRequest(item)
-    // setOpenEditModal(true)
+    setEditing(item)
   }
 
   const handleDelete = async (id: string) => {
@@ -64,11 +61,20 @@ const MainComponent: React.FC = () => {
   /* ================= UI ================= */
 
   return (
-    <UserOtFieldWorkRequests
-      requests={requests}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-    />
+    <>
+      <UserOtFieldWorkRequests
+        requests={requests}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+
+      <EditRequestModule
+        open={!!editing}
+        item={editing}
+        onClose={() => setEditing(null)}
+        onSaved={fetchRequests}
+      />
+    </>
   )
 }
 

@@ -198,20 +198,115 @@ export const updateRequestStatus = async (
   res.json({ message: "Status updated", request: updated });
 };
 
+//update edit request
 export const updateRequest = async (
   req: Request,
   res: Response
-) => {
-  const { id } = req.params;
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      start_hour,
+      end_hour,
+      fuel,
+      reason,
+      date,
+    } = req.body;
 
-  const updated = await RequestModel.findByIdAndUpdate(
-    id,
-    req.body,
-    { new: true, runValidators: true }
-  );
+    /* =====================
+       Validate ID
+    ===================== */
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ message: "Invalid request ID" });
+      return;
+    }
 
-  res.json({ message: "Request updated", request: updated });
+    /* =====================
+       Find existing request
+    ===================== */
+    const existing = await RequestModel.findById(id);
+    if (!existing) {
+      res.status(404).json({ message: "Request not found" });
+      return;
+    }
+
+    /* =====================
+       Validate title
+    ===================== */
+    if (title && !["OT", "FIELD_WORK"].includes(title)) {
+      res.status(400).json({ message: "Invalid title" });
+      return;
+    }
+
+    const finalTitle = title ?? existing.title;
+
+    /* =====================
+       Validate time
+    ===================== */
+    const finalStart = start_hour ?? existing.start_hour;
+    const finalEnd = end_hour ?? existing.end_hour;
+
+    if (!isValidTime(finalStart) || !isValidTime(finalEnd)) {
+      res.status(400).json({ message: "Invalid time format (HH:mm)" });
+      return;
+    }
+
+    if (toMinutes(finalEnd) <= toMinutes(finalStart)) {
+      res
+        .status(400)
+        .json({ message: "End time must be later than start time" });
+      return;
+    }
+
+    /* =====================
+       Fuel logic
+    ===================== */
+    let finalFuel = existing.fuel;
+
+    if (finalTitle === "FIELD_WORK") {
+      if (fuel == null || isNaN(fuel) || Number(fuel) <= 0) {
+        res.status(400).json({
+          message: "Fuel price is required for FIELD_WORK",
+        });
+        return;
+      }
+      finalFuel = Number(fuel);
+    } else {
+      // OT → fuel always 0
+      finalFuel = 0;
+    }
+
+    /* =====================
+       Update request
+    ===================== */
+    const updated = await RequestModel.findByIdAndUpdate(
+      id,
+      {
+        title: finalTitle,
+        start_hour: finalStart,
+        end_hour: finalEnd,
+        fuel: finalFuel,
+        reason: reason ?? existing.reason,
+        date: date ?? existing.date,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+      .populate("user_id", "first_name_en last_name_en email")
+      .populate("supervisor_id", "first_name_en last_name_en email");
+
+    res.json({
+      message: "Request updated successfully",
+      request: updated,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 };
+
 
 /* ============================================================
    DELETE
