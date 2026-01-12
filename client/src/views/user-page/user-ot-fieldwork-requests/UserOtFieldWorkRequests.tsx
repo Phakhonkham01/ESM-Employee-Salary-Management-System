@@ -22,7 +22,7 @@ export interface RequestItem {
   title: "OT" | "FIELD_WORK"
   start_hour: string
   end_hour: string
-  fuel: number            // ✅ fuel price
+  fuel: number
   reason: string
   status: RequestStatus
 }
@@ -86,15 +86,137 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
   onEdit,
   onDelete,
 }) => {
+  /* ================= FILTER STATE ================= */
+
+  const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
+  const [selectedMonth, setSelectedMonth] = React.useState<string>("")
+  const [selectedType, setSelectedType] = React.useState<
+    "all" | "OT" | "FIELD_WORK"
+  >("all")
+
+  /* ================= FILTER LOGIC ================= */
+
+  const filteredRequests = requests.filter((r) => {
+    if (selectedStatus !== "all" && r.status !== selectedStatus) {
+      return false
+    }
+
+    if (selectedType !== "all" && r.title !== selectedType) {
+      return false
+    }
+
+    if (selectedMonth) {
+      const month = new Date(r.date).toISOString().slice(0, 7)
+      if (month !== selectedMonth) return false
+    }
+
+    return true
+  })
+
+  /* ================= MONTH OPTIONS (CHRONOLOGICAL) ================= */
+
+  const availableMonths = Array.from(
+    new Set(
+      requests
+        .map((r) => {
+          try {
+            return new Date(r.date).toISOString().slice(0, 7)
+          } catch {
+            return ""
+          }
+        })
+        .filter(Boolean)
+    )
+  ).sort((a, b) => {
+    return (
+      new Date(a + "-01").getTime() -
+      new Date(b + "-01").getTime()
+    )
+  })
+
+  /* ================= FIXED FUEL COLUMN LOGIC ================= */
+
   const showFuelColumn = requests.some(
-    (r) => r.title === "FIELD_WORK" && r.fuel > 0
+    (r) => r.title === "FIELD_WORK"
   )
+
+  /* ================= RENDER ================= */
 
   return (
     <div style={containerStyle}>
       <h2 style={titleStyle}>📄 My Requests</h2>
 
       <Section title="⏱ OT / Field Work Requests">
+        {/* FILTERS */}
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            marginBottom: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          {/* TYPE FILTER */}
+          <select
+            value={selectedType}
+            onChange={(e) =>
+              setSelectedType(
+                e.target.value as "all" | "OT" | "FIELD_WORK"
+              )
+            }
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">All Types</option>
+            <option value="OT">OT</option>
+            <option value="FIELD_WORK">Field Work</option>
+          </select>
+
+          {/* STATUS FILTER */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Accept">Accepted</option>
+            <option value="Reject">Rejected</option>
+          </select>
+
+          {/* MONTH FILTER */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="">All Months</option>
+            {availableMonths.map((m) => (
+              <option key={m} value={m}>
+                {new Date(m + "-01").toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* TABLE */}
         <table style={{ ...tableStyle, width: "100%" }}>
           <colgroup>
             <col />
@@ -119,7 +241,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
           </thead>
 
           <tbody>
-            {requests.map((r) => {
+            {filteredRequests.map((r) => {
               const isPending = r.status === "Pending"
 
               return (
@@ -132,7 +254,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
                   {showFuelColumn && (
                     <td style={td}>
-                      {r.title === "FIELD_WORK" && r.fuel > 0
+                      {r.title === "FIELD_WORK"
                         ? r.fuel.toLocaleString()
                         : "-"}
                     </td>
@@ -141,7 +263,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                   <td style={td}>{r.reason}</td>
                   <td style={td}>{statusBadge(r.status)}</td>
 
-                  {/* ACTIONS */}
                   <td style={td}>
                     <div style={{ display: "flex", gap: "8px" }}>
                       <ActionButton
@@ -177,7 +298,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               )
             })}
 
-            {requests.length === 0 && (
+            {filteredRequests.length === 0 && (
               <EmptyRow colSpan={showFuelColumn ? 7 : 6} />
             )}
           </tbody>

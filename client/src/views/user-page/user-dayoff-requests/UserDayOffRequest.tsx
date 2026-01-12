@@ -19,8 +19,8 @@ import {
 export interface DayOffItem {
   _id: string
 
-  user_id: string           // actor (admin / employee)
-  employee_id: string       // target employee ✅ ADD
+  user_id: string
+  employee_id: string
   supervisor_id: string
 
   day_off_type: "FULL_DAY" | "HALF_DAY"
@@ -73,12 +73,10 @@ const ActionButton = ({
       transition: "background-color 0.2s ease",
     }}
     onMouseEnter={(e) => {
-      if (!disabled)
-        e.currentTarget.style.backgroundColor = hoverColor
+      if (!disabled) e.currentTarget.style.backgroundColor = hoverColor
     }}
     onMouseLeave={(e) => {
-      if (!disabled)
-        e.currentTarget.style.backgroundColor = color
+      if (!disabled) e.currentTarget.style.backgroundColor = color
     }}
   >
     {children}
@@ -95,6 +93,53 @@ const UserDayOffRequests: React.FC<Props> = ({
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const role = auth?.user?.role // "Admin" | "Employee"
 
+  /* ================= FILTER STATE ================= */
+
+  const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
+  const [selectedMonth, setSelectedMonth] = React.useState<string>("")
+
+  /* ================= FILTER LOGIC ================= */
+
+  const filteredDayOffs = dayOffs.filter((d) => {
+    if (selectedStatus !== "all" && d.status !== selectedStatus) {
+      return false
+    }
+
+    if (selectedMonth) {
+      const month = new Date(d.start_date_time)
+        .toISOString()
+        .slice(0, 7)
+      if (month !== selectedMonth) return false
+    }
+
+    return true
+  })
+
+  /* ================= MONTH OPTIONS (CHRONOLOGICAL) ================= */
+
+  const availableMonths = Array.from(
+    new Set(
+      dayOffs
+        .map((d) => {
+          try {
+            return new Date(d.start_date_time)
+              .toISOString()
+              .slice(0, 7)
+          } catch {
+            return ""
+          }
+        })
+        .filter(Boolean)
+    )
+  ).sort((a, b) => {
+    return (
+      new Date(a + "-01").getTime() -
+      new Date(b + "-01").getTime()
+    )
+  })
+
+  /* ================= RENDER ================= */
+
   return (
     <div style={containerStyle}>
       <h2 style={titleStyle}>
@@ -102,6 +147,56 @@ const UserDayOffRequests: React.FC<Props> = ({
       </h2>
 
       <Section title="🏖 Day Off Requests">
+        {/* FILTERS */}
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            marginBottom: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          {/* STATUS FILTER */}
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Accept">Accepted</option>
+            <option value="Reject">Rejected</option>
+          </select>
+
+          {/* MONTH FILTER */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="">All Months</option>
+            {availableMonths.map((m) => (
+              <option key={m} value={m}>
+                {new Date(m + "-01").toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* TABLE */}
         <table style={{ ...tableStyle, width: "100%" }}>
           <thead>
             <tr>
@@ -121,27 +216,27 @@ const UserDayOffRequests: React.FC<Props> = ({
           </thead>
 
           <tbody>
-            {dayOffs.map((d) => {
+            {filteredDayOffs.map((d) => {
               const isPending = d.status === "Pending"
 
               return (
                 <tr key={d._id} style={tr}>
                   {role === "Admin" && (
-                    <td style={{ ...td }}>{d.employee_id}</td>
+                    <td style={td}>{d.employee_id}</td>
                   )}
 
-                  <td style={{ ...td }}>{d.day_off_type}</td>
-                  <td style={{ ...td }}>
+                  <td style={td}>{d.day_off_type}</td>
+                  <td style={td}>
                     {formatDate(d.start_date_time)}
                   </td>
-                  <td style={{ ...td }}>
+                  <td style={td}>
                     {formatDate(d.end_date_time)}
                   </td>
-                  <td style={{ ...td }}>{d.date_off_number}</td>
-                  <td style={{ ...td }}>{d.title}</td>
-                  <td style={{ ...td }}>{statusBadge(d.status)}</td>
+                  <td style={td}>{d.date_off_number}</td>
+                  <td style={td}>{d.title}</td>
+                  <td style={td}>{statusBadge(d.status)}</td>
 
-                  <td style={{ ...td }}>
+                  <td style={td}>
                     <div style={{ display: "flex", gap: 8 }}>
                       <ActionButton
                         color="#3b82f6"
@@ -176,7 +271,9 @@ const UserDayOffRequests: React.FC<Props> = ({
               )
             })}
 
-            {dayOffs.length === 0 && <EmptyRow colSpan={role === "Admin" ? 8 : 7} />}
+            {filteredDayOffs.length === 0 && (
+              <EmptyRow colSpan={role === "Admin" ? 8 : 7} />
+            )}
           </tbody>
         </table>
       </Section>
