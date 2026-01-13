@@ -9,6 +9,7 @@ import departmentRoutes from  "./routes/departmentRoute.js";
 import positionRoutes from  "./routes/positionRoute.js";
 import requestRoutes from "./routes/requestRoutes.js";
 import dayOffRequestRoutes from "./routes/dayOffRequestRoutes.js";
+import AttendanceSummaryRoutes from "./routes/attendanceSummary.js";
 
 dotenv.config();
 
@@ -48,5 +49,5 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/positions", positionRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/day-off-requests", dayOffRequestRoutes);
-
+app.use("/api/attendance", AttendanceSummaryRoutes);
 

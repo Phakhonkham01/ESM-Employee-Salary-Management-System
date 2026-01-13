@@ -11,15 +11,15 @@ import {
 const router = Router();
 
 // Create
-router.post("/attendanceSummary", createSummary);
-// Read all
-router.get("/attendanceSummary", getAllSummaries);
-// Read by user (keep before /:id to avoid route conflicts)
+router.post("/", createSummary);
+// Get all
+router.get("/", getAllSummaries);
+// Get by user (keep before /:id to avoid route conflicts)
 router.get("/user/:userId", getSummaryByUser);
-// Read by id
-router.get("/attendanceSummary/:id", getSummaryById);
+// Get by id
+router.get("/:id", getSummaryById);
 // Update
-router.put("/attendanceSummary/:id", updateSummary);
+router.put("/:id", updateSummary);
 // Delete
-router.delete("/attendanceSummary/:id", deleteSummary);
+router.delete("/:id", deleteSummary);
 export default router;

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { FaPlus, FaTimes, FaCheck, FaEdit, FaTrash, FaUmbrellaBeach, FaEye } from "react-icons/fa"
-import { getAllUsers } from '../../services/Create_user/api'
+import { getAllUsers, updateUser } from '../../services/Create_user/api'
+import { createAttendanceSummary } from '../../services/Attendance/api'
 import type { UserData } from '../../services/Create_user/api'
-import { 
-  getAllDayOffRequests, 
-  createDayOffRequest, 
+import {
+  getAllDayOffRequests,
+  createDayOffRequest,
   updateDayOffStatus,
   type DayOffRequest,
-  type CreateDayOffRequestPayload 
+  type CreateDayOffRequestPayload
 } from '@/services/Day_off_api/api'
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
@@ -44,6 +45,26 @@ const DayoffRequests: React.FC = () => {
       alert('Failed to load users')
     }
   }
+
+  const calculatedVacationDays = () => {
+    return users.map(user => {
+      const userRequests = requests.filter(req => {
+        const reqUserId = typeof req.user_id === 'object' ? req.user_id._id : req.user_id
+        return reqUserId === user._id && req.status === 'Accept'
+      })
+      const totalDaysOff = userRequests.reduce((sum, req) => sum + req.date_off_number, 0)
+      return {
+        ...user,
+        vacation_days: user.vacation_days - totalDaysOff
+      }
+    })
+  }
+
+  // console.log('user vacation days:', users.map(u => ({ id: u._id, name: u.first_name_en, vacation_days: u.vacation_days })));
+  // console.log('days of number:', requests.map(u => ({ id: u._id, date_off_number: u.date_off_number })));
+  const usersWithUpdatedVacationDays = calculatedVacationDays()
+
+  // console.log('updated vacation days:', usersWithUpdatedVacationDays.map(u => ({ id: u._id, name: u.first_name_en, vacation_days: u.vacation_days })));
 
   const loadDayOffRequests = async () => {
     try {
@@ -120,7 +141,51 @@ const DayoffRequests: React.FC = () => {
   const handleStatusChange = async (requestId: string, newStatus: 'Accept' | 'Reject') => {
     try {
       setLoading(true)
+  
+      // Find the request being updated so we can derive attendance + user info
+      const targetRequest = requests.find((req) => req._id === requestId)
+  
       await updateDayOffStatus(requestId, newStatus)
+  
+      if (newStatus === 'Accept') {
+        // 1) Update users' vacation days
+        await Promise.all(
+          usersWithUpdatedVacationDays.map((user) =>
+            updateUser(user._id, { vacation_days: user.vacation_days })
+          )
+        )
+  
+        // 2) Create attendance summary for the accepted request
+        if (targetRequest) {
+          const startDate = new Date(targetRequest.start_date_time)
+          const year = startDate.getFullYear()
+          const month = startDate.getMonth() + 1
+  
+          const userId =
+            typeof targetRequest.user_id === 'string'
+              ? targetRequest.user_id
+              : targetRequest.user_id?._id ||
+                (typeof targetRequest.employee_id === 'string'
+                  ? targetRequest.employee_id
+                  : targetRequest.employee_id?._id)
+  
+          if (userId) {
+            try {
+              await createAttendanceSummary({
+                user_id: userId,
+                year,
+                month,
+                leave_days: targetRequest.date_off_number || 0,
+                ot_hours: 0,
+                attendance_days: 0,
+              })
+            } catch (attendanceError) {
+              console.error('Error creating attendance summary:', attendanceError)
+            }
+          }
+        }
+      }
+  
       alert(`Request ${newStatus.toLowerCase()}ed successfully!`)
       await loadDayOffRequests()
     } catch (error) {
@@ -167,7 +232,7 @@ const DayoffRequests: React.FC = () => {
     })
   }
 
-  const formatDateTime = (isoString: string) => {
+const formatDateTime = (isoString: string) => {
     const date = new Date(isoString)
     return date.toLocaleString('en-US', {
       year: 'numeric',
@@ -178,13 +243,17 @@ const DayoffRequests: React.FC = () => {
     })
   }
 
-  const getStatusColor = (status: RequestStatus) => {
+const getStatusColor = (status: RequestStatus) => {
     switch (status) {
       case 'Pending': return 'bg-yellow-100 text-yellow-800'
       case 'Accept': return 'bg-green-100 text-green-800'
       case 'Reject': return 'bg-red-100 text-red-800'
     }
   }
+
+const getStatusLabel = (status: RequestStatus) => {
+  return status === 'Accept' ? 'Accepted' : status
+}
 
   const calculatedDaysOff = calculateDaysOff(
     formData.start_date_time,
@@ -198,10 +267,7 @@ const DayoffRequests: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-400 rounded-lg flex items-center justify-center">
-              <FaUmbrellaBeach className="text-white text-lg" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Day Off Requests</h1>
+            <h1 className="text-3xl font-bold text-gray-900">🏖 Day Off Requests</h1>
           </div>
           <button
             onClick={() => {
@@ -252,8 +318,8 @@ const DayoffRequests: React.FC = () => {
                       <td className="px-4 py-3.5 text-gray-900 font-semibold text-sm whitespace-nowrap">{request.date_off_number}</td>
                       <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{request.title}</td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-md text-xs font-medium ${getStatusColor(request.status)}`}>
-                          {request.status}
+                    <span className={`px-3 py-1 rounded-md text-xs font-medium ${getStatusColor(request.status)}`}>
+                      {getStatusLabel(request.status)}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
@@ -270,22 +336,20 @@ const DayoffRequests: React.FC = () => {
                           <button
                             onClick={() => handleEdit(request)}
                             disabled={loading || isDisabled}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                              isDisabled 
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${isDisabled
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
                           >
                             <FaEdit className="text-xs" /> Edit
                           </button>
                           <button
                             onClick={() => handleStatusChange(request._id, 'Reject')}
                             disabled={loading || isDisabled}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-                              isDisabled
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                : 'bg-red-600 text-white hover:bg-red-700'
-                            }`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${isDisabled
+                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                              : 'bg-red-600 text-white hover:bg-red-700'
+                              }`}
                           >
                             <FaTrash className="text-xs" /> Cancel
                           </button>
@@ -512,10 +576,35 @@ const DayoffRequests: React.FC = () => {
                 <label className="text-sm font-semibold text-gray-500">Current Status</label>
                 <div className="mt-2">
                   <span className={`px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
-                    {selectedRequest.status}
+                    {getStatusLabel(selectedRequest.status)}
                   </span>
                 </div>
               </div>
+
+              {selectedRequest.status === 'Pending' && (
+                <div className="flex gap-3 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      handleStatusChange(selectedRequest._id, 'Accept')
+                      setShowDetailModal(false)
+                    }}
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-medium"
+                  >
+                    <FaCheck /> Accept Request
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleStatusChange(selectedRequest._id, 'Reject')
+                      setShowDetailModal(false)
+                    }}
+                    disabled={loading}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium"
+                  >
+                    <FaTimes /> Reject Request
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

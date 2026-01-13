@@ -1,147 +1,137 @@
 import React, { useState, useEffect } from 'react'
-import { FaRegEye, FaPlus, FaCalendarAlt, FaClock, FaUserCheck } from "react-icons/fa"
+import { FaRegEye, FaClock, FaCalendarCheck } from "react-icons/fa"
 import { getAllUsers } from '../../services/Create_user/api'
 import type { UserData } from '../../services/Create_user/api'
+import { getAllDayOffRequests, type DayOffRequest } from '../../services/Day_off_api/api'
 
-
-interface AttendanceRecord {
-    id: string
-    user_id: string
+interface UserAttendanceStats {
+    userId: string
+    user: UserData
     year: number
     month: number
-    ot_hours: number
-    leave_days: number
-    created_at: string
-}
-
-interface AttendanceWithUser extends AttendanceRecord {
-    user: UserData
-}
-
-interface DayOffRequest {
-    id: string
-    employee_id: string
-    supervisor_id?: string
-    day_off_type: 'Full day' | 'Half day'
-    start_date_time: string
-    end_date_time: string
-    date_off_number: number
-    title: 'OT' | 'FIELD WORK'
-    reason: string
-    status: 'Pending' | 'Accept' | 'Reject'
-    created_at: string
-    user: UserData
+    otHours: number
+    leaveDays: number
+    attendanceDays: number
 }
 
 const Attendance: React.FC = () => {
     const [users, setUsers] = useState<UserData[]>([])
-    const [attendanceRecords, setAttendanceRecords] = useState<AttendanceWithUser[]>([])
+    const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
     const [loading, setLoading] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
     const [showModal, setShowModal] = useState(false)
-    const [showAddModal, setShowAddModal] = useState(false)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
-    const [viewMode, setViewMode] = useState<'users' | 'attendance'>('attendance')
-
-    // Day-off requests state
-    const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
-
-    // Form state for adding a day off request
-    const [formData, setFormData] = useState({
-        employee_id: '',
-        supervisor_id: '',
-        day_off_type: 'Full day',
-        start_date_time: '',
-        end_date_time: '',
-        date_off_number: 1,
-        title: 'OT',
-        reason: '',
-        status: 'Pending',
-    })
 
     useEffect(() => {
-        fetchUsers()
-        fetchAttendanceRecords()
+        fetchData()
     }, [])
 
-    const fetchUsers = async () => {
+    const fetchData = async () => {
         try {
             setLoading(true)
-            const response = await getAllUsers()
-            setUsers(response.users)
+            const [usersResponse, dayOffResponse] = await Promise.all([
+                getAllUsers(),
+                getAllDayOffRequests()
+            ])
+            setUsers(usersResponse.users)
+            setDayOffRequests(dayOffResponse.requests)
         } catch (error) {
-            console.error('Error fetching users:', error)
+            console.error('Error fetching data:', error)
         } finally {
             setLoading(false)
         }
     }
 
-    const fetchAttendanceRecords = async () => {
-        try {
-            setLoading(true)
-            // Mock data - replace with actual API call
-            const mockAttendance: AttendanceRecord[] = [
-                {
-                    id: 'att1',
-                    user_id: '1',
-                    year: 2025,
-                    month: 1,
-                    ot_hours: 15.5,
-                    leave_days: 2,
-                    created_at: '2025-01-05T10:00:00Z'
-                },
-                {
-                    id: 'att2',
-                    user_id: '2',
-                    year: 2025,
-                    month: 1,
-                    ot_hours: 8.0,
-                    leave_days: 0,
-                    created_at: '2025-01-05T10:00:00Z'
-                },
-                {
-                    id: 'att3',
-                    user_id: '1',
-                    year: 2024,
-                    month: 12,
-                    ot_hours: 20.0,
-                    leave_days: 3,
-                    created_at: '2024-12-05T10:00:00Z'
-                }
-            ]
-
-            // Combine with user data
-            // const mockUsers: UserData[] = [
-            //     {
-            //         _id: '1',
-            //         first_name_en: 'John',
-            //         last_name_en: 'Doe',
-            //         first_name_la: 'ຈອນ',
-            //         last_name_la: 'ໂດ',
-            //         email: 'john.doe@example.com'
-            //     },
-            //     {
-            //         _id: '2',
-            //         first_name_en: 'Jane',
-            //         last_name_en: 'Smith',
-            //         first_name_la: 'ເຈນ',
-            //         last_name_la: 'ສະມິດ',
-            //         email: 'jane.smith@example.com'
-            //     }
-            // ]
-
-            // const combined = mockAttendance.map(att => ({
-            //     ...att,
-            //     user: mockUsers.find(u => u._id === att.user_id)!
-            // }))
-
-            // setAttendanceRecords(combined)
-        } catch (error) {
-            console.error('Error fetching attendance:', error)
-        } finally {
-            setLoading(false)
+    const getWorkingDaysInMonth = (year: number, month: number): number => {
+        const daysInMonth = new Date(year, month, 0).getDate()
+        let workingDays = 0
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month - 1, day)
+            const dayOfWeek = date.getDay()
+            // Count Monday to Friday (1-5) as working days
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                workingDays++
+            }
         }
+        
+        return workingDays
+    }
+
+    const calculateLeaveDays = (userId: string, year: number, month: number): number => {
+        const leaveRequests = dayOffRequests.filter(req => {
+            const requestUserId = typeof req.user_id === 'string' ? req.user_id : req.user_id?._id
+            const employeeId = typeof req.employee_id === 'string' ? req.employee_id : req.employee_id?._id
+
+            const matchesUser = requestUserId === userId || employeeId === userId
+            if (!matchesUser || req.status !== 'Accept') return false
+
+            const startDate = new Date(req.start_date_time)
+            const requestYear = startDate.getFullYear()
+            const requestMonth = startDate.getMonth() + 1
+
+            // Only count actual leave (not OT)
+            const isNotOT = !req.title?.toUpperCase().includes('OT')
+
+            return requestYear === year && requestMonth === month && isNotOT
+        })
+
+        return leaveRequests.reduce((sum, req) => sum + (req.date_off_number || 0), 0)
+    }
+
+    const calculateOTHours = (userId: string, year: number, month: number): number => {
+        const otRequests = dayOffRequests.filter(req => {
+            const requestUserId = typeof req.user_id === 'string' ? req.user_id : req.user_id?._id
+            const employeeId = typeof req.employee_id === 'string' ? req.employee_id : req.employee_id?._id
+
+            const matchesUser = requestUserId === userId || employeeId === userId
+            if (!matchesUser || req.status !== 'Accept') return false
+
+            const startDate = new Date(req.start_date_time)
+            const requestYear = startDate.getFullYear()
+            const requestMonth = startDate.getMonth() + 1
+
+            const isOT = req.title?.toUpperCase().includes('OT')
+
+            return requestYear === year && requestMonth === month && isOT
+        })
+
+        return otRequests.reduce((sum, req) => {
+            const start = new Date(req.start_date_time)
+            const end = new Date(req.end_date_time)
+            const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+            return sum + hours
+        }, 0)
+    }
+
+    const calculateAttendanceDays = (userId: string, year: number, month: number): number => {
+        const workingDays = getWorkingDaysInMonth(year, month)
+        const leaveDays = calculateLeaveDays(userId, year, month)
+        return Math.max(0, workingDays - leaveDays)
+    }
+
+    const getUserStats = (userId: string): UserAttendanceStats => {
+        const user = users.find(u => u._id === userId)!
+        return {
+            userId,
+            user,
+            year: selectedYear,
+            month: selectedMonth,
+            otHours: calculateOTHours(userId, selectedYear, selectedMonth),
+            leaveDays: calculateLeaveDays(userId, selectedYear, selectedMonth),
+            attendanceDays: calculateAttendanceDays(userId, selectedYear, selectedMonth)
+        }
+    }
+
+    const getUserRequestHistory = (userId: string) => {
+        return dayOffRequests
+            .filter(req => {
+                const requestUserId = typeof req.user_id === 'string' ? req.user_id : req.user_id?._id
+                const employeeId = typeof req.employee_id === 'string' ? req.employee_id : req.employee_id?._id
+                return requestUserId === userId || employeeId === userId
+            })
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
 
     const handleViewDetail = (user: UserData) => {
@@ -154,94 +144,67 @@ const Attendance: React.FC = () => {
         setSelectedUser(null)
     }
 
-    const closeAddModal = () => {
-        setShowAddModal(false)
-        setFormData({
-            employee_id: '',
-            supervisor_id: '',
-            day_off_type: 'Full day',
-            start_date_time: '',
-            end_date_time: '',
-            date_off_number: 1,
-            title: 'OT',
-            reason: '',
-            status: 'Pending',
-        })
-    }
-
-    const handleSubmitDayOffRequest = () => {
-        // Basic validation
-        if (!formData.employee_id) { alert('Please select an employee'); return }
-        if (!formData.start_date_time || !formData.end_date_time) { alert('Please select start and end date/time'); return }
-
-        const start = new Date(formData.start_date_time)
-        const end = new Date(formData.end_date_time)
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) { alert('Invalid date/time'); return }
-        if (start > end) { alert('Start date/time cannot be after end date/time'); return }
-
-        // Calculate decimal number of days
-        let date_off_number = 0
-        if (formData.day_off_type === 'Half day') {
-            // Half day must be within the same date
-            if (start.toDateString() !== end.toDateString()) { alert('Half day must be within the same date'); return }
-            date_off_number = 0.5
-        } else {
-            date_off_number = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        }
-
-        const newReq: DayOffRequest = {
-            id: `req${Date.now()}`,
-            employee_id: formData.employee_id,
-            supervisor_id: formData.supervisor_id || undefined,
-            day_off_type: formData.day_off_type as 'Full day' | 'Half day',
-            start_date_time: formData.start_date_time,
-            end_date_time: formData.end_date_time,
-            date_off_number,
-            title: formData.title as 'OT' | 'FIELD WORK',
-            reason: formData.reason,
-            status: (formData.status as 'Pending' | 'Accept' | 'Reject') || 'Pending',
-            created_at: new Date().toISOString(),
-            user: users.find(u => u._id === formData.employee_id)!
-        }
-
-        setDayOffRequests([...dayOffRequests, newReq])
-        closeAddModal()
-    }
-
-
     const getMonthName = (month: number) => {
         const months = ['January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December']
         return months[month - 1]
     }
 
-    const filteredAttendance = attendanceRecords.filter(record =>
-        record.year === selectedYear && record.month === selectedMonth
-    )
-
-    const getUserAttendanceHistory = (userId: string) => {
-        return attendanceRecords
-            .filter(record => record.user_id === userId)
-            .sort((a, b) => {
-                if (a.year !== b.year) return b.year - a.year
-                return b.month - a.month
-            })
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'Accept': return 'bg-green-100 text-green-700'
+            case 'Reject': return 'bg-red-100 text-red-700'
+            case 'Pending': return 'bg-yellow-100 text-yellow-700'
+            default: return 'bg-gray-100 text-gray-700'
+        }
     }
 
     const getTotalStats = () => {
-        const totalOT = filteredAttendance.reduce((sum, record) => sum + record.ot_hours, 0)
-        const totalLeave = filteredAttendance.reduce((sum, record) => sum + record.leave_days, 0)
-        return { totalOT, totalLeave }
+        const totalOT = users.reduce((sum, user) =>
+            sum + calculateOTHours(user._id, selectedYear, selectedMonth), 0)
+        const totalLeave = users.reduce((sum, user) =>
+            sum + calculateLeaveDays(user._id, selectedYear, selectedMonth), 0)
+        const totalAttendance = users.reduce((sum, user) =>
+            sum + calculateAttendanceDays(user._id, selectedYear, selectedMonth), 0)
+        return { totalOT, totalLeave, totalAttendance }
     }
 
     const stats = getTotalStats()
+    const workingDaysInMonth = getWorkingDaysInMonth(selectedYear, selectedMonth)
 
     return (
         <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-semibold text-gray-800">Attendance Management</h2>
+                <h2 className="text-2xl font-semibold text-gray-800">Attendance</h2>
+                <button
+                    onClick={fetchData}
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                    Refresh Data
+                </button>
             </div>
 
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-green-50 rounded-lg p-4">
+                    <div className="text-sm text-green-600 font-medium mb-1">Total Attendance Days</div>
+                    <div className="text-2xl font-bold text-green-700">{stats.totalAttendance}</div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="text-sm text-blue-600 font-medium mb-1">Total OT Hours</div>
+                    <div className="text-2xl font-bold text-blue-700">{stats.totalOT.toFixed(1)}h</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4">
+                    <div className="text-sm text-orange-600 font-medium mb-1">Total Leave Days</div>
+                    <div className="text-2xl font-bold text-orange-700">{stats.totalLeave.toFixed(1)}</div>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4">
+                    <div className="text-sm text-purple-600 font-medium mb-1">Working Days</div>
+                    <div className="text-2xl font-bold text-purple-700">{workingDaysInMonth}</div>
+                </div>
+            </div>
+
+            {/* Filters */}
             <div className="flex items-center gap-4 mb-4 bg-gray-50 p-4 rounded-lg">
                 <div>
                     <label className="text-xs text-gray-600 font-medium mb-1 block">Year</label>
@@ -272,6 +235,7 @@ const Attendance: React.FC = () => {
                 </div>
             </div>
 
+            {/* Table */}
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
                     <thead>
@@ -279,16 +243,23 @@ const Attendance: React.FC = () => {
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name (EN)</th>
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name (LA)</th>
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Year</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Month</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">OT Hours</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Leave Days</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Attendance Days</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user) => {
-                            const rec = attendanceRecords.find(r => r.user_id === user._id && r.year === selectedYear && r.month === selectedMonth)
-                            const ot = rec ? rec.ot_hours : 0
-                            const leave = rec ? rec.leave_days : 0
+                        {loading ? (
+                            <tr>
+                                <td colSpan={9} className="text-center py-8 text-gray-500">
+                                    Loading...
+                                </td>
+                            </tr>
+                        ) : users.map((user) => {
+                            const stats = getUserStats(user._id)
                             return (
                                 <tr
                                     key={user._id}
@@ -307,15 +278,27 @@ const Attendance: React.FC = () => {
                                     <td className="px-4 py-4 text-sm text-gray-700">
                                         {user.email}
                                     </td>
+                                    <td className="px-4 py-4 text-center text-sm font-medium text-gray-800">
+                                        {stats.year}
+                                    </td>
+                                    <td className="px-4 py-4 text-center text-sm font-medium text-gray-800">
+                                        {getMonthName(stats.month)}
+                                    </td>
                                     <td className="px-4 py-4 text-center">
                                         <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium text-sm">
                                             <FaClock size={12} />
-                                            {ot.toFixed(1)}h
+                                            {stats.otHours.toFixed(1)}h
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 text-center">
                                         <div className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 px-3 py-1 rounded-full font-medium text-sm">
-                                            {leave} days
+                                            {stats.leaveDays.toFixed(1)}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4 text-center">
+                                        <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium text-sm">
+                                            <FaCalendarCheck size={12} />
+                                            {stats.attendanceDays}
                                         </div>
                                     </td>
                                     <td className="px-4 py-4 text-center">
@@ -333,7 +316,7 @@ const Attendance: React.FC = () => {
                     </tbody>
                 </table>
 
-                {users.length === 0 && (
+                {users.length === 0 && !loading && (
                     <div className="text-center py-16 text-gray-500">
                         <div className="text-5xl mb-4 opacity-50">👥</div>
                         <p className="mb-2">No users found</p>
@@ -341,12 +324,12 @@ const Attendance: React.FC = () => {
                 )}
             </div>
 
-            {/* User Detail Modal with Attendance History */}
+            {/* User Detail Modal */}
             {showModal && selectedUser && (
-                <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-xl">
-                            <h3 className="text-xl font-semibold text-white">Employee Attendance History</h3>
+                            <h3 className="text-xl font-semibold">Employee Request History</h3>
                         </div>
 
                         <div className="p-6 space-y-6">
@@ -373,46 +356,54 @@ const Attendance: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Attendance History */}
+                            {/* Request History */}
                             <div>
-                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Attendance History</h4>
+                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Request History</h4>
                                 <div className="space-y-3">
-                                    {getUserAttendanceHistory(selectedUser._id).map((record) => (
-                                        <div key={record.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <FaCalendarAlt className="text-gray-400" size={14} />
-                                                        <span className="font-medium text-gray-800">
-                                                            {getMonthName(record.month)} {record.year}
+                                    {getUserRequestHistory(selectedUser._id).map((request) => (
+                                        <div key={request._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-medium text-gray-800">{request.title}</span>
+                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                                                            {request.status}
                                                         </span>
                                                     </div>
                                                     <div className="text-xs text-gray-500">
-                                                        Created: {new Date(record.created_at).toLocaleDateString()}
+                                                        Type: {request.day_off_type}
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-3">
-                                                    <div className="text-center">
-                                                        <div className="text-xs text-gray-500 mb-1">OT Hours</div>
-                                                        <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold text-sm">
-                                                            {record.ot_hours.toFixed(1)}h
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <div className="text-xs text-gray-500 mb-1">Leave Days</div>
-                                                        <div className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-bold text-sm">
-                                                            {record.leave_days}
-                                                        </div>
+                                                <div className="text-right">
+                                                    <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold text-sm">
+                                                        {request.date_off_number} {request.date_off_number === 1 ? 'day' : 'days'}
                                                     </div>
                                                 </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div>
+                                                    <span className="text-gray-500">Start:</span>
+                                                    <span className="ml-1 text-gray-700">
+                                                        {new Date(request.start_date_time).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">End:</span>
+                                                    <span className="ml-1 text-gray-700">
+                                                        {new Date(request.end_date_time).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-2 text-xs text-gray-500">
+                                                Created: {new Date(request.created_at).toLocaleDateString()}
                                             </div>
                                         </div>
                                     ))}
 
-                                    {getUserAttendanceHistory(selectedUser._id).length === 0 && (
+                                    {getUserRequestHistory(selectedUser._id).length === 0 && (
                                         <div className="text-center py-8 text-gray-500">
                                             <div className="text-3xl mb-2 opacity-50">📋</div>
-                                            <p>No attendance records found</p>
+                                            <p>No request records found</p>
                                         </div>
                                     )}
                                 </div>
