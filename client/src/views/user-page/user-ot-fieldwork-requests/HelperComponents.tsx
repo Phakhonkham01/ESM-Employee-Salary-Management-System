@@ -26,8 +26,13 @@ export const EmptyRow = ({ colSpan }: { colSpan: number }) => (
 
 /* ================= HELPERS ================= */
 
-export const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString("en-GB")
+// ✅ safer date formatter
+export const formatDate = (date: string) => {
+  if (!date) return "-"
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return "-"
+  return d.toLocaleDateString("en-GB")
+}
 
 export const statusBadge = (status: RequestStatus) => {
   const map: Record<RequestStatus, [string, string]> = {

@@ -1,81 +1,104 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import EditDayOffModal from "./EditDayOffModal"
 
 import UserDayOffRequest, { DayOffItem } from './UserDayOffRequest'
+import EditDayOffModal from './EditModal'
+import DayOffDetailModal from './DetailModal'
 import { loadingStyle } from './HelperComponents'
 
 const MainComponent: React.FC = () => {
-    const [dayOffs, setDayOffs] = useState<DayOffItem[]>([])
-    const [loading, setLoading] = useState<boolean>(true)
+  const [dayOffs, setDayOffs] = useState<DayOffItem[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
 
-    const auth = JSON.parse(localStorage.getItem('auth') || 'null')
-    const userId = auth?.user?._id
-    const [editingItem, setEditingItem] = useState<DayOffItem | null>(null)
-    const [openEdit, setOpenEdit] = useState(false)
+  const auth = JSON.parse(localStorage.getItem('auth') || 'null')
+  const userId = auth?.user?._id
 
-    /* ================= FETCH ================= */
+  // ✏️ Edit
+  const [editingItem, setEditingItem] = useState<DayOffItem | null>(null)
+  const [openEdit, setOpenEdit] = useState(false)
 
-    const fetchDayOffs = async () => {
-        if (!userId) return
+  // 👁 Detail
+  const [detailItem, setDetailItem] = useState<DayOffItem | null>(null)
+  const [openDetail, setOpenDetail] = useState(false)
 
-        try {
-            setLoading(true)
-            const res = await axios.get(`/api/day-off-requests/user/${userId}`)
-            setDayOffs(res.data.requests ?? [])
-        } catch (error) {
-            console.error('Failed to load day off requests:', error)
-        } finally {
-            setLoading(false)
-        }
+  /* ================= FETCH ================= */
+
+  const fetchDayOffs = async () => {
+    if (!userId) return
+
+    try {
+      setLoading(true)
+      const res = await axios.get(`/api/day-off-requests/user/${userId}`)
+      setDayOffs(res.data.requests ?? [])
+    } catch (error) {
+      console.error('Failed to load day off requests:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
-    useEffect(() => {
-        fetchDayOffs()
-    }, [])
+  useEffect(() => {
+    fetchDayOffs()
+  }, [])
 
-    /* ================= DELETE ================= */
+  /* ================= DELETE ================= */
 
-    const handleDelete = async (id: string) => {
-        try {
-            await axios.delete(`/api/day-off-requests/${id}`)
-            fetchDayOffs() // 🔄 refresh list
-        } catch (error) {
-            console.error('Failed to delete day off request:', error)
-            alert('Failed to delete request')
-        }
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`/api/day-off-requests/${id}`)
+      fetchDayOffs()
+    } catch (error) {
+      console.error('Failed to delete day off request:', error)
+      alert('Failed to delete request')
     }
+  }
 
-    /* ================= EDIT ================= */
-    const handleEdit = (item: DayOffItem) => {
-        // console.log("Edit day off request:", item)
+  /* ================= EDIT ================= */
 
-        setEditingItem(item)
-        setOpenEdit(true)
-    }
+  const handleEdit = (item: DayOffItem) => {
+    setEditingItem(item)
+    setOpenEdit(true)
+  }
 
-    /* ================= UI ================= */
+  /* ================= DETAIL ================= */
 
-    if (loading) {
-        return <div style={loadingStyle}>Loading your day off requests...</div>
-    }
+  const handleDetail = (item: DayOffItem) => {
+    setDetailItem(item)
+    setOpenDetail(true)
+  }
 
-    return (
-        <>
-            <UserDayOffRequest
-                dayOffs={dayOffs}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-            />
+  /* ================= UI ================= */
 
-            <EditDayOffModal
-                open={openEdit}
-                item={editingItem}
-                onClose={() => setOpenEdit(false)}
-                onSaved={fetchDayOffs}
-            />
-        </>
-    )
+  if (loading) {
+    return <div style={loadingStyle}>Loading your day off requests...</div>
+  }
+
+  return (
+    <>
+      <UserDayOffRequest
+        dayOffs={dayOffs}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onDetail={handleDetail}
+      />
+
+      {/* EDIT MODAL */}
+      <EditDayOffModal
+        open={openEdit}
+        item={editingItem}
+        onClose={() => setOpenEdit(false)}
+        onSaved={fetchDayOffs}
+      />
+
+      {/* DETAIL MODAL */}
+      {openDetail && detailItem && (
+        <DayOffDetailModal
+          item={detailItem}
+          onClose={() => setOpenDetail(false)}
+        />
+      )}
+    </>
+  )
 }
 
 export default MainComponent

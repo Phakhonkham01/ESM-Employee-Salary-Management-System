@@ -1,12 +1,11 @@
 import React from "react"
-import { HiPencil, HiTrash } from "react-icons/hi"
+import { HiPencil, HiTrash, HiEye } from "react-icons/hi"
 import {
   Section,
   EmptyRow,
-  formatDate,
+  formatDateTime,
   statusBadge,
   containerStyle,
-  titleStyle,
   tableStyle,
   th,
   td,
@@ -35,6 +34,7 @@ interface Props {
   dayOffs: DayOffItem[]
   onEdit: (item: DayOffItem) => void
   onDelete: (id: string) => void
+  onDetail: (item: DayOffItem) => void
 }
 
 /* ================= BUTTON ================= */
@@ -87,21 +87,26 @@ const UserDayOffRequests: React.FC<Props> = ({
   dayOffs,
   onEdit,
   onDelete,
+  onDetail,
 }) => {
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const role = auth?.user?.role
 
   /* ================= FILTER STATE ================= */
 
-  const [selectedStatus, setSelectedStatus] =
-    React.useState<string>("all")
-  const [selectedMonth, setSelectedMonth] =
-    React.useState<string>("")
+  const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
+  const [selectedMonth, setSelectedMonth] = React.useState<string>("")
+  const [selectedDayOffType, setSelectedDayOffType] =
+    React.useState<string>("all") // ✅ NEW
 
   /* ================= FILTER LOGIC ================= */
 
   const filteredDayOffs = dayOffs.filter((d) => {
     if (selectedStatus !== "all" && d.status !== selectedStatus) {
+      return false
+    }
+
+    if (selectedDayOffType !== "all" && d.day_off_type !== selectedDayOffType) {
       return false
     }
 
@@ -145,6 +150,23 @@ const UserDayOffRequests: React.FC<Props> = ({
             flexWrap: "wrap",
           }}
         >
+               {/* DAY OFF TYPE */}
+          <select
+            value={selectedDayOffType}
+            onChange={(e) => setSelectedDayOffType(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">All Types</option>
+            <option value="FULL_DAY">Full Day</option>
+            <option value="HALF_DAY">Half Day</option>
+          </select>
+
+          {/* STATUS */}
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
@@ -161,6 +183,8 @@ const UserDayOffRequests: React.FC<Props> = ({
             <option value="Reject">Rejected</option>
           </select>
 
+     
+          {/* MONTH */}
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -194,20 +218,20 @@ const UserDayOffRequests: React.FC<Props> = ({
           <colgroup>
             {role === "Admin" && <col style={{ width: "140px" }} />}
             <col style={{ width: "120px" }} />
-            <col style={{ width: "140px" }} />
-            <col style={{ width: "140px" }} />
+            <col style={{ width: "160px" }} />
+            <col style={{ width: "160px" }} />
             <col style={{ width: "80px" }} />
             <col style={{ width: "220px" }} />
             <col style={{ width: "120px" }} />
-            <col style={{ width: "180px" }} />
+            <col style={{ width: "220px" }} />
           </colgroup>
 
           <thead>
             <tr>
               {role === "Admin" && <th style={th}>Employee ID</th>}
               <th style={th}>Type</th>
-              <th style={th}>Start</th>
-              <th style={th}>End</th>
+              <th style={th}>Start (Date & Time)</th>
+              <th style={th}>End (Date & Time)</th>
               <th style={th}>Days</th>
               <th style={th}>Reason</th>
               <th style={th}>Status</th>
@@ -226,13 +250,10 @@ const UserDayOffRequests: React.FC<Props> = ({
                   )}
 
                   <td style={td}>{d.day_off_type}</td>
-                  <td style={td}>
-                    {formatDate(d.start_date_time)}
-                  </td>
-                  <td style={td}>
-                    {formatDate(d.end_date_time)}
-                  </td>
+                  <td style={td}>{formatDateTime(d.start_date_time)}</td>
+                  <td style={td}>{formatDateTime(d.end_date_time)}</td>
                   <td style={td}>{d.date_off_number}</td>
+
                   <td
                     style={{
                       ...td,
@@ -242,9 +263,20 @@ const UserDayOffRequests: React.FC<Props> = ({
                   >
                     {d.title}
                   </td>
+
                   <td style={td}>{statusBadge(d.status)}</td>
+
                   <td style={td}>
                     <div style={{ display: "flex", gap: 8 }}>
+                      <ActionButton
+                        color="#6b7280"
+                        hoverColor="#4b5563"
+                        onClick={() => onDetail(d)}
+                      >
+                        <HiEye size={14} />
+                        Detail
+                      </ActionButton>
+
                       <ActionButton
                         color="#3b82f6"
                         hoverColor="#2563eb"

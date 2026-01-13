@@ -1,12 +1,11 @@
 import React from "react"
-import { HiPencil, HiTrash } from "react-icons/hi"
+import { HiPencil, HiTrash, HiEye } from "react-icons/hi"
 import {
   Section,
   EmptyRow,
   formatDate,
   statusBadge,
   containerStyle,
-  titleStyle,
   tableStyle,
   th,
   td,
@@ -33,6 +32,7 @@ interface Props {
   requests: RequestItem[]
   onEdit: (item: RequestItem) => void
   onDelete: (id: string) => void
+  onDetail: (item: RequestItem) => void
 }
 
 /* ================= REUSABLE BUTTON ================= */
@@ -54,7 +54,7 @@ const ActionButton = ({
     onClick={disabled ? undefined : onClick}
     disabled={disabled}
     style={{
-      padding: "6px 10px",
+      padding: "8px 12px",
       backgroundColor: disabled ? "#d1d5db" : color,
       color: disabled ? "#6b7280" : "white",
       border: "none",
@@ -79,12 +79,13 @@ const ActionButton = ({
   </button>
 )
 
-/* ================= UI COMPONENT ================= */
+/* ================= COMPONENT ================= */
 
 const UserOtFieldWorkRequests: React.FC<Props> = ({
   requests,
   onEdit,
   onDelete,
+  onDetail,
 }) => {
   /* ================= FILTER STATE ================= */
 
@@ -132,9 +133,8 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-
       <Section title="⏱ OT / Field Work Requests">
-        {/* FILTERS */}
+        {/* ================= FILTERS ================= */}
         <div
           style={{
             display: "flex",
@@ -200,7 +200,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
           </select>
         </div>
 
-        {/* TABLE */}
+        {/* ================= TABLE ================= */}
         <table
           style={{
             ...tableStyle,
@@ -208,14 +208,15 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             tableLayout: "fixed",
           }}
         >
+          {/* ✅ FIXED COLUMN WIDTHS */}
           <colgroup>
-            <col style={{ width: "120px" }} />
-            <col style={{ width: "130px" }} />
-            <col style={{ width: "120px" }} />
-            <col style={{ width: "100px" }} />
-            <col style={{ width: "160px" }} />
-            <col style={{ width: "120px" }} />
-            <col style={{ width: "180px" }} />
+            <col style={{ width: "100px" }} />  {/* Type */}
+            <col style={{ width: "120px" }} />  {/* Date */}
+            <col style={{ width: "140px" }} />  {/* Time */}
+            <col style={{ width: "100px" }} />  {/* Fuel */}
+            <col style={{ width: "220px" }} />  {/* Reason */}
+            <col style={{ width: "120px" }} />  {/* Status */}
+            <col style={{ width: "220px" }} />  {/* Actions */}
           </colgroup>
 
           <thead>
@@ -237,28 +238,42 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               return (
                 <tr key={r._id} style={tr}>
                   <td style={td}>{r.title}</td>
+
                   <td style={td}>{formatDate(r.date)}</td>
+
                   <td style={td}>
                     {r.start_hour} – {r.end_hour}
                   </td>
+
                   <td style={td}>
                     {r.title === "FIELD_WORK"
                       ? r.fuel.toLocaleString()
                       : "-"}
                   </td>
+
                   <td
                     style={{
                       ...td,
                       whiteSpace: "normal",
                       wordBreak: "break-word",
-                      lineHeight: "1.4",
                     }}
                   >
                     {r.reason}
                   </td>
+
                   <td style={td}>{statusBadge(r.status)}</td>
+
                   <td style={td}>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <ActionButton
+                        color="#6b7280"
+                        hoverColor="#4b5563"
+                        onClick={() => onDetail(r)}
+                      >
+                        <HiEye size={14} />
+                        Detail
+                      </ActionButton>
+
                       <ActionButton
                         color="#3b82f6"
                         hoverColor="#2563eb"
@@ -273,15 +288,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                         color="#ef4444"
                         hoverColor="#dc2626"
                         disabled={!isPending}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to cancel this request?"
-                            )
-                          ) {
-                            onDelete(r._id)
-                          }
-                        }}
+                        onClick={() => onDelete(r._id)}
                       >
                         <HiTrash size={14} />
                         Cancel

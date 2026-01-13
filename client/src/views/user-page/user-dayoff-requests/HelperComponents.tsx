@@ -26,8 +26,28 @@ export const EmptyRow = ({ colSpan }: { colSpan: number }) => (
 
 /* ================= HELPERS ================= */
 
-export const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString("en-GB")
+// 📅 Date only (existing – KEEP)
+export const formatDate = (date: string) => {
+  if (!date) return "-"
+  return new Date(date).toLocaleDateString("en-GB")
+}
+
+// 📅 Date + ⏰ Time (NEW)
+export const formatDateTime = (date: string) => {
+  if (!date) return "-"
+
+  const d = new Date(date)
+
+  if (isNaN(d.getTime())) return "-"
+
+  return d.toLocaleString("en-GB", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
 
 export const statusBadge = (status: RequestStatus) => {
   const map: Record<RequestStatus, [string, string]> = {

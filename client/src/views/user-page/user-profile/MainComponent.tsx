@@ -35,7 +35,6 @@ const MainComponent = () => {
 
   return (
     <div className="p-8 max-w-5xl min-h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold mb-6">User Profile</h1>
 
       <UserProfile user={user} />
     </div>

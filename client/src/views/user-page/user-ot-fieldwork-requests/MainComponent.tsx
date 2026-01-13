@@ -4,13 +4,15 @@ import axios from "axios"
 import UserOtFieldWorkRequests, {
   RequestItem,
 } from "./UserOtFieldWorkRequests"
-import EditRequestModule from "./EdiRequest"
+import EditRequestModule from "./EditModal"
+import RequestDetailModal from "./DetailModal" // ✅ NEW
 import { loadingStyle } from "./HelperComponents"
 
 const MainComponent: React.FC = () => {
   const [requests, setRequests] = useState<RequestItem[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [editing, setEditing] = useState<RequestItem | null>(null)
+  const [detailItem, setDetailItem] = useState<RequestItem | null>(null) // ✅ NEW
 
   /* ================= FETCH DATA ================= */
 
@@ -40,11 +42,13 @@ const MainComponent: React.FC = () => {
     setEditing(item)
   }
 
+  const handleDetail = (item: RequestItem) => {
+    setDetailItem(item)
+  }
+
   const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/requests/${id}`)
-
-      // Optimistic UI update
       setRequests((prev) => prev.filter((r) => r._id !== id))
     } catch (err) {
       console.error("Failed to delete request:", err)
@@ -66,8 +70,18 @@ const MainComponent: React.FC = () => {
         requests={requests}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onDetail={handleDetail}   // ✅ CONNECTED
       />
 
+      {/* DETAIL MODAL */}
+      {detailItem && (
+        <RequestDetailModal
+          item={detailItem}
+          onClose={() => setDetailItem(null)}
+        />
+      )}
+
+      {/* EDIT MODAL */}
       <EditRequestModule
         open={!!editing}
         item={editing}
