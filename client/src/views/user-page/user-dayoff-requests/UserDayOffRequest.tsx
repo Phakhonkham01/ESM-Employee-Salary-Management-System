@@ -91,14 +91,19 @@ const UserDayOffRequests: React.FC<Props> = ({
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const role = auth?.user?.role
 
+  /* ================= FILTER STATE ================= */
+
   const [selectedStatus, setSelectedStatus] =
     React.useState<string>("all")
   const [selectedMonth, setSelectedMonth] =
     React.useState<string>("")
 
+  /* ================= FILTER LOGIC ================= */
+
   const filteredDayOffs = dayOffs.filter((d) => {
-    if (selectedStatus !== "all" && d.status !== selectedStatus)
+    if (selectedStatus !== "all" && d.status !== selectedStatus) {
       return false
+    }
 
     if (selectedMonth) {
       const month = new Date(d.start_date_time)
@@ -110,13 +115,23 @@ const UserDayOffRequests: React.FC<Props> = ({
     return true
   })
 
+  /* ================= MONTH OPTIONS ================= */
+
   const availableMonths = Array.from(
     new Set(
-      dayOffs.map((d) =>
-        new Date(d.start_date_time).toISOString().slice(0, 7)
-      )
+      dayOffs
+        .map((d) =>
+          new Date(d.start_date_time).toISOString().slice(0, 7)
+        )
+        .filter(Boolean)
     )
+  ).sort(
+    (a, b) =>
+      new Date(a + "-01").getTime() -
+      new Date(b + "-01").getTime()
   )
+
+  /* ================= RENDER ================= */
 
   return (
     <div style={containerStyle}>
@@ -125,6 +140,54 @@ const UserDayOffRequests: React.FC<Props> = ({
       </h2>
 
       <Section title="🏖 Day Off Requests">
+        {/* FILTERS */}
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            marginBottom: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Accept">Accepted</option>
+            <option value="Reject">Rejected</option>
+          </select>
+
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              fontSize: "12px",
+            }}
+          >
+            <option value="">All Months</option>
+            {availableMonths.map((m) => (
+              <option key={m} value={m}>
+                {new Date(m + "-01").toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* TABLE */}
         <table
           style={{
             ...tableStyle,
@@ -133,9 +196,7 @@ const UserDayOffRequests: React.FC<Props> = ({
           }}
         >
           <colgroup>
-            {role === "Admin" ? (
-              <col style={{ width: "140px" }} />
-            ) : null}
+            {role === "Admin" && <col style={{ width: "140px" }} />}
             <col style={{ width: "120px" }} />
             <col style={{ width: "140px" }} />
             <col style={{ width: "140px" }} />
@@ -147,9 +208,7 @@ const UserDayOffRequests: React.FC<Props> = ({
 
           <thead>
             <tr>
-              {role === "Admin" ? (
-                <th style={th}>Employee ID</th>
-              ) : null}
+              {role === "Admin" && <th style={th}>Employee ID</th>}
               <th style={th}>Type</th>
               <th style={th}>Start</th>
               <th style={th}>End</th>
@@ -166,9 +225,9 @@ const UserDayOffRequests: React.FC<Props> = ({
 
               return (
                 <tr key={d._id} style={tr}>
-                  {role === "Admin" ? (
+                  {role === "Admin" && (
                     <td style={td}>{d.employee_id}</td>
-                  ) : null}
+                  )}
 
                   <td style={td}>{d.day_off_type}</td>
                   <td style={td}>
