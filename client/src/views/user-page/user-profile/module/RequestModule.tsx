@@ -16,7 +16,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     ===================== */
     const [date, setDate] = useState('')
     const [startHour, setStartHour] = useState('08')
-    const [startMinute, setStartMinute] = useState('00')
+    const [startMinute, setStartMinute] = useState('30')
     const [endHour, setEndHour] = useState('17')
     const [endMinute, setEndMinute] = useState('00')
     const [reason, setReason] = useState('')

@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
+
 import { getSupervisors, Supervisor } from '@/services/User_Page/user_api'
 import { updateDayOffRequest } from '@/services/User_Page/day_off_request_api'
-import { DayOffItem } from './UserDayOffRequest'  
+import { DayOffItem } from './UserDayOffRequest'
 
 type Props = {
     open: boolean
@@ -10,24 +13,26 @@ type Props = {
     onSaved: () => void
 }
 
-
 const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     /* =====================
-       State
-    ===================== */
+     State
+  ===================== */
     const [dayOffType, setDayOffType] = useState<'FULL_DAY' | 'HALF_DAY'>(
-        'FULL_DAY'
+        'FULL_DAY',
     )
-    const [startDateTime, setStartDateTime] = useState('')
-    const [endDateTime, setEndDateTime] = useState('')
-    const [title, setTitle] = useState('') // ✅ renamed
+
+    // 📅 Date + ⏰ Time (combined)
+    const [startDateTime, setStartDateTime] = useState<Date | null>(null)
+    const [endDateTime, setEndDateTime] = useState<Date | null>(null)
+
+    const [title, setTitle] = useState('')
 
     const [supervisors, setSupervisors] = useState<Supervisor[]>([])
     const [supervisorId, setSupervisorId] = useState('')
 
     /* =====================
-       Load supervisors
-    ===================== */
+     Load supervisors
+  ===================== */
     useEffect(() => {
         if (!open) return
 
@@ -37,21 +42,21 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     }, [open])
 
     /* =====================
-       Fill form when item changes
-    ===================== */
+     Fill form when item changes
+  ===================== */
     useEffect(() => {
         if (!item) return
 
         setDayOffType(item.day_off_type)
-        setStartDateTime(item.start_date_time.slice(0, 16))
-        setEndDateTime(item.end_date_time.slice(0, 16))
-        setTitle(item.title)            // ✅ changed
+        setStartDateTime(new Date(item.start_date_time))
+        setEndDateTime(new Date(item.end_date_time))
+        setTitle(item.title)
         setSupervisorId(item.supervisor_id)
     }, [item])
 
     /* =====================
-       Submit
-    ===================== */
+     Submit
+  ===================== */
     const handleSubmit = async () => {
         if (!item) return
 
@@ -61,11 +66,11 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
         }
 
         if (!startDateTime || !endDateTime) {
-            alert('Please select start and end date/time')
+            alert('Please select start and end date & time')
             return
         }
 
-        if (new Date(endDateTime) <= new Date(startDateTime)) {
+        if (endDateTime <= startDateTime) {
             alert('End date must be later than start date')
             return
         }
@@ -79,9 +84,9 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
             await updateDayOffRequest(item._id, {
                 supervisor_id: supervisorId,
                 day_off_type: dayOffType,
-                start_date_time: startDateTime,
-                end_date_time: endDateTime,
-                title, // ✅ changed
+                start_date_time: startDateTime.toISOString(),
+                end_date_time: endDateTime.toISOString(),
+                title,
             })
 
             onSaved()
@@ -97,31 +102,25 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/40"
-                onClick={onClose}
-            />
+            <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-                {/* Header */}
-                <div className="mb-4">
-                    <h2 className="text-xl font-semibold text-slate-900">
-                        Edit Day Off Request
-                    </h2>
-                </div>
+            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-visible">
+                <h2 className="text-xl font-semibold text-slate-900 mb-4">
+                    Edit Day Off Request
+                </h2>
 
                 <div className="space-y-4">
                     {/* Day Off Type */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                             Day Off Type
                         </label>
                         <select
                             value={dayOffType}
                             onChange={(e) =>
                                 setDayOffType(
-                                    e.target.value as 'FULL_DAY' | 'HALF_DAY'
+                                    e.target.value as 'FULL_DAY' | 'HALF_DAY',
                                 )
                             }
                             className="w-full border rounded-lg px-3 py-2 text-sm"
@@ -131,46 +130,59 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                         </select>
                     </div>
 
-                    {/* Start Date Time */}
+                    {/* Start Date & Time */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                             Start Date & Time
                         </label>
-                        <input
-                            type="datetime-local"
-                            value={startDateTime}
-                            onChange={(e) =>
-                                setStartDateTime(e.target.value)
+                        <DatePicker
+                            selected={startDateTime}
+                            onChange={(date: Date | null) =>
+                                setStartDateTime(date)
                             }
+                            showTimeSelect
+                            timeFormat="HH:mm"
+                            timeIntervals={30}
+                            dateFormat="dd/MM/yyyy HH:mm"
+                            placeholderText="Select start date & time"
+                            popperPlacement="bottom-start"
+                            calendarClassName="rounded-xl shadow-lg border p-2"
+                            wrapperClassName="w-full"
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
                     </div>
 
-                    {/* End Date Time */}
+                    {/* End Date & Time */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                             End Date & Time
                         </label>
-                        <input
-                            type="datetime-local"
-                            value={endDateTime}
-                            onChange={(e) =>
-                                setEndDateTime(e.target.value)
+                        <DatePicker
+                            selected={endDateTime}
+                            onChange={(date: Date | null) =>
+                                setEndDateTime(date)
                             }
+                            showTimeSelect
+                            timeFormat="HH:mm"
+                            timeIntervals={30}
+                            dateFormat="dd/MM/yyyy HH:mm"
+                            placeholderText="Select end date & time"
+                            minDate={startDateTime ?? undefined}
+                            popperPlacement="bottom-start"
+                            calendarClassName="rounded-xl shadow-lg border p-2"
+                            wrapperClassName="w-full"
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
                     </div>
 
                     {/* Supervisor */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                             Supervisor
                         </label>
                         <select
                             value={supervisorId}
-                            onChange={(e) =>
-                                setSupervisorId(e.target.value)
-                            }
+                            onChange={(e) => setSupervisorId(e.target.value)}
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         >
                             <option value="">Select Supervisor</option>
@@ -182,9 +194,9 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                         </select>
                     </div>
 
-                    {/* Title (Reason) */}
+                    {/* Reason */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium mb-1">
                             Reason
                         </label>
                         <textarea
