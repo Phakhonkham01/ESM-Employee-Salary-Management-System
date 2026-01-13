@@ -17,39 +17,12 @@ const getCurrentMonthYear = () => {
 };
 
 /**
- * Helper function to calculate OT from requests
+ * Helper function to calculate OT from requests (แบบใหม่ ไม่ใช้ multiplier)
  */
-// ใน salaryModel.ts หรือเพิ่มใน controller
-interface OTDetail {
-  date: Date;
-  title: string;
-  start_hour: string;
-  end_hour: string;
-  total_hours: number;
-  ot_type: 'weekday' | 'weekend' | 'holiday';
-  hourly_rate: number;
-  ot_multiplier: number;
-  amount: number;
-  description?: string;
-}
-/**
- * Helper function to calculate OT from requests with details
- */
-/**
- * Helper function to calculate OT from requests with details
- */
-/**
- * Helper function to calculate OT from requests with details
- */
-const calculateOT = async (
+const calculateOTWithoutMultiplier = async (
   userId: string, 
   month: number, 
-  year: number,
-  customRates?: {
-    weekday_rate: number;
-    weekend_rate: number;
-    holiday_rate: number;
-  }
+  year: number
 ): Promise<{
   total_amount: number;
   total_hours: number;
@@ -74,28 +47,14 @@ const calculateOT = async (
     let total_amount = 0;
     let total_hours = 0;
 
-    // ดึงข้อมูลผู้ใช้เพื่อคำนวณอัตราค่าจ้างรายชั่วโมง
-    const user = await User.findById(userId);
-    if (!user || !user.base_salary) {
-      return { total_amount: 0, total_hours: 0, details: [] };
-    }
-
-    // คำนวณอัตราค่าจ้างรายชั่วโมง (ฐานเดือนละ 22 วัน ทำงานวันละ 8 ชั่วโมง)
-    const hourlyRate = user.base_salary / (22 * 8);
-    
-    // อัตราคูณค่า OT (ค่า default)
-    const defaultRates = {
-      weekday_rate: customRates?.weekday_rate || 1.5,
-      weekend_rate: customRates?.weekend_rate || 2.0,
-      holiday_rate: customRates?.holiday_rate || 3.0
-    };
-
     // วนลูปคำนวณแต่ละรายการ OT
     for (const request of otRequests) {
       if (request.start_hour && request.end_hour) {
         const start = parseInt(request.start_hour.split(':')[0]);
         const end = parseInt(request.end_hour.split(':')[0]);
-        const hours = end - start;
+        const hours = Math.max(0, end - start);
+        
+        if (hours <= 0) continue;
         
         // ตรวจสอบประเภทวัน
         let requestDate = request.date_off || request.created_at;
@@ -103,22 +62,15 @@ const calculateOT = async (
         const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 1 = Monday, ...
         
         let ot_type = 'weekday';
-        let multiplier = defaultRates.weekday_rate;
         
-        // ตรวจสอบว่าเป็นวันหยุดหรือไม่
-        if (request.title && (
-          request.title.includes('HOLIDAY') || 
-          request.title.includes('วันหยุด') ||
-          request.title.includes('Holiday')
-        )) {
-          ot_type = 'holiday';
-          multiplier = defaultRates.holiday_rate;
-        } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+        // ถ้าเป็นเสาร์ (6) หรือ อาทิตย์ (0) = weekend
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
           ot_type = 'weekend';
-          multiplier = defaultRates.weekend_rate;
         }
         
-        const amount = hours * hourlyRate * multiplier;
+        // สำหรับระบบ จะไม่คำนวณเงิน OT (ให้ป้อนเองใน manual)
+        // หรืออาจจะใช้ค่า default rate จากระบบถ้าต้องการ
+        const amount = 0; // ระบบไม่คำนวณเงิน OT
         
         details.push({
           date: dateObj,
@@ -127,11 +79,12 @@ const calculateOT = async (
           end_hour: request.end_hour,
           total_hours: hours,
           ot_type,
-          hourly_rate: hourlyRate,
-          ot_multiplier: multiplier,
-          amount,
+          hourly_rate: 0, // ป้อนเองใน manual
+          rate_per_day: 0, // ป้อนเองใน manual
+          amount: amount, // 0 สำหรับระบบ
           description: request.description || request.reason,
-          request_id: request._id
+          request_id: request._id,
+          is_manual: false
         });
         
         total_hours += hours;
@@ -145,10 +98,15 @@ const calculateOT = async (
     return { total_amount: 0, total_hours: 0, details: [] };
   }
 };
+
 /**
  * Helper function to calculate fuel costs from FIELD_WORK requests
  */
-const calculateFuelCosts = async (userId: string, month: number, year: number): Promise<number> => {
+const calculateFuelCosts = async (
+  userId: string,
+  month: number,
+  year: number
+): Promise<number> => {
   try {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59);
@@ -160,11 +118,17 @@ const calculateFuelCosts = async (userId: string, month: number, year: number): 
       created_at: {
         $gte: startDate,
         $lte: endDate
-      }
+      },
+      fuel: { $exists: true, $ne: null }
     });
 
-    // Assuming 500 THB per FIELD_WORK day (adjust as needed)
-    return fieldWorkRequests.length * 500;
+    // ✅ รวมค่า fuel จากทุก request
+    const totalFuelCost = fieldWorkRequests.reduce(
+      (sum, req) => sum + (req.fuel || 0),
+      0
+    );
+
+    return totalFuelCost;
   } catch (error) {
     console.error("Error calculating fuel costs:", error);
     return 0;
@@ -181,7 +145,7 @@ const calculateDayOffDays = async (userId: string, month: number, year: number):
 
     const dayOffRequests = await DayOffRequestModel.find({
       user_id: userId,
-      status: "Accept",
+      status: "Accepted",
       created_at: {
         $gte: startDate,
         $lte: endDate
@@ -207,165 +171,278 @@ const calculateDayOffDays = async (userId: string, month: number, year: number):
  * CREATE - Create salary calculation
  * POST /api/salaries
  */
-/**
- * CREATE - Create salary calculation
- * POST /api/salaries
- */
-/**
- * CREATE - Create salary calculation
- * POST /api/salaries
- */
 export const createSalary = async (req: Request, res: Response): Promise<void> => {
   try {
+    let net_salary_calculated: number = 0;
+
     const {
       user_id,
       month,
       year,
-      bonus,
-      commission,
-      money_not_spent_on_holidays,
-      other_income,
-      office_expenses,
-      social_security,
-      working_days,
+      bonus = 0,
+      commission = 0,
+      money_not_spent_on_holidays = 0,
+      other_income = 0,
+      office_expenses = 0,
+      social_security = 0,
+      working_days = 0,
       notes,
-      salary, // 👈 รับจาก frontend (net_salary)
-      net_salary, // 👈 รับจาก frontend (ถ้ามี)
+      salary,
+      net_salary,
       created_by,
-      ot_rates = {
-        weekday_rate: 1.5,
-        weekend_rate: 2.0,
-        holiday_rate: 3.0
-      }
+      ot_details = [], // รวมทั้ง manual และ auto
+      manual_ot, // ข้อมูล manual OT จาก frontend
+      base_salary, // เงินเดือนพื้นฐาน (ส่งมาจาก frontend)
+      fuel_costs, // ค่าน้ำมัน (ส่งมาจาก frontend)
+      ot_amount, // ยอด OT ทั้งหมด (ส่งมาจาก frontend)
+      ot_hours // จำนวนชั่วโมง OT ทั้งหมด (ส่งมาจาก frontend)
     } = req.body;
 
-    // 👇 แก้ไขการรับค่า created_by
-    const creatorId = created_by || (req.user ? req.user.id : null);
-
-    // Validation
     if (!user_id) {
-      res.status(400).json({ 
-        message: "Missing user_id",
-        salary: null
-      });
+      res.status(400).json({ message: "Missing user_id", salary: null });
       return;
     }
 
-    // ถ้าไม่มี created_by ใน request ให้ใช้ user_id แทน (หรือค่า default)
-    const finalCreatedBy = creatorId || user_id;
-
-    // Check if salary already exists for this month/year
-    const existingSalary = await Salary.findOne({
-      user_id,
-      month: month || getCurrentMonthYear().month,
-      year: year || getCurrentMonthYear().year
-    });
-
-    if (existingSalary) {
-      res.status(400).json({ 
-        message: "Salary for this month already exists",
-        salary: null
-      });
-      return;
-    }
-
-    // Get user data
-    const user = await User.findById(user_id);
-    if (!user) {
-      res.status(404).json({ 
-        message: "User not found",
-        salary: null
-      });
-      return;
-    }
-
-    // Calculate various components
     const currentMonth = month || getCurrentMonthYear().month;
     const currentYear = year || getCurrentMonthYear().year;
+    const finalCreatedBy = created_by || user_id;
 
-    // คำนวณ OT พร้อมรายละเอียด
-    const otCalculation = await calculateOT(user_id, currentMonth, currentYear, ot_rates);
-    const ot_amount = otCalculation.total_amount;
-    const ot_hours = otCalculation.total_hours;
-    const ot_details = otCalculation.details;
+    // 🔎 หา salary เดิมที่ตรงกับเดือนและปีที่ระบุ
+    const existingSalary = await Salary.findOne({
+      user_id,
+      month: currentMonth,
+      year: currentYear
+    });
+
+    // ✅ ถ้ามี salary ในเดือน/ปีนี้แล้ว
+    if (existingSalary) {
+      console.log('Found existing salary:', {
+        id: existingSalary._id,
+        month: existingSalary.month,
+        year: existingSalary.year,
+        status: existingSalary.status
+      });
+
+      // ❌ ห้ามสร้าง/แก้ไข ถ้า status ไม่ใช่ pending
+      if (existingSalary.status === 'paid') {
+        res.status(400).json({ 
+          message: `ไม่สามารถสร้างหรือแก้ไขเงินเดือนได้ เนื่องจากเดือน ${currentMonth}/${currentYear} จ่ายเงินเดือนไปแล้ว`,
+          salary: null 
+        });
+        return;
+      }
+
+      if (existingSalary.status === 'approved') {
+        res.status(400).json({ 
+          message: `ไม่สามารถสร้างหรือแก้ไขเงินเดือนได้ เนื่องจากเดือน ${currentMonth}/${currentYear} อนุมัติไปแล้ว`,
+          salary: null 
+        });
+        return;
+      }
+
+      if (existingSalary.status === 'cancelled') {
+        res.status(400).json({ 
+          message: `ไม่สามารถสร้างหรือแก้ไขเงินเดือนได้ เนื่องจากเดือน ${currentMonth}/${currentYear} ถูกยกเลิกไปแล้ว`,
+          salary: null 
+        });
+        return;
+      }
+
+      // ✅ ถ้า status = pending ให้ update ข้อมูลเดือนนั้นๆ
+      // เช็คอีกครั้งว่าเดือน/ปีตรงกันจริงๆ (double check)
+      if (existingSalary.month !== currentMonth || existingSalary.year !== currentYear) {
+        console.error('Month/Year mismatch!', {
+          existing: { month: existingSalary.month, year: existingSalary.year },
+          current: { month: currentMonth, year: currentYear }
+        });
+        res.status(500).json({ 
+          message: 'เกิดข้อผิดพลาดในการตรวจสอบเดือน/ปี',
+          salary: null 
+        });
+        return;
+      }
+
+      console.log('Updating existing salary for month:', currentMonth, 'year:', currentYear);
+    }
+
+    // 👤 ข้อมูล user
+    const user = await User.findById(user_id);
+    if (!user) {
+      res.status(404).json({ message: "User not found", salary: null });
+      return;
+    }
+
+    // 📊 คำนวณค่าต่างๆ (ถ้าไม่ได้ส่งมาจาก frontend ให้คำนวณจากระบบ)
+    const finalBaseSalary = base_salary || user.base_salary || 0;
     
-    const base_salary = user.base_salary || 0;
-    const fuel_costs = await calculateFuelCosts(user_id, currentMonth, currentYear);
+    // แยก OT details เป็น manual และ auto (ถ้ามี)
+    const manualOTDetails = Array.isArray(ot_details) 
+      ? ot_details.filter((detail: any) => detail.is_manual === true)
+      : [];
+    
+    const autoOTDetails = Array.isArray(ot_details) 
+      ? ot_details.filter((detail: any) => !detail.is_manual)
+      : [];
+
+    // คำนวณ OT จากระบบ (ถ้ามีคำขอ OT ที่อนุมัติแล้ว)
+    let autoOTCalculation = { total_amount: 0, total_hours: 0, details: [] };
+    if (autoOTDetails.length === 0) {
+      // ถ้าไม่มี auto OT details จาก frontend ให้คำนวณจากระบบ
+      autoOTCalculation = await calculateOTWithoutMultiplier(
+        user_id,
+        currentMonth,
+        currentYear
+      );
+    } else {
+      // ถ้ามี auto OT details จาก frontend ให้ใช้ข้อมูลนั้น
+      autoOTCalculation = {
+        total_amount: autoOTDetails.reduce((sum: number, detail: any) => sum + (detail.amount || 0), 0),
+        total_hours: autoOTDetails.reduce((sum: number, detail: any) => sum + (detail.total_hours || 0), 0),
+        details: autoOTDetails
+      };
+    }
+
+    // คำนวณ OT จาก manual entry
+    const manualOTAmount = manualOTDetails.reduce((sum: number, detail: any) => sum + (detail.amount || 0), 0);
+    const manualOTHours = manualOTDetails.reduce((sum: number, detail: any) => sum + (detail.total_hours || 0), 0);
+
+    // รวม OT ทั้งหมด (manual + auto)
+    const finalOTAmount = (ot_amount !== undefined ? ot_amount : (autoOTCalculation.total_amount + manualOTAmount));
+    const finalOTHours = (ot_hours !== undefined ? ot_hours : (autoOTCalculation.total_hours + manualOTHours));
+    
+    // รวม OT details ทั้งหมด
+    const allOTDetails = [
+      ...autoOTCalculation.details,
+      ...manualOTDetails
+    ];
+
+    // คำนวณ fuel costs (ถ้าไม่ได้ส่งมาจาก frontend)
+    const finalFuelCosts = fuel_costs !== undefined ? fuel_costs : await calculateFuelCosts(user_id, currentMonth, currentYear);
+    
     const day_off_days = await calculateDayOffDays(user_id, currentMonth, currentYear);
-    
-    // Calculate remaining vacation days
     const remaining_vacation_days = Math.max(
       0,
       (user.vacation_days || 0) - day_off_days
     );
 
-    // Calculate net salary - ใช้ค่าจาก frontend หรือคำนวณใหม่
-    let net_salary_calculated;
-    
+    // 💰 คำนวณ net salary
     if (salary || net_salary) {
-      // ใช้ค่าจาก frontend ถ้ามี
       net_salary_calculated = salary || net_salary;
     } else {
-      // คำนวณใหม่ถ้าไม่มี
-      const totalIncome = base_salary + ot_amount + (bonus || 0) + (commission || 0) + 
-                         fuel_costs + (money_not_spent_on_holidays || 0) + 
-                         (other_income || 0);
-      
-      const totalDeductions = (office_expenses || 0) + (social_security || 0);
+      const totalIncome =
+        finalBaseSalary +
+        finalOTAmount +
+        bonus +
+        commission +
+        finalFuelCosts +
+        money_not_spent_on_holidays +
+        other_income;
+
+      const totalDeductions = office_expenses + social_security;
       net_salary_calculated = totalIncome - totalDeductions;
     }
 
-    // Create salary record
+    // 🔁 UPDATE (ถ้ามีและ status = pending)
+    if (existingSalary && existingSalary.status === 'pending') {
+      existingSalary.set({
+        base_salary: finalBaseSalary,
+        ot_amount: finalOTAmount,
+        ot_hours: finalOTHours,
+        ot_details: allOTDetails,
+        bonus,
+        commission,
+        fuel_costs: finalFuelCosts,
+        money_not_spent_on_holidays,
+        other_income,
+        office_expenses,
+        social_security,
+        working_days,
+        day_off_days,
+        remaining_vacation_days,
+        net_salary: net_salary_calculated,
+        notes: notes || `Manual OT: ${manualOTDetails.length > 0 ? 'Yes' : 'No'}`,
+        updated_at: new Date(),
+        manual_ot_data: manual_ot // บันทึกข้อมูล manual ot แยกไว้
+      });
+
+      await existingSalary.save();
+
+      const populatedSalary = await Salary.findById(existingSalary._id)
+        .populate("user_id", "first_name_en last_name_en email")
+        .populate("created_by", "first_name_en last_name_en");
+
+      console.log('Updated salary:', {
+        id: populatedSalary?._id,
+        month: populatedSalary?.month,
+        year: populatedSalary?.year,
+        ot_amount: finalOTAmount,
+        manual_ot_count: manualOTDetails.length
+      });
+
+      res.status(200).json({
+        message: `อัพเดทเงินเดือน ${currentMonth}/${currentYear} สำเร็จ`,
+        salary: populatedSalary
+      });
+      return;
+    }
+
+    // 🆕 CREATE ใหม่ (กรณีไม่มี salary ในเดือน/ปีนี้)
+    console.log('Creating new salary for month:', currentMonth, 'year:', currentYear);
+    console.log('OT Details:', {
+      manual_count: manualOTDetails.length,
+      auto_count: autoOTCalculation.details.length,
+      total_ot_amount: finalOTAmount,
+      total_ot_hours: finalOTHours
+    });
+
     const newSalary = await Salary.create({
       user_id,
       month: currentMonth,
       year: currentYear,
-      base_salary,
-      ot_amount,
-      ot_hours,
-      ot_details, // ✅ บันทึกรายละเอียด OT
-      ot_rates: {
-        weekday_rate: ot_rates.weekday_rate,
-        weekend_rate: ot_rates.weekend_rate,
-        holiday_rate: ot_rates.holiday_rate
-      },
-      bonus: bonus || 0,
-      commission: commission || 0,
-      fuel_costs,
-      money_not_spent_on_holidays: money_not_spent_on_holidays || 0,
-      other_income: other_income || 0,
-      office_expenses: office_expenses || 0,
-      social_security: social_security || 0,
-      working_days: working_days || 0,
+      base_salary: finalBaseSalary,
+      ot_amount: finalOTAmount,
+      ot_hours: finalOTHours,
+      ot_details: allOTDetails,
+      bonus,
+      commission,
+      fuel_costs: finalFuelCosts,
+      money_not_spent_on_holidays,
+      other_income,
+      office_expenses,
+      social_security,
+      working_days,
       day_off_days,
       remaining_vacation_days,
-      payment_date: new Date(),
       net_salary: net_salary_calculated,
-      status: 'pending',
+      payment_date: new Date(),
+      status: "pending",
       created_by: finalCreatedBy,
-      notes,
+      notes: notes || `Manual OT: ${manualOTDetails.length > 0 ? 'Yes' : 'No'}`,
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
+      manual_ot_data: manual_ot // บันทึกข้อมูล manual ot แยกไว้
     });
 
-    // Populate user details
     const populatedSalary = await Salary.findById(newSalary._id)
-      .populate("user_id", "first_name_en last_name_en email base_salary vacation_days")
+      .populate("user_id", "first_name_en last_name_en email")
       .populate("created_by", "first_name_en last_name_en");
 
+    console.log('Created new salary:', {
+      id: populatedSalary?._id,
+      month: populatedSalary?.month,
+      year: populatedSalary?.year,
+      base_salary: finalBaseSalary,
+      net_salary: net_salary_calculated
+    });
+
     res.status(201).json({
-      message: "Salary calculation created successfully",
-      salary: populatedSalary,
-      ot_summary: {
-        total_hours: ot_hours,
-        total_amount: ot_amount,
-        details_count: ot_details.length
-      }
+      message: `สร้างเงินเดือน ${currentMonth}/${currentYear} สำเร็จ`,
+      salary: populatedSalary
     });
   } catch (error: any) {
     console.error("Error creating salary:", error);
-    res.status(500).json({ 
-      message: "Server error", 
+    res.status(500).json({
+      message: "Server error",
       error: error.message,
       salary: null
     });
@@ -404,14 +481,23 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Calculate dynamic data
-    const ot_amount = await calculateOT(userId, currentMonth, currentYear);
+    // Calculate OT (แบบใหม่ ไม่ใช้ multiplier)
+    const otCalculation = await calculateOTWithoutMultiplier(userId, currentMonth, currentYear);
     const fuel_costs = await calculateFuelCosts(userId, currentMonth, currentYear);
     const day_off_days = await calculateDayOffDays(userId, currentMonth, currentYear);
     const remaining_vacation_days = Math.max(
       0,
       (user.vacation_days || 0) - day_off_days
     );
+
+    // แยกชั่วโมงตามประเภท
+    const weekday_ot_hours = otCalculation.details
+      .filter(detail => detail.ot_type === 'weekday')
+      .reduce((sum, detail) => sum + detail.total_hours, 0);
+    
+    const weekend_ot_hours = otCalculation.details
+      .filter(detail => detail.ot_type === 'weekend')
+      .reduce((sum, detail) => sum + detail.total_hours, 0);
 
     // Determine color for vacation days
     let vacationColor = 'green'; // Default green
@@ -431,11 +517,15 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
           vacation_days: user.vacation_days || 0
         },
         calculated: {
-          ot_amount,
+          ot_amount: otCalculation.total_amount,
+          ot_hours: otCalculation.total_hours,
+          ot_details: otCalculation.details,
           fuel_costs,
           day_off_days,
           remaining_vacation_days,
-          vacation_color: vacationColor
+          vacation_color: vacationColor,
+          weekday_ot_hours,
+          weekend_ot_hours
         },
         month: currentMonth,
         year: currentYear

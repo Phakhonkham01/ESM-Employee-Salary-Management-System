@@ -7,9 +7,9 @@ export interface IDayOffRequest extends Document {
   day_off_type: "FULL_DAY" | "HALF_DAY";
   start_date_time: Date;
   end_date_time: Date;
-  date_off_number: number; // ✅ FIXED
+  date_off_number: number;
   title: string;
-  status: "Pending" | "Accept" | "Reject";
+  status: "Pending" | "Accepted" | "Rejected"; // ✅ เปลี่ยนเป็น Accepted, Rejected
   created_at: Date;
 }
 
@@ -29,7 +29,7 @@ const dayOffRequestSchema = new Schema<IDayOffRequest>({
   employee_id: {
     type: Schema.Types.ObjectId,
     ref: "User",
-    required: false,
+    required: true,
   },
 
   day_off_type: {
@@ -64,7 +64,7 @@ const dayOffRequestSchema = new Schema<IDayOffRequest>({
 
   status: {
     type: String,
-    enum: ["Pending", "Accept", "Reject"],
+    enum: ["Pending", "Accepted", "Rejected"], // ✅ เปลี่ยนตรงนี้
     default: "Pending",
   },
 
@@ -72,7 +72,6 @@ const dayOffRequestSchema = new Schema<IDayOffRequest>({
     type: Date,
     default: Date.now,
   },
-
 });
 
 export default mongoose.model<IDayOffRequest>(

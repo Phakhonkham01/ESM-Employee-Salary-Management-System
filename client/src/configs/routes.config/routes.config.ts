@@ -10,7 +10,7 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'Salary_Calculator',
+        key: 'SalaryManagement',
         path: '/salary-calculator',
         component: lazy(() => import('@/views/salary-management/Salary_List_User')),
         authority: [],
@@ -29,13 +29,13 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'collapseMenu.item1',
-        path: '/collapse-menu-item-view-1',
-        component: lazy(() => import('@/views/demo/CollapseMenuItemView1')),
+        key: 'RequestManagement.item22',
+        path: '/request-dayoff-management',
+        component: lazy(() => import('@/views/Requests-Management/SupervisorDayOffApproval')),
         authority: [],
     },
     {
-        key: 'collapseMenu.item2',
+        key: 'salary.report',
         path: '/salary-report',
         component: lazy(() => import('@/views/salary-management/SalaryHistory')),
         authority: [],
