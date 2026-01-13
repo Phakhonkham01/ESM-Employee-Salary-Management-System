@@ -104,7 +104,7 @@ const UserDayOffRequests: React.FC<Props> = ({
   const ITEMS_PER_PAGE = 10
   const [currentPage, setCurrentPage] = React.useState(1)
 
-  /* ================= CLEAR FILTERS (NEW) ================= */
+  /* ================= CLEAR FILTERS ================= */
 
   const clearFilters = () => {
     setSelectedStatus("all")
@@ -133,6 +133,33 @@ const UserDayOffRequests: React.FC<Props> = ({
     return true
   })
 
+  /* ================= SORT LOGIC (NEW – ONLY CHANGE) ================= */
+
+  const statusOrder: Record<RequestStatus, number> = {
+    Pending: 1,
+    Accept: 2,
+    Reject: 3,
+  }
+
+  const sortedDayOffs = [...filteredDayOffs].sort((a, b) => {
+    // 1️⃣ Status
+    const statusDiff =
+      statusOrder[a.status] - statusOrder[b.status]
+    if (statusDiff !== 0) return statusDiff
+
+    // 2️⃣ Start date & time
+    const startDiff =
+      new Date(a.start_date_time).getTime() -
+      new Date(b.start_date_time).getTime()
+    if (startDiff !== 0) return startDiff
+
+    // 3️⃣ End date & time
+    return (
+      new Date(a.end_date_time).getTime() -
+      new Date(b.end_date_time).getTime()
+    )
+  })
+
   /* 🔁 RESET PAGE WHEN FILTERS CHANGE */
   React.useEffect(() => {
     setCurrentPage(1)
@@ -140,9 +167,9 @@ const UserDayOffRequests: React.FC<Props> = ({
 
   /* ================= PAGINATION LOGIC ================= */
 
-  const totalPages = Math.ceil(filteredDayOffs.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(sortedDayOffs.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  const paginatedDayOffs = filteredDayOffs.slice(
+  const paginatedDayOffs = sortedDayOffs.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
   )
@@ -168,7 +195,7 @@ const UserDayOffRequests: React.FC<Props> = ({
   return (
     <div style={containerStyle}>
       <Section title="🏖 Day Off Requests">
-        {/* ================= FILTERS ================= */}
+        {/* ================= FILTERS (UNCHANGED) ================= */}
         <div
           style={{
             display: "flex",
@@ -230,7 +257,6 @@ const UserDayOffRequests: React.FC<Props> = ({
             ))}
           </select>
 
-          {/* ✅ CLEAR FILTER BUTTON (NEW) */}
           <button
             onClick={clearFilters}
             style={{

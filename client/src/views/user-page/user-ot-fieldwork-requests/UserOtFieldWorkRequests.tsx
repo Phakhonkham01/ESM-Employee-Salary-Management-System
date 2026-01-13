@@ -101,7 +101,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
   const ITEMS_PER_PAGE = 10
   const [currentPage, setCurrentPage] = React.useState(1)
 
-  /* ================= CLEAR FILTERS (NEW) ================= */
+  /* ================= CLEAR FILTERS ================= */
 
   const clearFilters = () => {
     setSelectedStatus("all")
@@ -129,6 +129,28 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
     return true
   })
 
+  /* ================= SORT LOGIC (ONLY NEW PART) ================= */
+
+  const statusOrder: Record<RequestStatus, number> = {
+    Pending: 1,
+    Accept: 2,
+    Reject: 3,
+  }
+
+  const sortedRequests = [...filteredRequests].sort((a, b) => {
+    // 1️⃣ Status: Pending → Accept → Reject
+    const statusDiff = statusOrder[a.status] - statusOrder[b.status]
+    if (statusDiff !== 0) return statusDiff
+
+    // 2️⃣ Date: newest first
+    const dateDiff =
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    if (dateDiff !== 0) return dateDiff
+
+    // 3️⃣ Time: earlier start first
+    return a.start_hour.localeCompare(b.start_hour)
+  })
+
   /* 🔁 RESET PAGE WHEN FILTER CHANGES */
   React.useEffect(() => {
     setCurrentPage(1)
@@ -136,10 +158,10 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
   /* ================= PAGINATION LOGIC ================= */
 
-  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(sortedRequests.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
-  const paginatedRequests = filteredRequests.slice(
+  const paginatedRequests = sortedRequests.slice(
     startIndex,
     endIndex
   )
@@ -163,7 +185,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
   return (
     <div style={containerStyle}>
       <Section title="⏱ OT / Field Work Requests">
-        {/* ================= FILTERS ================= */}
+        {/* ================= FILTERS (UNCHANGED UI) ================= */}
         <div
           style={{
             display: "flex",
@@ -229,7 +251,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             ))}
           </select>
 
-          {/* ✅ CLEAR FILTERS BUTTON */}
           <button
             onClick={clearFilters}
             style={{
