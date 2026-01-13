@@ -142,10 +142,11 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
     const statusDiff = statusOrder[a.status] - statusOrder[b.status]
     if (statusDiff !== 0) return statusDiff
 
-    // 2️⃣ Date: newest first
-    const dateDiff =
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    if (dateDiff !== 0) return dateDiff
+ // 2️⃣ Date: oldest first ✅
+const dateDiff =
+  new Date(a.date).getTime() - new Date(b.date).getTime()
+if (dateDiff !== 0) return dateDiff
+
 
     // 3️⃣ Time: earlier start first
     return a.start_hour.localeCompare(b.start_hour)
