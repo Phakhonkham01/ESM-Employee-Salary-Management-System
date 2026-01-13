@@ -7,18 +7,21 @@ import {
 import type { NavigationTree } from '@/@types/navigation'
 
 const navigationConfig: NavigationTree[] = [
-    {
-        key: 'Salary_Calculator',
-        path: '/salary-management',
-        title: 'Home',
+    //  dashboard
+        {
+        key: 'dashboard',
+        path: '/dashboard',
+        title: 'Dashboard',
         translateKey: '',
-        icon: 'home',
+        icon: 'dashboard',
         type: NAV_ITEM_TYPE_ITEM,
         authority: [],
         subMenu: [],
     },
   
+  
     /** Example purpose only, please remove */
+    //user management
     {
         key: 'singleMenuItem',
         path: '/user-management',
@@ -39,6 +42,7 @@ const navigationConfig: NavigationTree[] = [
         authority: [],
         subMenu: [],
     },
+    //salary management
     {
         key: 'collapseMenu',
         path: '',
@@ -70,7 +74,7 @@ const navigationConfig: NavigationTree[] = [
             },
         ],
     },
- 
+    //attendance management
     {
         key: 'attendanceMenu',
         path: '/attendance',
@@ -102,7 +106,7 @@ const navigationConfig: NavigationTree[] = [
             }
         ],
     },
-  
+  //user profile and requests
      {
         key: 'User', 
         path: '/user',

@@ -9,6 +9,12 @@ export const protectedRoutes: Routes = [
         component: lazy(() => import('@/views/home')),
         authority: [],
     },
+        {
+        key: 'dashboard',
+        path: '/dashboard',
+        component: lazy(() => import('@/views/dashboard/Dashbaord')),
+        authority: [], 
+    },
     {
         key: 'Salary_Calculator',
         path: '/salary-calculator',
@@ -28,42 +34,16 @@ export const protectedRoutes: Routes = [
         component: lazy(() => import('@/views/Requests-Management/SupervisorRequests')) as any,
         authority: [],
     },
-    {
-        key: 'collapseMenu.item1',
-        path: '/collapse-menu-item-view-1',
-        component: lazy(() => import('@/views/demo/CollapseMenuItemView1')),
-        authority: [],
-    },
+ 
     {
         key: 'collapseMenu.item2',
         path: '/salary-report',
         component: lazy(() => import('@/views/salary-management/SalaryHistory')),
         authority: [],
     },
-    {
-        key: 'groupMenu.single',
-        path: '/group-single-menu-item-view',
-        component: lazy(() =>
-            import('@/views/demo/GroupSingleMenuItemView')
-        ),
-        authority: [],
-    },
-    {
-        key: 'groupMenu.collapse.item1',
-        path: '/group-collapse-menu-item-view-1',
-        component: lazy(() =>
-            import('@/views/demo/GroupCollapseMenuItemView1')
-        ),
-        authority: [],
-    },
-    {
-        key: 'groupMenu.collapse.item2',
-        path: '/group-collapse-menu-item-view-2',
-        component: lazy(() =>
-            import('@/views/demo/GroupCollapseMenuItemView2')
-        ),
-        authority: [],
-    },
+
+ 
+  
     {
         key: 'attendance.records',
         path: '/attendance-records',
