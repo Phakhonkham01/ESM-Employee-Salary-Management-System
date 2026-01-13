@@ -1,12 +1,14 @@
-
 import React, { useState, useEffect } from 'react'
 import { FaRegEye, FaPlus, FaCalendarAlt, FaClock, FaUserCheck, FaTimes, FaCheck, FaFilter } from "react-icons/fa"
-import { getAllUsers } from '../../services/Create_user/api'
-import type { UserData } from '../../services/Create_user/api'
-import { getAllDayOffRequests } from '@/services/Day_off_api/api'
 
 type DayOffType = 'Full day' | 'Half day'
 type RequestStatus = 'Pending' | 'Accept' | 'Reject'
+
+interface UserData {
+  _id: string
+  first_name_en: string
+  last_name_en: string
+}
 
 interface DayOffRequest {
   id: number
@@ -18,6 +20,7 @@ interface DayOffRequest {
   end_date_time: string
   date_off_number: number
   title: string
+  reason: string
   status: RequestStatus
   created_at: string
 }
@@ -25,46 +28,83 @@ interface DayOffRequest {
 const DayoffRequests: React.FC = () => {
   const [requests, setRequests] = useState<DayOffRequest[]>([])
   const [users, setUsers] = useState<UserData[]>([])
-  const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
   const [showModal, setShowModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<DayOffRequest | null>(null)
   const [filterStatus, setFilterStatus] = useState<RequestStatus | 'All'>('All')
   const [searchTerm, setSearchTerm] = useState('')
-
+  
   const [formData, setFormData] = useState({
     employee_id: '',
     supervisor_id: '',
     day_off_type: 'Full day' as DayOffType,
     start_date_time: '',
     end_date_time: '',
-    title: '',
+    title: ''
   })
 
   useEffect(() => {
-    loadUsers()
-    loadAllUsers()
+    loadMockUsers()
+    loadMockRequests()
   }, [])
 
-  const loadUsers = async () => {
-    try {
-      const userData = await getAllUsers()
-      setUsers(userData.users)
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
+  const loadMockUsers = () => {
+    const mockUsers: UserData[] = [
+      { _id: '1', first_name_en: 'John', last_name_en: 'Doe' },
+      { _id: '2', first_name_en: 'Jane', last_name_en: 'Smith' },
+      { _id: '3', first_name_en: 'Bob', last_name_en: 'Johnson' },
+      { _id: '4', first_name_en: 'Alice', last_name_en: 'Williams' }
+    ]
+    setUsers(mockUsers)
   }
 
-  const loadAllUsers = async () => {
-    try {
-      const DayOffRequest = await getAllDayOffRequests()
-      // setDayOffRequests()
-    } catch (error) {
-      console.error('Error loading users:', error)
-    }
+  const loadMockRequests = () => {
+    const mockRequests: DayOffRequest[] = [
+      {
+        id: 1,
+        user_id: 1,
+        supervisor_id: 2,
+        employee_id: 1,
+        day_off_type: 'Full day',
+        start_date_time: '2026-01-20',
+        end_date_time: '2026-01-22',
+        date_off_number: 3,
+        title: 'Family Vacation',
+        reason: 'Taking time off for family trip to beach',
+        status: 'Pending',
+        created_at: '2026-01-10'
+      },
+      {
+        id: 2,
+        user_id: 3,
+        supervisor_id: 2,
+        employee_id: 3,
+        day_off_type: 'Half day',
+        start_date_time: '2026-01-15',
+        end_date_time: '2026-01-15',
+        date_off_number: 0.5,
+        title: 'Medical Appointment',
+        reason: 'Doctor appointment in the afternoon',
+        status: 'Accept',
+        created_at: '2026-01-05'
+      },
+      {
+        id: 3,
+        user_id: 4,
+        supervisor_id: 2,
+        employee_id: 4,
+        day_off_type: 'Full day',
+        start_date_time: '2026-01-18',
+        end_date_time: '2026-01-19',
+        date_off_number: 2,
+        title: 'Personal Matter',
+        reason: 'Need to handle urgent personal business',
+        status: 'Reject',
+        created_at: '2026-01-08'
+      }
+    ]
+    setRequests(mockRequests)
   }
-
-  console.log('---------------------->', dayOffRequests);
 
   const calculateDaysOff = (start: string, end: string, type: DayOffType): number => {
     if (!start || !end) return 0
@@ -72,16 +112,17 @@ const DayoffRequests: React.FC = () => {
     const endDate = new Date(end)
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-    return type === 'Half day' ? diffDays * 0.5 : diffDays
+    const multiplier = type === 'Full day' ? 1 : 0.5
+    return diffDays * multiplier
   }
 
   const handleSubmit = () => {
-    if (!formData.employee_id || !formData.supervisor_id || !formData.title ||
-      !formData.start_date_time || !formData.end_date_time) {
+    if (!formData.employee_id || !formData.supervisor_id || !formData.title || 
+        !formData.start_date_time || !formData.end_date_time) {
       alert('Please fill in all required fields')
       return
     }
-
+    
     const daysOff = calculateDaysOff(
       formData.start_date_time,
       formData.end_date_time,
@@ -98,6 +139,7 @@ const DayoffRequests: React.FC = () => {
       end_date_time: formData.end_date_time,
       date_off_number: daysOff,
       title: formData.title,
+      reason: '',
       status: 'Pending',
       created_at: new Date().toISOString().split('T')[0]
     }
@@ -119,7 +161,7 @@ const DayoffRequests: React.FC = () => {
   }
 
   const handleStatusChange = (id: number, newStatus: RequestStatus) => {
-    setRequests(requests.map(req =>
+    setRequests(requests.map(req => 
       req.id === id ? { ...req, status: newStatus } : req
     ))
     setShowDetailModal(false)
@@ -200,8 +242,8 @@ const DayoffRequests: React.FC = () => {
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Employee</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Title</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Type</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Dates</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Days</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date Time Range</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date Off Number</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Actions</th>
               </tr>
@@ -221,12 +263,20 @@ const DayoffRequests: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">
-                    <div className="flex items-center gap-1">
-                      <FaCalendarAlt className="text-gray-500" />
-                      {request.start_date_time} to {request.end_date_time}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1">
+                        <FaCalendarAlt className="text-gray-500" />
+                        <span className="font-medium">Start:</span> {new Date(request.start_date_time).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-1 ml-5">
+                        <span className="font-medium">End:</span> {new Date(request.end_date_time).toLocaleDateString()}
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-900 font-medium">{request.date_off_number}</td>
+                  <td className="px-6 py-4">
+                    <div className="text-gray-900 font-bold text-lg">{request.date_off_number}</div>
+                    <div className="text-xs text-gray-500">{request.day_off_type === 'Full day' ? '1 day/day' : '0.5 days/day'}</div>
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(request.status)}`}>
                       {request.status}
@@ -256,7 +306,7 @@ const DayoffRequests: React.FC = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/10 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900">New Day Off Request</h2>
@@ -313,47 +363,49 @@ const DayoffRequests: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, day_off_type: e.target.value as DayOffType })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="Full day">Full Day</option>
-                  <option value="Half day">Half Day</option>
+                  <option value="Full day">Full Day (1 day per calendar day)</option>
+                  <option value="Half day">Half Day (0.5 days per calendar day)</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date & Time *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={formData.start_date_time}
-                    onChange={(e) =>
-                      setFormData({ ...formData, start_date_time: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, start_date_time: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date & Time *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date *</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={formData.end_date_time}
-                    onChange={(e) =>
-                      setFormData({ ...formData, end_date_time: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, end_date_time: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
 
-
               {formData.start_date_time && formData.end_date_time && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800">
-                    <strong>Total Days Off:</strong> {calculateDaysOff(formData.start_date_time, formData.end_date_time, formData.day_off_type)} days
-                  </p>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Calculated Date Off Number</p>
+                      <p className="text-3xl font-bold text-blue-600">{calculatedDaysOff}</p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {formData.day_off_type === 'Full day' ? '1 day per calendar day' : '0.5 days per calendar day'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">From</p>
+                      <p className="font-semibold text-gray-900">{new Date(formData.start_date_time).toLocaleDateString()}</p>
+                      <p className="text-sm text-gray-600 mt-2">To</p>
+                      <p className="font-semibold text-gray-900">{new Date(formData.end_date_time).toLocaleDateString()}</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -380,7 +432,7 @@ const DayoffRequests: React.FC = () => {
       )}
 
       {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 backdrop-blur-md bg-white/10 bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-2xl w-full">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Request Details</h2>
@@ -392,10 +444,6 @@ const DayoffRequests: React.FC = () => {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-500">Title</label>
-                <p className="text-lg font-semibold text-gray-900">{selectedRequest.title}</p>
-              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Employee</label>
@@ -406,47 +454,31 @@ const DayoffRequests: React.FC = () => {
                   <p className="text-gray-900">{getUserName(selectedRequest.supervisor_id)}</p>
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Title</label>
+                <p className="text-lg font-semibold text-gray-900">{selectedRequest.title}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Day Off Type</label>
                   <p className="text-gray-900">{selectedRequest.day_off_type}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Total Days</label>
-                  <p className="text-gray-900 font-semibold">{selectedRequest.date_off_number} days</p>
+                  <label className="text-sm font-medium text-gray-500">Date Off Number</label>
+                  <p className="text-2xl font-bold text-blue-600">{selectedRequest.date_off_number}</p>
+                  <p className="text-xs text-gray-500">{selectedRequest.day_off_type === 'Full day' ? '1 day per day' : '0.5 days per day'}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Start Date</label>
-                  <p className="text-gray-900">{selectedRequest.start_date_time}</p>
+                  <p className="text-gray-900">{new Date(selectedRequest.start_date_time).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">End Date</label>
-                  <p className="text-gray-900">{selectedRequest.end_date_time}</p>
+                  <p className="text-gray-900">{new Date(selectedRequest.end_date_time).toLocaleDateString()}</p>
                 </div>
               </div>
-
-              {formData.start_date_time && formData.end_date_time && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Calculated Date Off Number</p>
-                      <p className="text-3xl font-bold text-blue-600">{calculatedDaysOff}</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {formData.day_off_type === 'Full day' ? '1 day per calendar day' : '0.5 days per calendar day'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">From</p>
-                      <p className="font-semibold text-gray-900">{new Date(formData.start_date_time).toLocaleDateString()}</p>
-                      <p className="text-sm text-gray-600 mt-2">To</p>
-                      <p className="font-semibold text-gray-900">{new Date(formData.end_date_time).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <div>
                 <label className="text-sm font-medium text-gray-500">Current Status</label>
                 <div className="mt-1">
@@ -456,6 +488,22 @@ const DayoffRequests: React.FC = () => {
                 </div>
               </div>
             </div>
+            {selectedRequest.status === 'Pending' && (
+              <div className="p-6 border-t border-gray-200 flex gap-4">
+                <button
+                  onClick={() => handleStatusChange(selectedRequest.id, 'Accept')}
+                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
+                >
+                  <FaCheck /> Accept
+                </button>
+                <button
+                  onClick={() => handleStatusChange(selectedRequest.id, 'Reject')}
+                  className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition"
+                >
+                  <FaTimes /> Reject
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
