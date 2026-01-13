@@ -65,15 +65,22 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'attendanceMenu',
-        path: '/group-attendance-menu-item-1',
+        key: 'attendance.records',
+        path: '/attendance-records',
         component: lazy(() =>
             import('@/views/attendance/Attendance')
         ),
         authority: [],
     },
-   
-     {
+    {
+        key: 'dayoff.requests',
+        path: '/dayoff-requests',
+        component: lazy(() =>
+            import('@/views/attendance/DayoffRequests')
+        ),
+        authority: [],
+    },
+    {
         key: 'user.profile',
         path: '/user-profile',
         component: lazy(() => import('@/views/user-page/user-profile/MainComponent')),
@@ -82,23 +89,15 @@ export const protectedRoutes: Routes = [
     {
         key: 'user.ot.fieldwork.requests',
         path: '/user-ot-fieldwork-requests',
-        component: lazy(() =>  import('@/views/user-page/user-ot-fieldwork-requests/MainComponent')),
+        component: lazy(() => import('@/views/user-page/user-ot-fieldwork-requests/MainComponent')),
         authority: [],
     },
-     {
+    {
         key: 'user.dayoff.requests',
         path: '/user-dayoff-requests',
-        component: lazy(() =>  import('@/views/user-page/user-dayoff-requests/MainComponent')),
+        component: lazy(() => import('@/views/user-page/user-dayoff-requests/MainComponent')),
         authority: [],
-    },
-    // {
-    //     key: 'attendanceMenu.item2',
-    //     path: '/group-attendance-menu-item-2',
-    //     component: lazy(() =>
-    //         import('@/views/attendance/SalaryCalculation')
-    //     ),
-    //     authority: [],
-    // },
-    
+    }
+
 ]
-        // component: lazy(() => import('@/views/user-management/Create_User')),
+// component: lazy(() => import('@/views/user-management/Create_User')),

@@ -18,11 +18,14 @@ import {
 
 export interface DayOffItem {
   _id: string
+  user_id: string
+  employee_id: string
+  supervisor_id: string
   day_off_type: "FULL_DAY" | "HALF_DAY"
   start_date_time: string
   end_date_time: string
   date_off_number: number
-  reason: string
+  title: string
   status: RequestStatus
 }
 
@@ -34,7 +37,7 @@ interface Props {
   onDelete: (id: string) => void
 }
 
-/* ================= REUSABLE BUTTON ================= */
+/* ================= BUTTON ================= */
 
 const ActionButton = ({
   color,
@@ -68,71 +71,125 @@ const ActionButton = ({
       transition: "background-color 0.2s ease",
     }}
     onMouseEnter={(e) => {
-      if (!disabled)
-        e.currentTarget.style.backgroundColor = hoverColor
+      if (!disabled) e.currentTarget.style.backgroundColor = hoverColor
     }}
     onMouseLeave={(e) => {
-      if (!disabled)
-        e.currentTarget.style.backgroundColor = color
+      if (!disabled) e.currentTarget.style.backgroundColor = color
     }}
   >
     {children}
   </button>
 )
 
-/* ================= UI COMPONENT ================= */
+/* ================= COMPONENT ================= */
 
 const UserDayOffRequests: React.FC<Props> = ({
   dayOffs,
   onEdit,
   onDelete,
 }) => {
+  const auth = JSON.parse(localStorage.getItem("auth") || "null")
+  const role = auth?.user?.role
+
+  const [selectedStatus, setSelectedStatus] =
+    React.useState<string>("all")
+  const [selectedMonth, setSelectedMonth] =
+    React.useState<string>("")
+
+  const filteredDayOffs = dayOffs.filter((d) => {
+    if (selectedStatus !== "all" && d.status !== selectedStatus)
+      return false
+
+    if (selectedMonth) {
+      const month = new Date(d.start_date_time)
+        .toISOString()
+        .slice(0, 7)
+      if (month !== selectedMonth) return false
+    }
+
+    return true
+  })
+
+  const availableMonths = Array.from(
+    new Set(
+      dayOffs.map((d) =>
+        new Date(d.start_date_time).toISOString().slice(0, 7)
+      )
+    )
+  )
+
   return (
     <div style={containerStyle}>
-      <h2 style={titleStyle}>📄 My Requests</h2>
+      <h2 style={titleStyle}>
+        {role === "Admin" ? "📄 Day Off Requests" : "📄 My Requests"}
+      </h2>
 
       <Section title="🏖 Day Off Requests">
-        <table style={{ ...tableStyle, width: "100%" }}>
+        <table
+          style={{
+            ...tableStyle,
+            width: "100%",
+            tableLayout: "fixed",
+          }}
+        >
+          <colgroup>
+            {role === "Admin" ? (
+              <col style={{ width: "140px" }} />
+            ) : null}
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "80px" }} />
+            <col style={{ width: "220px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "180px" }} />
+          </colgroup>
+
           <thead>
             <tr>
-              <th style={{ ...th, textAlign: "left" }}>Type</th>
-              <th style={{ ...th, textAlign: "left" }}>Start date</th>
-              <th style={{ ...th, textAlign: "left" }}>End date</th>
-              <th style={{ ...th, textAlign: "left" }}>Days</th>
-              <th style={{ ...th, textAlign: "left" }}>Reason</th>
-              <th style={{ ...th, textAlign: "left" }}>Status</th>
-              <th style={{ ...th, textAlign: "left" }}>Actions</th>
+              {role === "Admin" ? (
+                <th style={th}>Employee ID</th>
+              ) : null}
+              <th style={th}>Type</th>
+              <th style={th}>Start</th>
+              <th style={th}>End</th>
+              <th style={th}>Days</th>
+              <th style={th}>Reason</th>
+              <th style={th}>Status</th>
+              <th style={th}>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            {dayOffs.map((d) => {
+            {filteredDayOffs.map((d) => {
               const isPending = d.status === "Pending"
 
               return (
                 <tr key={d._id} style={tr}>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {d.day_off_type}
-                  </td>
-                  <td style={{ ...td, textAlign: "left" }}>
+                  {role === "Admin" ? (
+                    <td style={td}>{d.employee_id}</td>
+                  ) : null}
+
+                  <td style={td}>{d.day_off_type}</td>
+                  <td style={td}>
                     {formatDate(d.start_date_time)}
                   </td>
-                  <td style={{ ...td, textAlign: "left" }}>
+                  <td style={td}>
                     {formatDate(d.end_date_time)}
                   </td>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {d.date_off_number}
+                  <td style={td}>{d.date_off_number}</td>
+                  <td
+                    style={{
+                      ...td,
+                      whiteSpace: "normal",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {d.title}
                   </td>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {d.reason}
-                  </td>
-                  <td style={{ ...td, textAlign: "left" }}>
-                    {statusBadge(d.status)}
-                  </td>
-
-                  {/* ACTIONS (VISIBLE BUT DISABLED WHEN NOT PENDING) */}
-                  <td style={{ ...td, textAlign: "left" }}>
-                    <div style={{ display: "flex", gap: "8px" }}>
+                  <td style={td}>{statusBadge(d.status)}</td>
+                  <td style={td}>
+                    <div style={{ display: "flex", gap: 8 }}>
                       <ActionButton
                         color="#3b82f6"
                         hoverColor="#2563eb"
@@ -147,15 +204,7 @@ const UserDayOffRequests: React.FC<Props> = ({
                         color="#ef4444"
                         hoverColor="#dc2626"
                         disabled={!isPending}
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to cancel this request?"
-                            )
-                          ) {
-                            onDelete(d._id)
-                          }
-                        }}
+                        onClick={() => onDelete(d._id)}
                       >
                         <HiTrash size={14} />
                         Cancel
@@ -166,7 +215,9 @@ const UserDayOffRequests: React.FC<Props> = ({
               )
             })}
 
-            {dayOffs.length === 0 && <EmptyRow colSpan={7} />}
+            {filteredDayOffs.length === 0 && (
+              <EmptyRow colSpan={role === "Admin" ? 8 : 7} />
+            )}
           </tbody>
         </table>
       </Section>
