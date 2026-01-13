@@ -135,10 +135,6 @@ const UserDayOffRequests: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-      <h2 style={titleStyle}>
-        {role === "Admin" ? "📄 Day Off Requests" : "📄 My Requests"}
-      </h2>
-
       <Section title="🏖 Day Off Requests">
         {/* FILTERS */}
         <div

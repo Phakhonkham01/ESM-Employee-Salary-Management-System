@@ -132,7 +132,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-      <h2 style={titleStyle}>📄 My Requests</h2>
 
       <Section title="⏱ OT / Field Work Requests">
         {/* FILTERS */}
