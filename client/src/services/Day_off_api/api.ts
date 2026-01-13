@@ -1,5 +1,5 @@
 
-const API_URL = "http://localhost:8000/api/day-off-requests/allusers";
+const API_URL = "http://localhost:8000/api";
 
 export interface UserRef {
   _id: string;
@@ -26,10 +26,25 @@ export interface DayOffRequest {
   created_at: string;
 }
 
+
+// CREATE
+export interface CreateDayOffRequestPayload {
+  user_id: string;
+  supervisor_id: string;
+  employee_id?: string;
+
+  day_off_type: "FULL_DAY" | "HALF_DAY";
+  start_date_time: string;
+  end_date_time: string;
+
+  date_off_number: number;
+  title: string;
+}
+
 // GET ALL DAY OFF REQUESTS
 export const getAllDayOffRequests = async (): Promise<{ requests: DayOffRequest[] }> => {
   try {
-    const response = await fetch(`${API_URL}`, {
+    const response = await fetch(`${API_URL}/day-off-requests/allusers`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -49,25 +64,12 @@ export const getAllDayOffRequests = async (): Promise<{ requests: DayOffRequest[
   }
 };
 
-// CREATE
-export interface CreateDayOffRequestPayload {
-  user_id: string;
-  supervisor_id: string;
-  employee_id?: string;
-
-  day_off_type: "FULL_DAY" | "HALF_DAY";
-  start_date_time: string;
-  end_date_time: string;
-
-  date_off_number: number;
-  title: string;
-}
-
+// CREATE DAY OFF REQUEST
 export const createDayOffRequest = async (
   payload: CreateDayOffRequestPayload
 ) => {
   try {
-    const response = await fetch(`${API_URL}`, {
+    const response = await fetch(`${API_URL}/day-off-requests`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -94,7 +96,7 @@ export const updateDayOffStatus = async (
   status: "Accept" | "Reject"
 ) => {
   try {
-    const response = await fetch(`${API_URL}/${requestId}/status`, {
+    const response = await fetch(`${API_URL}/day-off-requests/${requestId}/status`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
