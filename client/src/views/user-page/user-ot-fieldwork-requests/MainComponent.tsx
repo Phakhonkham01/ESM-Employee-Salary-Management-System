@@ -4,7 +4,7 @@ import axios from "axios"
 import UserOtFieldWorkRequests, {
   RequestItem,
 } from "./UserOtFieldWorkRequests"
-import EditRequestModule from "./EditModal"
+import EditRequestModule from "./EdiRequest"
 import RequestDetailModal from "./DetailModal" // ✅ NEW
 import { loadingStyle } from "./HelperComponents"
 

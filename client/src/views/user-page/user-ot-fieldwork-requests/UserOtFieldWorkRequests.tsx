@@ -96,6 +96,20 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
   const [selectedType, setSelectedType] =
     React.useState<"all" | "OT" | "FIELD_WORK">("all")
 
+  /* ================= PAGINATION STATE ================= */
+
+  const ITEMS_PER_PAGE = 10
+  const [currentPage, setCurrentPage] = React.useState(1)
+
+  /* ================= CLEAR FILTERS (NEW) ================= */
+
+  const clearFilters = () => {
+    setSelectedStatus("all")
+    setSelectedMonth("")
+    setSelectedType("all")
+    setCurrentPage(1)
+  }
+
   /* ================= FILTER LOGIC ================= */
 
   const filteredRequests = requests.filter((r) => {
@@ -114,6 +128,21 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
     return true
   })
+
+  /* 🔁 RESET PAGE WHEN FILTER CHANGES */
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedStatus, selectedMonth, selectedType])
+
+  /* ================= PAGINATION LOGIC ================= */
+
+  const totalPages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedRequests = filteredRequests.slice(
+    startIndex,
+    endIndex
+  )
 
   /* ================= MONTH OPTIONS ================= */
 
@@ -141,6 +170,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             gap: "12px",
             marginBottom: "16px",
             flexWrap: "wrap",
+            alignItems: "center",
           }}
         >
           <select
@@ -198,6 +228,21 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               </option>
             ))}
           </select>
+
+          {/* ✅ CLEAR FILTERS BUTTON */}
+          <button
+            onClick={clearFilters}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              backgroundColor: "#f9fafb",
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            Clear Filters
+          </button>
         </div>
 
         {/* ================= TABLE ================= */}
@@ -208,15 +253,14 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             tableLayout: "fixed",
           }}
         >
-          {/* ✅ FIXED COLUMN WIDTHS */}
           <colgroup>
-            <col style={{ width: "100px" }} />  {/* Type */}
-            <col style={{ width: "120px" }} />  {/* Date */}
-            <col style={{ width: "140px" }} />  {/* Time */}
-            <col style={{ width: "100px" }} />  {/* Fuel */}
-            <col style={{ width: "220px" }} />  {/* Reason */}
-            <col style={{ width: "120px" }} />  {/* Status */}
-            <col style={{ width: "220px" }} />  {/* Actions */}
+            <col style={{ width: "100px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "140px" }} />
+            <col style={{ width: "100px" }} />
+            <col style={{ width: "220px" }} />
+            <col style={{ width: "120px" }} />
+            <col style={{ width: "220px" }} />
           </colgroup>
 
           <thead>
@@ -232,25 +276,21 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
           </thead>
 
           <tbody>
-            {filteredRequests.map((r) => {
+            {paginatedRequests.map((r) => {
               const isPending = r.status === "Pending"
 
               return (
                 <tr key={r._id} style={tr}>
                   <td style={td}>{r.title}</td>
-
                   <td style={td}>{formatDate(r.date)}</td>
-
                   <td style={td}>
                     {r.start_hour} – {r.end_hour}
                   </td>
-
                   <td style={td}>
                     {r.title === "FIELD_WORK"
                       ? r.fuel.toLocaleString()
                       : "-"}
                   </td>
-
                   <td
                     style={{
                       ...td,
@@ -260,9 +300,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                   >
                     {r.reason}
                   </td>
-
                   <td style={td}>{statusBadge(r.status)}</td>
-
                   <td style={td}>
                     <div style={{ display: "flex", gap: 8 }}>
                       <ActionButton
@@ -299,11 +337,50 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               )
             })}
 
-            {filteredRequests.length === 0 && (
+            {paginatedRequests.length === 0 && (
               <EmptyRow colSpan={7} />
             )}
           </tbody>
         </table>
+
+        {/* ================= PAGINATION ================= */}
+        {totalPages > 1 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 8,
+              marginTop: 16,
+            }}
+          >
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                style={{
+                  fontWeight:
+                    currentPage === i + 1 ? "bold" : "normal",
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </Section>
     </div>
   )

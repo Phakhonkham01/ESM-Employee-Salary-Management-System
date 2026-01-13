@@ -97,18 +97,31 @@ const UserDayOffRequests: React.FC<Props> = ({
   const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
   const [selectedMonth, setSelectedMonth] = React.useState<string>("")
   const [selectedDayOffType, setSelectedDayOffType] =
-    React.useState<string>("all") // ✅ NEW
+    React.useState<string>("all")
+
+  /* ================= PAGINATION STATE ================= */
+
+  const ITEMS_PER_PAGE = 10
+  const [currentPage, setCurrentPage] = React.useState(1)
+
+  /* ================= CLEAR FILTERS (NEW) ================= */
+
+  const clearFilters = () => {
+    setSelectedStatus("all")
+    setSelectedMonth("")
+    setSelectedDayOffType("all")
+    setCurrentPage(1)
+  }
 
   /* ================= FILTER LOGIC ================= */
 
   const filteredDayOffs = dayOffs.filter((d) => {
-    if (selectedStatus !== "all" && d.status !== selectedStatus) {
+    if (selectedStatus !== "all" && d.status !== selectedStatus) return false
+    if (
+      selectedDayOffType !== "all" &&
+      d.day_off_type !== selectedDayOffType
+    )
       return false
-    }
-
-    if (selectedDayOffType !== "all" && d.day_off_type !== selectedDayOffType) {
-      return false
-    }
 
     if (selectedMonth) {
       const month = new Date(d.start_date_time)
@@ -119,6 +132,20 @@ const UserDayOffRequests: React.FC<Props> = ({
 
     return true
   })
+
+  /* 🔁 RESET PAGE WHEN FILTERS CHANGE */
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedStatus, selectedMonth, selectedDayOffType])
+
+  /* ================= PAGINATION LOGIC ================= */
+
+  const totalPages = Math.ceil(filteredDayOffs.length / ITEMS_PER_PAGE)
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const paginatedDayOffs = filteredDayOffs.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  )
 
   /* ================= MONTH OPTIONS ================= */
 
@@ -141,16 +168,16 @@ const UserDayOffRequests: React.FC<Props> = ({
   return (
     <div style={containerStyle}>
       <Section title="🏖 Day Off Requests">
-        {/* FILTERS */}
+        {/* ================= FILTERS ================= */}
         <div
           style={{
             display: "flex",
             gap: "12px",
             marginBottom: "16px",
             flexWrap: "wrap",
+            alignItems: "center",
           }}
         >
-               {/* DAY OFF TYPE */}
           <select
             value={selectedDayOffType}
             onChange={(e) => setSelectedDayOffType(e.target.value)}
@@ -166,7 +193,6 @@ const UserDayOffRequests: React.FC<Props> = ({
             <option value="HALF_DAY">Half Day</option>
           </select>
 
-          {/* STATUS */}
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
@@ -183,8 +209,6 @@ const UserDayOffRequests: React.FC<Props> = ({
             <option value="Reject">Rejected</option>
           </select>
 
-     
-          {/* MONTH */}
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -205,9 +229,24 @@ const UserDayOffRequests: React.FC<Props> = ({
               </option>
             ))}
           </select>
+
+          {/* ✅ CLEAR FILTER BUTTON (NEW) */}
+          <button
+            onClick={clearFilters}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              border: "1px solid #d1d5db",
+              backgroundColor: "#f9fafb",
+              fontSize: "12px",
+              cursor: "pointer",
+            }}
+          >
+            Clear Filters
+          </button>
         </div>
 
-        {/* TABLE */}
+        {/* ================= TABLE ================= */}
         <table
           style={{
             ...tableStyle,
@@ -240,7 +279,7 @@ const UserDayOffRequests: React.FC<Props> = ({
           </thead>
 
           <tbody>
-            {filteredDayOffs.map((d) => {
+            {paginatedDayOffs.map((d) => {
               const isPending = d.status === "Pending"
 
               return (
@@ -302,11 +341,50 @@ const UserDayOffRequests: React.FC<Props> = ({
               )
             })}
 
-            {filteredDayOffs.length === 0 && (
+            {paginatedDayOffs.length === 0 && (
               <EmptyRow colSpan={role === "Admin" ? 8 : 7} />
             )}
           </tbody>
         </table>
+
+        {/* ================= PAGINATION ================= */}
+        {totalPages > 1 && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 8,
+              marginTop: 16,
+            }}
+          >
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                style={{
+                  fontWeight:
+                    currentPage === i + 1 ? "bold" : "normal",
+                }}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </Section>
     </div>
   )
