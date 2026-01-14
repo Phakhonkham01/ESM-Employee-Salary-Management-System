@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FaPlus, FaTimes, FaCheck, FaEdit, FaTrash, FaUmbrellaBeach, FaEye } from "react-icons/fa"
+import { FaPlus, FaTimes, FaCheck, FaEdit, FaTrash, FaUmbrellaBeach, FaEye, FaFilePdf } from "react-icons/fa"
 import { getAllUsers, updateUser } from '../../services/Create_user/api'
 import { createAttendanceSummary } from '../../services/Attendance/api'
 import type { UserData } from '../../services/Create_user/api'
@@ -10,6 +10,7 @@ import {
   type DayOffRequest,
   type CreateDayOffRequestPayload
 } from '@/services/Day_off_api/api'
+import { useExportToPDF } from './ExportToPDF'
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
 type RequestStatus = 'Pending' | 'Accept' | 'Reject'
@@ -261,6 +262,8 @@ const getStatusLabel = (status: RequestStatus) => {
     formData.day_off_type
   )
 
+  const handleExportToPDF = useExportToPDF({ requests, users })
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -269,17 +272,26 @@ const getStatusLabel = (status: RequestStatus) => {
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold text-gray-900">🏖 Day Off Requests</h1>
           </div>
-          <button
-            onClick={() => {
-              setSelectedRequest(null)
-              resetForm()
-              setShowModal(true)
-            }}
-            disabled={loading}
-            className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
-          >
-            <FaPlus /> New Request
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExportToPDF}
+              disabled={loading || requests.length === 0}
+              className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              <FaFilePdf /> Export to PDF
+            </button>
+            <button
+              onClick={() => {
+                setSelectedRequest(null)
+                resetForm()
+                setShowModal(true)
+              }}
+              disabled={loading}
+              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+            >
+              <FaPlus /> New Request
+            </button>
+          </div>
         </div>
 
         {/* Table */}
@@ -371,7 +383,7 @@ const getStatusLabel = (status: RequestStatus) => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-md bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-8 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-3xl font-bold text-gray-900">

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { FaRegEye, FaClock, FaCalendarCheck } from "react-icons/fa"
+import { FaRegEye, FaCalendarCheck, FaFilePdf } from "react-icons/fa"
 import { getAllUsers } from '../../services/Create_user/api'
 import type { UserData } from '../../services/Create_user/api'
 import { getAllDayOffRequests, type DayOffRequest } from '../../services/Day_off_api/api'
+import { getAllDepartments, type DepartmentData } from '../../services/departments/api'
+import { useExportAttendanceToPDF } from './ExportToPDF'
 
 interface UserAttendanceStats {
     userId: string
     user: UserData
     year: number
     month: number
-    otHours: number
     leaveDays: number
     attendanceDays: number
 }
@@ -17,11 +18,13 @@ interface UserAttendanceStats {
 const Attendance: React.FC = () => {
     const [users, setUsers] = useState<UserData[]>([])
     const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
+    const [departments, setDepartments] = useState<DepartmentData[]>([])
     const [loading, setLoading] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserData | null>(null)
     const [showModal, setShowModal] = useState(false)
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+    const [selectedDepartment, setSelectedDepartment] = useState<string>('')
 
     useEffect(() => {
         fetchData()
@@ -30,12 +33,14 @@ const Attendance: React.FC = () => {
     const fetchData = async () => {
         try {
             setLoading(true)
-            const [usersResponse, dayOffResponse] = await Promise.all([
+            const [usersResponse, dayOffResponse, departmentsResponse] = await Promise.all([
                 getAllUsers(),
-                getAllDayOffRequests()
+                getAllDayOffRequests(),
+                getAllDepartments()
             ])
             setUsers(usersResponse.users)
             setDayOffRequests(dayOffResponse.requests)
+            setDepartments(departmentsResponse.departments)
         } catch (error) {
             console.error('Error fetching data:', error)
         } finally {
@@ -80,30 +85,6 @@ const Attendance: React.FC = () => {
         return leaveRequests.reduce((sum, req) => sum + (req.date_off_number || 0), 0)
     }
 
-    const calculateOTHours = (userId: string, year: number, month: number): number => {
-        const otRequests = dayOffRequests.filter(req => {
-            const requestUserId = typeof req.user_id === 'string' ? req.user_id : req.user_id?._id
-            const employeeId = typeof req.employee_id === 'string' ? req.employee_id : req.employee_id?._id
-
-            const matchesUser = requestUserId === userId || employeeId === userId
-            if (!matchesUser || req.status !== 'Accept') return false
-
-            const startDate = new Date(req.start_date_time)
-            const requestYear = startDate.getFullYear()
-            const requestMonth = startDate.getMonth() + 1
-
-            const isOT = req.title?.toUpperCase().includes('OT')
-
-            return requestYear === year && requestMonth === month && isOT
-        })
-
-        return otRequests.reduce((sum, req) => {
-            const start = new Date(req.start_date_time)
-            const end = new Date(req.end_date_time)
-            const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-            return sum + hours
-        }, 0)
-    }
 
     const calculateAttendanceDays = (userId: string, year: number, month: number): number => {
         const workingDays = getWorkingDaysInMonth(year, month)
@@ -118,7 +99,6 @@ const Attendance: React.FC = () => {
             user,
             year: selectedYear,
             month: selectedMonth,
-            otHours: calculateOTHours(userId, selectedYear, selectedMonth),
             leaveDays: calculateLeaveDays(userId, selectedYear, selectedMonth),
             attendanceDays: calculateAttendanceDays(userId, selectedYear, selectedMonth)
         }
@@ -159,40 +139,83 @@ const Attendance: React.FC = () => {
         }
     }
 
+    const getUniqueDepartments = () => {
+        // Use fetched departments from API
+        return departments.map(dept => ({
+            _id: dept._id,
+            name: dept.department_name
+        }))
+    }
+
+    const getFilteredUsers = () => {
+        if (!selectedDepartment) return users
+        return users.filter(user => {
+            const deptId = typeof user.department_id === 'object' && user.department_id !== null
+                ? user.department_id._id
+                : user.department_id
+            return deptId === selectedDepartment
+        })
+    }
+
     const getTotalStats = () => {
-        const totalOT = users.reduce((sum, user) =>
-            sum + calculateOTHours(user._id, selectedYear, selectedMonth), 0)
-        const totalLeave = users.reduce((sum, user) =>
+        const filteredUsers = getFilteredUsers()
+        const totalLeave = filteredUsers.reduce((sum, user) =>
             sum + calculateLeaveDays(user._id, selectedYear, selectedMonth), 0)
-        const totalAttendance = users.reduce((sum, user) =>
+        const totalAttendance = filteredUsers.reduce((sum, user) =>
             sum + calculateAttendanceDays(user._id, selectedYear, selectedMonth), 0)
-        return { totalOT, totalLeave, totalAttendance }
+        return { totalLeave, totalAttendance }
     }
 
     const stats = getTotalStats()
     const workingDaysInMonth = getWorkingDaysInMonth(selectedYear, selectedMonth)
 
+    // Prepare user stats for export
+    const userStatsForExport = getFilteredUsers().map(user => getUserStats(user._id))
+
+    // Export to PDF hook
+    const handleExportToPDF = useExportAttendanceToPDF({
+        users: getFilteredUsers(),
+        userStats: userStatsForExport,
+        summaryStats: {
+            totalOT: 0,
+            totalLeave: stats.totalLeave,
+            totalAttendance: stats.totalAttendance,
+            workingDaysInMonth: workingDaysInMonth
+        },
+        otData: [],
+        selectedYear,
+        selectedMonth,
+        selectedDepartment,
+        departments,
+        getMonthName
+    })
+
     return (
         <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800">Attendance</h2>
-                <button
-                    onClick={fetchData}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                    Refresh Data
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={handleExportToPDF}
+                        disabled={loading || getFilteredUsers().length === 0}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <FaFilePdf /> Export to PDF
+                    </button>
+                    <button
+                        onClick={fetchData}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        Refresh Data
+                    </button>
+                </div>
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-green-50 rounded-lg p-4">
                     <div className="text-sm text-green-600 font-medium mb-1">Total Attendance Days</div>
                     <div className="text-2xl font-bold text-green-700">{stats.totalAttendance}</div>
-                </div>
-                <div className="bg-blue-50 rounded-lg p-4">
-                    <div className="text-sm text-blue-600 font-medium mb-1">Total OT Hours</div>
-                    <div className="text-2xl font-bold text-blue-700">{stats.totalOT.toFixed(1)}h</div>
                 </div>
                 <div className="bg-orange-50 rounded-lg p-4">
                     <div className="text-sm text-orange-600 font-medium mb-1">Total Leave Days</div>
@@ -230,8 +253,27 @@ const Attendance: React.FC = () => {
                         ))}
                     </select>
                 </div>
+                <div>
+                    <label className="text-xs text-gray-600 font-medium mb-1 block">Department</label>
+                    <select
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
+                        disabled={loading}
+                    >
+                        <option value="">All Departments</option>
+                        {getUniqueDepartments().map(dept => (
+                            <option key={dept._id} value={dept._id}>{dept.name}</option>
+                        ))}
+                    </select>
+                </div>
                 <div className="ml-auto text-sm text-gray-600">
                     Showing attendance for <span className="font-medium">{getMonthName(selectedMonth)} {selectedYear}</span>
+                    {selectedDepartment && (
+                        <span className="ml-2">
+                            • <span className="font-medium">{getUniqueDepartments().find(d => d._id === selectedDepartment)?.name}</span>
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -245,7 +287,6 @@ const Attendance: React.FC = () => {
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Year</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Month</th>
-                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">OT Hours</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Leave Days</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Attendance Days</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
@@ -254,11 +295,17 @@ const Attendance: React.FC = () => {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={9} className="text-center py-8 text-gray-500">
+                                <td colSpan={8} className="text-center py-8 text-gray-500">
                                     Loading...
                                 </td>
                             </tr>
-                        ) : users.map((user) => {
+                        ) : getFilteredUsers().length === 0 ? (
+                            <tr>
+                                <td colSpan={8} className="text-center py-8 text-gray-500">
+                                    No users found for the selected filters
+                                </td>
+                            </tr>
+                        ) : getFilteredUsers().map((user) => {
                             const stats = getUserStats(user._id)
                             return (
                                 <tr
@@ -283,12 +330,6 @@ const Attendance: React.FC = () => {
                                     </td>
                                     <td className="px-4 py-4 text-center text-sm font-medium text-gray-800">
                                         {getMonthName(stats.month)}
-                                    </td>
-                                    <td className="px-4 py-4 text-center">
-                                        <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium text-sm">
-                                            <FaClock size={12} />
-                                            {stats.otHours.toFixed(1)}h
-                                        </div>
                                     </td>
                                     <td className="px-4 py-4 text-center">
                                         <div className="inline-flex items-center gap-1 bg-orange-50 text-orange-700 px-3 py-1 rounded-full font-medium text-sm">
