@@ -10,6 +10,8 @@ import positionRoutes from  "./routes/positionRoute.js";
 import requestRoutes from "./routes/requestRoutes.js";
 import dayOffRequestRoutes from "./routes/dayOffRequestRoutes.js";
 import salaryRoutes from "./routes/salaryRoutes.js";
+import AttendanceSummaryRoutes from "./routes/attendanceSummary.js";
+
 dotenv.config();
 
 const app: Application = express();
@@ -49,4 +51,5 @@ app.use("/api/positions", positionRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/day-off-requests", dayOffRequestRoutes);
 app.use("/api/salaries", salaryRoutes);
+app.use("/api/attendance", AttendanceSummaryRoutes);
 

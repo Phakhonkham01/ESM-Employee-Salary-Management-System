@@ -5,7 +5,6 @@ export interface IAttendanceSummary extends Document {
   year: number;
   month: number;
   ot_hours: number;
-  working_hours: number;
   attendance_days: number;
   leave_days: number;
   created_at: Date;
@@ -28,10 +27,6 @@ const AttendanceSummarySchema = new Schema<IAttendanceSummary>({
     max: 12
   },
   ot_hours: {
-    type: Number,
-    default: 0
-  },
-  working_hours: {
     type: Number,
     default: 0
   },

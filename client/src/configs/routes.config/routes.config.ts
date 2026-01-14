@@ -73,6 +73,14 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
+        key: 'otandfieldwork.records',
+        path: '/otandfieldwork-records',
+        component: lazy(() =>
+            import('@/views/attendance/OTandFieldWork')
+        ),
+        authority: [],
+    },
+    {
         key: 'dayoff.requests',
         path: '/dayoff-requests',
         component: lazy(() =>
