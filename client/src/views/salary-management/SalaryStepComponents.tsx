@@ -42,7 +42,7 @@ interface StepComponentsProps {
     // Manual OT Props
     manualOT: ManualOTState
     onManualOTChange: (
-        type: keyof ManualOTState,
+        type: 'weekday' | 'weekend',
         field: string,
         value: string,
     ) => void
@@ -51,7 +51,7 @@ interface StepComponentsProps {
     clearManualOT: () => void
     calculateManualOTSummary: () => {
         totalHours: number
-        totalDays: number
+        totalWeekendDays: number
         totalAmount: number
     }
 }
@@ -130,12 +130,16 @@ const OtDetailsTable: React.FC<{
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                             {detail.ot_type === 'weekday'
                                 ? `${detail.total_hours} ชม.`
-                                : `${detail.days} วัน`}
+                                : detail.days
+                                  ? `${detail.days} วัน`
+                                  : `${detail.total_hours} ชม.`}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                             {detail.ot_type === 'weekday'
                                 ? `฿${detail.hourly_rate?.toFixed(2) || '0.00'}/ชม.`
-                                : `฿${detail.rate_per_day?.toFixed(2) || '0.00'}/วัน`}
+                                : detail.days
+                                  ? `฿${detail.rate_per_day?.toFixed(2) || '0.00'}/วัน`
+                                  : `฿${detail.hourly_rate?.toFixed(2) || '0.00'}/ชม.`}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                             ฿{detail.amount.toLocaleString()}
@@ -155,12 +159,10 @@ const OtDetailsTable: React.FC<{
                                 sum +
                                 (detail.ot_type === 'weekday'
                                     ? detail.total_hours
-                                    : detail.days),
+                                    : detail.days || detail.total_hours),
                             0,
                         )}{' '}
-                        {otDetails.some((d) => d.ot_type === 'weekday')
-                            ? 'ชม.'
-                            : 'วัน'}
+                        {otDetails.some((d) => d.days) ? 'วัน/ชม.' : 'ชม.'}
                     </td>
                     <td className="px-4 py-3 text-center text-gray-700">-</td>
                     <td className="px-4 py-3 font-bold text-blue-700">
@@ -175,12 +177,78 @@ const OtDetailsTable: React.FC<{
     </div>
 )
 
-// Manual OT Input Card
-const ManualOTCard: React.FC<{
-    type: 'weekday' | 'weekend'
-    label: string
-    description: string
-    color: string
+// Manual OT Input Card สำหรับวันทำงานปกติ
+const WeekdayOTCard: React.FC<{
+    hours: number
+    rate_per_hour: number
+    onHoursChange: (value: string) => void
+    onRatePerHourChange: (value: string) => void
+}> = ({ hours, rate_per_hour, onHoursChange, onRatePerHourChange }) => {
+    const amount = hours * rate_per_hour
+
+    return (
+        <div className="border border-blue-300 rounded-lg p-4 bg-blue-50">
+            <h5 className="font-bold text-blue-700 mb-2">
+                วันทำงานปกติ (จันทร์-ศุกร์)
+            </h5>
+            <p className="text-sm text-gray-600 mb-3">
+                กรอกจำนวนชั่วโมง OT วันทำงานปกติ
+            </p>
+
+            <div className="space-y-3">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        จำนวนชั่วโมง OT
+                    </label>
+                    <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        value={hours}
+                        onChange={(e) => onHoursChange(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="0"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ค่าจ้างต่อชั่วโมง
+                    </label>
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                            ฿
+                        </span>
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={rate_per_hour}
+                            onChange={(e) =>
+                                onRatePerHourChange(e.target.value)
+                            }
+                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="0.00"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-3 p-3 rounded bg-blue-100">
+                <div className="text-sm text-blue-800">
+                    <div className="font-bold mb-1">
+                        รวมเงิน: ฿{amount.toFixed(2)}
+                    </div>
+                    <div className="text-xs">
+                        {hours} ชม. × ฿{rate_per_hour.toFixed(2)}/ชม.
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// Manual OT Input Card สำหรับเสาร์-อาทิตย์
+const WeekendOTCard: React.FC<{
     hours: number
     days: number
     rate_per_hour: number
@@ -189,14 +257,7 @@ const ManualOTCard: React.FC<{
     onDaysChange: (value: string) => void
     onRatePerHourChange: (value: string) => void
     onRatePerDayChange: (value: string) => void
-    bgColor: string
-    textColor: string
-    borderColor: string
 }> = ({
-    type,
-    label,
-    description,
-    color,
     hours,
     days,
     rate_per_hour,
@@ -205,112 +266,152 @@ const ManualOTCard: React.FC<{
     onDaysChange,
     onRatePerHourChange,
     onRatePerDayChange,
-    bgColor,
-    textColor,
-    borderColor,
 }) => {
-    const amount =
-        type === 'weekday' ? hours * rate_per_hour : days * rate_per_day
+    const hoursAmount = hours * rate_per_hour
+    const daysAmount = days * rate_per_day
+    const totalAmount = hoursAmount + daysAmount
 
     return (
-        <div className={`border ${borderColor} rounded-lg p-4 ${bgColor}`}>
-            <h5 className={`font-bold ${textColor} mb-2`}>{label}</h5>
-            <p className="text-sm text-gray-600 mb-3">{description}</p>
+        <div className="border border-yellow-300 rounded-lg p-4 bg-yellow-50">
+            <h5 className="font-bold text-yellow-700 mb-2">
+                วันหยุดเสาร์-อาทิตย์
+            </h5>
+            <p className="text-sm text-gray-600 mb-3">
+                กรอกข้อมูล OT เสาร์-อาทิตย์
+            </p>
 
-            {type === 'weekday' ? (
-                <div className="space-y-3">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            จำนวนชั่วโมง OT
-                        </label>
-                        <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            value={hours}
-                            onChange={(e) => onHoursChange(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="0"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ค่าจ้างต่อชั่วโมง
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                ฿
-                            </span>
+            <div className="space-y-4">
+                {/* ชั่วโมง OT เสาร์-อาทิตย์ */}
+                <div className="border-b pb-3">
+                    <h6 className="font-medium text-gray-700 mb-2">
+                        ชั่วโมง OT
+                    </h6>
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                จำนวนชั่วโมง OT
+                            </label>
                             <input
                                 type="number"
-                                step="0.01"
+                                step="0.5"
                                 min="0"
-                                value={rate_per_hour}
-                                onChange={(e) =>
-                                    onRatePerHourChange(e.target.value)
-                                }
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="0.00"
+                                value={hours}
+                                onChange={(e) => onHoursChange(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="0"
                             />
                         </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                ค่าจ้างต่อชั่วโมง
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                    ฿
+                                </span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={rate_per_hour}
+                                    onChange={(e) =>
+                                        onRatePerHourChange(e.target.value)
+                                    }
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+                        {hours > 0 && rate_per_hour > 0 && (
+                            <div className="p-2 rounded bg-yellow-100">
+                                <div className="text-xs text-yellow-800">
+                                    <div>
+                                        ชั่วโมง OT: {hours} ชม. × ฿
+                                        {rate_per_hour.toFixed(2)}
+                                    </div>
+                                    <div className="font-bold mt-1">
+                                        รวม: ฿{hoursAmount.toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
-            ) : (
-                <div className="space-y-3">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            จำนวนวัน OT (0.5 = ครึ่งวัน, 1 = 1 วัน)
-                        </label>
-                        <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            value={days}
-                            onChange={(e) => onDaysChange(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                            placeholder="0"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ค่าจ้างต่อวัน
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                ฿
-                            </span>
+
+                {/* วันทำงานเสาร์-อาทิตย์ */}
+                <div>
+                    <h6 className="font-medium text-gray-700 mb-2">
+                        วันทำงาน (เต็มวัน/ครึ่งวัน)
+                    </h6>
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                จำนวนวัน (0.5 = ครึ่งวัน, 1 = 1 วัน)
+                            </label>
                             <input
                                 type="number"
-                                step="0.01"
+                                step="0.5"
                                 min="0"
-                                value={rate_per_day}
-                                onChange={(e) =>
-                                    onRatePerDayChange(e.target.value)
-                                }
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                                placeholder="0.00"
+                                value={days}
+                                onChange={(e) => onDaysChange(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                placeholder="0"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                ค่าจ้างต่อวัน
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                    ฿
+                                </span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={rate_per_day}
+                                    onChange={(e) =>
+                                        onRatePerDayChange(e.target.value)
+                                    }
+                                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+                        {days > 0 && rate_per_day > 0 && (
+                            <div className="p-2 rounded bg-yellow-100">
+                                <div className="text-xs text-yellow-800">
+                                    <div>
+                                        วันทำงาน: {days} วัน × ฿
+                                        {rate_per_day.toFixed(2)}
+                                    </div>
+                                    <div className="font-bold mt-1">
+                                        รวม: ฿{daysAmount.toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {(hours > 0 || days > 0) && (
+                <div className="mt-3 p-3 rounded bg-yellow-100 border border-yellow-200">
+                    <div className="text-sm text-yellow-800">
+                        <div className="font-bold mb-1">
+                            รวมทั้งหมดเสาร์-อาทิตย์: ฿{totalAmount.toFixed(2)}
+                        </div>
+                        <div className="text-xs">
+                            {hours > 0 &&
+                                `${hours} ชม. (฿${hoursAmount.toFixed(2)})`}
+                            {hours > 0 && days > 0 && ' + '}
+                            {days > 0 &&
+                                `${days} วัน (฿${daysAmount.toFixed(2)})`}
                         </div>
                     </div>
                 </div>
             )}
-
-            <div
-                className={`mt-3 p-3 rounded ${color === 'blue' ? 'bg-blue-100' : 'bg-yellow-100'}`}
-            >
-                <div
-                    className={`text-sm ${color === 'blue' ? 'text-blue-800' : 'text-yellow-800'}`}
-                >
-                    <div className="font-bold mb-1">
-                        รวมเงิน: ฿{amount.toFixed(2)}
-                    </div>
-                    <div className="text-xs">
-                        {type === 'weekday'
-                            ? `${hours} ชม. × ฿${rate_per_hour.toFixed(2)}`
-                            : `${days} วัน × ฿${rate_per_day.toFixed(2)}`}
-                    </div>
-                </div>
-            </div>
         </div>
     )
 }
@@ -468,7 +569,8 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
 }) => {
     if (!prefillData) return null
 
-    const { totalHours, totalDays, totalAmount } = calculateManualOTSummary()
+    const { totalHours, totalWeekendDays, totalAmount } =
+        calculateManualOTSummary()
 
     return (
         <div>
@@ -514,49 +616,35 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     {/* Weekday OT Input */}
-                    <ManualOTCard
-                        type="weekday"
-                        label="วันทำงานปกติ"
-                        description="จันทร์ - ศุกร์"
-                        color="blue"
+                    <WeekdayOTCard
                         hours={manualOT.weekday.hours}
-                        days={0}
                         rate_per_hour={manualOT.weekday.rate_per_hour}
-                        rate_per_day={0}
                         onHoursChange={(value) =>
                             onManualOTChange('weekday', 'hours', value)
                         }
-                        onDaysChange={() => {}}
                         onRatePerHourChange={(value) =>
                             onManualOTChange('weekday', 'rate_per_hour', value)
                         }
-                        onRatePerDayChange={() => {}}
-                        bgColor="bg-blue-50"
-                        textColor="text-blue-700"
-                        borderColor="border-blue-300"
                     />
 
                     {/* Weekend OT Input */}
-                    <ManualOTCard
-                        type="weekend"
-                        label="วันหยุดเสาร์-อาทิตย์"
-                        description="เสาร์ - อาทิตย์ (0.5 = ครึ่งวัน, 1 = 1 วัน)"
-                        color="yellow"
-                        hours={0}
+                    <WeekendOTCard
+                        hours={manualOT.weekend.hours}
                         days={manualOT.weekend.days}
-                        rate_per_hour={0}
+                        rate_per_hour={manualOT.weekend.rate_per_hour}
                         rate_per_day={manualOT.weekend.rate_per_day}
-                        onHoursChange={() => {}}
+                        onHoursChange={(value) =>
+                            onManualOTChange('weekend', 'hours', value)
+                        }
                         onDaysChange={(value) =>
                             onManualOTChange('weekend', 'days', value)
                         }
-                        onRatePerHourChange={() => {}}
+                        onRatePerHourChange={(value) =>
+                            onManualOTChange('weekend', 'rate_per_hour', value)
+                        }
                         onRatePerDayChange={(value) =>
                             onManualOTChange('weekend', 'rate_per_day', value)
                         }
-                        bgColor="bg-yellow-50"
-                        textColor="text-yellow-700"
-                        borderColor="border-yellow-300"
                     />
                 </div>
 
@@ -569,7 +657,11 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
                         <div className="text-sm text-gray-600">
                             <div>วันทำงาน: {manualOT.weekday.hours} ชม.</div>
                             <div>
-                                เสาร์-อาทิตย์: {manualOT.weekend.days} วัน
+                                เสาร์-อาทิตย์ (ชม.): {manualOT.weekend.hours}{' '}
+                                ชม.
+                            </div>
+                            <div>
+                                เสาร์-อาทิตย์ (วัน): {manualOT.weekend.days} วัน
                             </div>
                             <div className="font-bold mt-1">
                                 รวม: ฿{totalAmount.toFixed(2)}
@@ -587,9 +679,14 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
                         <button
                             onClick={addManualOTDetail}
                             disabled={
-                                (manualOT.weekday.hours === 0 ||
-                                    manualOT.weekday.rate_per_hour === 0) &&
-                                (manualOT.weekend.days === 0 ||
+                                (manualOT.weekday.hours === 0 &&
+                                    manualOT.weekend.hours === 0 &&
+                                    manualOT.weekend.days === 0) ||
+                                (manualOT.weekday.hours > 0 &&
+                                    manualOT.weekday.rate_per_hour === 0) ||
+                                (manualOT.weekend.hours > 0 &&
+                                    manualOT.weekend.rate_per_hour === 0) ||
+                                (manualOT.weekend.days > 0 &&
                                     manualOT.weekend.rate_per_day === 0)
                             }
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -634,6 +731,8 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
     )
 }
 
+// Step3AdditionalIncome, Step4Deductions, Step5Summary คงเดิม...
+// (ให้คง code เดิมไว้ไม่ต้องเปลี่ยน)
 export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
     formData,
     onInputChange,
@@ -865,7 +964,10 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                             <div className="text-sm text-gray-500">
                                                 {detail.ot_type === 'weekday'
                                                     ? `${detail.total_hours} ชั่วโมง`
-                                                    : `${detail.days} วัน`}
+                                                    : detail.days &&
+                                                        detail.days > 0
+                                                      ? `${detail.days} วัน`
+                                                      : `${detail.total_hours} ชั่วโมง`}
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -876,12 +978,16 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                             <div className="text-xs text-gray-500">
                                                 {detail.ot_type === 'weekday'
                                                     ? `฿${detail.hourly_rate?.toFixed(2) || '0.00'}/ชม.`
-                                                    : `฿${detail.rate_per_day?.toFixed(2) || '0.00'}/วัน`}
+                                                    : detail.days &&
+                                                        detail.days > 0
+                                                      ? `฿${detail.rate_per_day?.toFixed(2) || '0.00'}/วัน`
+                                                      : `฿${detail.hourly_rate?.toFixed(2) || '0.00'}/ชม.`}
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
+
                             <div className="flex justify-between pt-2 border-t border-blue-200">
                                 <span className="font-bold text-blue-900">
                                     รวม OT ด้วยตนเอง:

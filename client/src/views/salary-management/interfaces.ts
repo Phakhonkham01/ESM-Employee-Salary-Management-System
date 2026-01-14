@@ -50,31 +50,31 @@ export interface PrefillData {
     calculated: {
         ot_amount: number
         ot_hours: number
-        ot_details: SystemOTDetail[]
+        ot_details: any[]
         fuel_costs: number
         day_off_days: number
         remaining_vacation_days: number
         vacation_color: 'red' | 'yellow' | 'green'
         // แยกชั่วโมงตามประเภท
         weekday_ot_hours: number
-        weekend_ot_hours: number
+        weekend_ot_hours: number  // ชั่วโมง OT เสาร์-อาทิตย์จากระบบ
     }
     month: number
     year: number
 }
-
 // Interface สำหรับ Manual OT State แบบใหม่
 export interface ManualOTState {
     weekday: {
-        hours: number // จำนวนชั่วโมง OT วันทำงานปกติ
-        rate_per_hour: number // ค่าจ้างต่อชั่วโมง
+        hours: number
+        rate_per_hour: number
     }
     weekend: {
-        days: number // จำนวนวัน OT เสาร์-อาทิตย์ (0.5, 1, 2, ...)
-        rate_per_day: number // ค่าจ้างต่อวัน
+        hours: number          // จำนวนชั่วโมง OT เสาร์-อาทิตย์ (ชั่วโมง)
+        days: number           // จำนวนวัน OT เสาร์-อาทิตย์ (0.5, 1, 2...)
+        rate_per_hour: number  // ค่าจ้างต่อชั่วโมง (สำหรับชั่วโมง)
+        rate_per_day: number   // ค่าจ้างต่อวัน (สำหรับวัน)
     }
 }
-
 // Interface สำหรับ Props
 export interface SalaryCalculatorProps {
     open: boolean
@@ -83,4 +83,38 @@ export interface SalaryCalculatorProps {
     user: any
     month: number
     year: number
+}
+// Interface สำหรับ Salary ใน database
+export interface SalaryData {
+    _id?: string
+    user_id: string
+    month: number
+    year: number
+    base_salary: number
+    // OT รวม
+    ot_amount: number
+    ot_hours: number
+    ot_details:  []
+    // OT แยกตามประเภท
+    weekday_ot_hours: number
+    weekend_ot_hours: number
+    weekday_ot_amount: number
+    weekend_ot_amount: number
+    // อื่นๆ
+    bonus: number
+    commission: number
+    fuel_costs: number
+    money_not_spent_on_holidays: number
+    other_income: number
+    office_expenses: number
+    social_security: number
+    working_days: number
+    day_off_days: number
+    remaining_vacation_days: number
+    net_salary: number
+    status: string
+    notes?: string
+    created_by: string
+    created_at: Date
+    updated_at: Date
 }

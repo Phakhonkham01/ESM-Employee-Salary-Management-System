@@ -64,11 +64,12 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
             rate_per_hour: 0,
         },
         weekend: {
+            hours: 0, // Add this
             days: 0,
+            rate_per_hour: 0, // Add this
             rate_per_day: 0,
         },
     })
-
     // State สำหรับ Manual OT Details
     const [manualOTDetails, setManualOTDetails] = useState<any[]>([])
 
@@ -136,18 +137,20 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                     },
                 }
             } else {
+                // สำหรับ weekend
                 return {
                     ...prev,
                     weekend: {
                         ...prev.weekend,
                         [field]:
-                            field === 'days' ? Math.max(0, numValue) : numValue,
+                            field === 'days' || field === 'hours'
+                                ? Math.max(0, numValue)
+                                : numValue,
                     },
                 }
             }
         })
     }
-
     const addManualOTDetail = () => {
         const details = []
 
@@ -171,12 +174,32 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
             })
         }
 
-        // เพิ่ม Weekend OT ถ้ามี
+        // เพิ่ม Weekend OT Hours ถ้ามี
+        if (manualOT.weekend.hours > 0 && manualOT.weekend.rate_per_hour > 0) {
+            const amount =
+                manualOT.weekend.hours * manualOT.weekend.rate_per_hour
+            details.push({
+                date: new Date(year, month - 1, 1).toISOString(),
+                title: 'Manual OT - เสาร์-อาทิตย์ (ชั่วโมง)',
+                start_hour: '09:00',
+                end_hour: `${17 + manualOT.weekend.hours}:00`,
+                total_hours: manualOT.weekend.hours,
+                ot_type: 'weekend',
+                hourly_rate: manualOT.weekend.rate_per_hour,
+                days: 0,
+                rate_per_day: 0,
+                amount: amount,
+                description: `OT เสาร์-อาทิตย์ ${manualOT.weekend.hours} ชม. @ ฿${manualOT.weekend.rate_per_hour}/ชม.`,
+                is_manual: true,
+            })
+        }
+
+        // เพิ่ม Weekend OT Days ถ้ามี
         if (manualOT.weekend.days > 0 && manualOT.weekend.rate_per_day > 0) {
             const amount = manualOT.weekend.days * manualOT.weekend.rate_per_day
             details.push({
                 date: new Date(year, month - 1, 1).toISOString(),
-                title: 'Manual OT - วันหยุดเสาร์-อาทิตย์',
+                title: 'Manual OT - เสาร์-อาทิตย์ (วัน)',
                 start_hour: '09:00',
                 end_hour: '17:00',
                 total_hours: manualOT.weekend.days * 8, // 1 วัน = 8 ชม.
@@ -198,7 +221,12 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
     const clearManualOT = () => {
         setManualOT({
             weekday: { hours: 0, rate_per_hour: 0 },
-            weekend: { days: 0, rate_per_day: 0 },
+            weekend: {
+                hours: 0, // Add this
+                days: 0,
+                rate_per_hour: 0, // Add this
+                rate_per_day: 0,
+            },
         })
         setManualOTDetails([])
     }
@@ -300,10 +328,17 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
             working_days: 22,
             notes: '',
         })
+
         setManualOT({
             weekday: { hours: 0, rate_per_hour: 0 },
-            weekend: { days: 0, rate_per_day: 0 },
+            weekend: {
+                hours: 0,
+                days: 0,
+                rate_per_hour: 0,
+                rate_per_day: 0,
+            },
         })
+
         setManualOTDetails([])
         setError(null)
         setSuccess(false)
@@ -352,7 +387,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
     // คำนวณจำนวนชั่วโมง OT และเงิน OT รวม
     const calculateManualOTSummary = () => {
         let totalHours = 0
-        let totalDays = 0
+        let totalWeekendDays = 0
         let totalAmount = 0
 
         // Weekday
@@ -362,13 +397,20 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 manualOT.weekday.hours * manualOT.weekday.rate_per_hour
         }
 
-        // Weekend
+        // Weekend Hours
+        if (manualOT.weekend.hours > 0 && manualOT.weekend.rate_per_hour > 0) {
+            totalHours += manualOT.weekend.hours
+            totalAmount +=
+                manualOT.weekend.hours * manualOT.weekend.rate_per_hour
+        }
+
+        // Weekend Days
         if (manualOT.weekend.days > 0 && manualOT.weekend.rate_per_day > 0) {
-            totalDays += manualOT.weekend.days
+            totalWeekendDays += manualOT.weekend.days
             totalAmount += manualOT.weekend.days * manualOT.weekend.rate_per_day
         }
 
-        return { totalHours, totalDays, totalAmount }
+        return { totalHours, totalWeekendDays, totalAmount }
     }
 
     const renderStepContent = (step: number) => {
