@@ -714,7 +714,7 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
             )}
 
             {/* Display Auto-calculated OT Details */}
-            {prefillData?.calculated.ot_details &&
+            {/* {prefillData?.calculated.ot_details &&
                 prefillData.calculated.ot_details.length > 0 && (
                     <div className="mt-8">
                         <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -726,7 +726,7 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
                             title="รายการ OT จากระบบ"
                         />
                     </div>
-                )}
+                )} */}
         </div>
     )
 }

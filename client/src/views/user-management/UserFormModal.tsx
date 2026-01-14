@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react'
+'use client'
+
+import type React from 'react'
+import { useState, useEffect } from 'react'
 import { createUser, updateUser } from '../../services/Create_user/api'
 import {
     getAllDepartments,
@@ -80,7 +83,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 const baseSalary = editingUser.base_salary
                 const salaryValue =
                     typeof baseSalary === 'string'
-                        ? parseFloat(baseSalary) || 0
+                        ? Number.parseFloat(baseSalary) || 0
                         : typeof baseSalary === 'number'
                           ? baseSalary
                           : 0
@@ -195,7 +198,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         const { name, value } = e.target
 
         if (name === 'vacation_days' || name === 'base_salary') {
-            const numericValue = parseFloat(value) || 0
+            const numericValue = Number.parseFloat(value) || 0
             setFormData((prev) => ({
                 ...prev,
                 [name]: numericValue,
@@ -212,7 +215,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
     const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9.]/g, '')
-        const numericValue = parseFloat(value) || 0
+        const numericValue = Number.parseFloat(value) || 0
         setFormData((prev) => ({
             ...prev,
             base_salary: numericValue,
@@ -260,13 +263,13 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 await updateUser(editingUser._id, submitData)
                 setMessage({
                     type: 'success',
-                    text: 'User updated successfully!',
+                    text: 'User has been updated successfully.',
                 })
             } else {
                 await createUser(submitData)
                 setMessage({
                     type: 'success',
-                    text: 'User created successfully!',
+                    text: 'User has been created successfully.',
                 })
             }
 
@@ -278,7 +281,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         } catch (error: any) {
             setMessage({
                 type: 'error',
-                text: error.message || 'Something went wrong!',
+                text: error.message || 'An error occurred. Please try again.',
             })
         } finally {
             setLoading(false)
@@ -338,42 +341,309 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     if (!isOpen) return null
+    // 将现有的 DatePicker 组件定义替换为以下完整版本：
 
+    const DatePicker = ({
+        label,
+        value,
+        onChange,
+        required = false,
+    }: {
+        label: string
+        value: string
+        onChange: (date: string) => void
+        required?: boolean
+    }) => {
+        const [isOpen, setIsOpen] = useState(false)
+        const [viewDate, setViewDate] = useState(() => {
+            if (value) {
+                // Parse value string (YYYY-MM-DD) to Date object
+                const [year, month, day] = value.split('-').map(Number)
+                return new Date(year, month - 1, day)
+            }
+            return new Date()
+        })
+
+        const months = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+        ]
+
+        const years = Array.from(
+            { length: 100 },
+            (_, i) => new Date().getFullYear() - 80 + i,
+        )
+
+        const getDaysInMonth = (date: Date) => {
+            const year = date.getFullYear()
+            const month = date.getMonth()
+            const firstDay = new Date(year, month, 1).getDay()
+            const daysInMonth = new Date(year, month + 1, 0).getDate()
+            const days: (number | null)[] = []
+
+            for (let i = 0; i < firstDay; i++) {
+                days.push(null)
+            }
+            for (let i = 1; i <= daysInMonth; i++) {
+                days.push(i)
+            }
+            while (days.length < 42) {
+                days.push(null)
+            }
+            return days
+        }
+
+        const handleSelectDate = (day: number) => {
+            const year = viewDate.getFullYear()
+            const month = viewDate.getMonth()
+            const date = day
+
+            // สร้าง date string โดยตรง โดยไม่ใช้ toISOString()
+            const formatted = `${year}-${(month + 1).toString().padStart(2, '0')}-${date.toString().padStart(2, '0')}`
+            onChange(formatted)
+            setIsOpen(false)
+        }
+
+        const formatDisplayDate = (dateStr: string) => {
+            if (!dateStr) return ''
+            // แยกเป็นส่วนๆ และสร้าง Date object ใหม่
+            const [year, month, day] = dateStr.split('-').map(Number)
+            const date = new Date(year, month - 1, day)
+
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+            })
+        }
+
+        // ใช้วิธี parse แบบ manual เพื่อหลีกเลี่ยง timezone issues
+        const selectedDate = value
+            ? (() => {
+                  const [year, month, day] = value.split('-').map(Number)
+                  return new Date(year, month - 1, day)
+              })()
+            : null
+
+        const handlePrevMonth = () => {
+            setViewDate(
+                new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1),
+            )
+        }
+
+        const handleNextMonth = () => {
+            setViewDate(
+                new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1),
+            )
+        }
+
+        const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+            const monthIndex = months.indexOf(e.target.value)
+            setViewDate(new Date(viewDate.getFullYear(), monthIndex, 1))
+        }
+
+        const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+            setViewDate(
+                new Date(parseInt(e.target.value), viewDate.getMonth(), 1),
+            )
+        }
+
+        const days = getDaysInMonth(viewDate)
+        const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+
+        // หาว่า selectedDate ตรงกับวันที่ใน calendar หรือไม่
+        const isDateSelected = (day: number) => {
+            if (!selectedDate || !day) return false
+            return (
+                day === selectedDate.getDate() &&
+                viewDate.getMonth() === selectedDate.getMonth() &&
+                viewDate.getFullYear() === selectedDate.getFullYear()
+            )
+        }
+
+        const isToday = (day: number) => {
+            const today = new Date()
+            return (
+                day === today.getDate() &&
+                viewDate.getMonth() === today.getMonth() &&
+                viewDate.getFullYear() === today.getFullYear()
+            )
+        }
+
+        return (
+            <div className="relative">
+                <label className="block text-sm font-normal text-gray-700 mb-1">
+                    {label}
+                    {required && <span className="text-red-600 ml-1">*</span>}
+                </label>
+                <div
+                    className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] cursor-pointer bg-white"
+                    onClick={() => setIsOpen(!isOpen)}
+                >
+                    {value
+                        ? formatDisplayDate(value)
+                        : `Select ${label.toLowerCase()}`}
+                </div>
+
+                {isOpen && (
+                    <div className="absolute z-50 mt-1 bg-white border border-gray-300 rounded-md shadow-lg w-64">
+                        <div className="p-3">
+                            {/* Header with month/year navigation */}
+                            <div className="flex items-center justify-between mb-3">
+                                <button
+                                    type="button"
+                                    onClick={handlePrevMonth}
+                                    className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900"
+                                >
+                                    ‹
+                                </button>
+
+                                <div className="flex gap-2">
+                                    <select
+                                        value={months[viewDate.getMonth()]}
+                                        onChange={handleMonthChange}
+                                        className="text-sm border-none focus:ring-0 focus:outline-none bg-transparent"
+                                    >
+                                        {months.map((month) => (
+                                            <option key={month} value={month}>
+                                                {month}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    <select
+                                        value={viewDate.getFullYear()}
+                                        onChange={handleYearChange}
+                                        className="text-sm border-none focus:ring-0 focus:outline-none bg-transparent"
+                                    >
+                                        {years.map((year) => (
+                                            <option key={year} value={year}>
+                                                {year}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleNextMonth}
+                                    className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900"
+                                >
+                                    ›
+                                </button>
+                            </div>
+
+                            {/* Day headers */}
+                            <div className="grid grid-cols-7 gap-1 mb-2">
+                                {dayNames.map((day) => (
+                                    <div
+                                        key={day}
+                                        className="text-center text-xs text-gray-500 font-medium"
+                                    >
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Days grid */}
+                            <div className="grid grid-cols-7 gap-1">
+                                {days.map((day, index) => {
+                                    const selected = isDateSelected(day || 0)
+                                    const today = isToday(day || 0)
+
+                                    return (
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() =>
+                                                day && handleSelectDate(day)
+                                            }
+                                            disabled={!day}
+                                            className={`
+                      h-8 w-8 text-sm rounded flex items-center justify-center
+                      ${!day ? 'invisible' : ''}
+                      ${
+                          selected
+                              ? 'bg-[#1F3A5F] text-white'
+                              : today
+                                ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                                : 'text-gray-700 hover:bg-gray-100'
+                      }
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                                        >
+                                            {day}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+
+                            {/* Today button */}
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const today = new Date()
+                                        // สร้าง date string แบบเดียวกัน
+                                        const formatted = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`
+                                        onChange(formatted)
+                                        setIsOpen(false)
+                                    }}
+                                    className="w-full text-sm text-[#1F3A5F] hover:text-[#152642] font-medium py-1 hover:bg-gray-50 rounded"
+                                >
+                                    Select Today
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
+    }
     return (
         <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
             onClick={handleBackdropClick}
         >
-            <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl animate-slideUp">
+            <div className="bg-white border border-gray-300 w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-lg">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+                <div className="bg-[#1F3A5F] px-6 py-4 flex items-center justify-between border-b border-[#152642]">
                     <div className="flex items-center gap-3 text-white">
                         {editingUser ? (
                             <>
-                                <div className="bg-white/20 p-2 rounded-lg">
-                                    <HiPencil className="w-6 h-6" />
+                                <div className="p-1">
+                                    <HiPencil className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-semibold">
+                                    <h2 className="text-lg font-medium">
                                         Edit User
                                     </h2>
-                                    <p className="text-blue-100 text-sm">
-                                        {editingUser.first_name_en}{' '}
-                                        {editingUser.last_name_en}
+                                    <p className="text-gray-300 text-xs mt-0.5">
+                                        ID: {editingUser._id}
                                     </p>
                                 </div>
                             </>
                         ) : (
                             <>
-                                <div className="bg-white/20 p-2 rounded-lg">
-                                    <HiUserAdd className="w-6 h-6" />
+                                <div className="p-1">
+                                    <HiUserAdd className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-semibold">
+                                    <h2 className="text-lg font-medium">
                                         Create New User
                                     </h2>
-                                    <p className="text-blue-100 text-sm">
-                                        Add a new team member
+                                    <p className="text-gray-300 text-xs mt-0.5">
+                                        User Registration Form
                                     </p>
                                 </div>
                             </>
@@ -381,43 +651,48 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     </div>
                     <button
                         onClick={handleClose}
-                        className="text-white hover:bg-white/20 p-2 rounded-lg transition-all duration-200"
+                        className="text-white hover:bg-white/10 p-2 rounded transition-colors"
+                        title="Close"
                     >
-                        <HiX className="w-6 h-6" />
+                        <HiX className="w-5 h-5" />
                     </button>
                 </div>
 
                 {/* Body */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50">
                     {message && (
                         <div
-                            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
+                            className={`mb-6 p-3 rounded border text-sm font-medium ${
                                 message.type === 'success'
-                                    ? 'bg-green-50 border border-green-200 text-green-800'
-                                    : 'bg-red-50 border border-red-200 text-red-800'
+                                    ? 'bg-[#E6F4EA] border-[#2E7D32] text-[#2E7D32]'
+                                    : 'bg-[#FDE8E8] border-[#9B1C1C] text-[#9B1C1C]'
                             }`}
                         >
-                            {message.type === 'success' ? (
-                                <HiCheckCircle className="w-5 h-5 flex-shrink-0" />
-                            ) : (
-                                <HiXCircle className="w-5 h-5 flex-shrink-0" />
-                            )}
-                            <span className="font-medium">{message.text}</span>
+                            <div className="flex items-center gap-2">
+                                {message.type === 'success' ? (
+                                    <HiCheckCircle className="w-4 h-4" />
+                                ) : (
+                                    <HiXCircle className="w-4 h-4" />
+                                )}
+                                {message.text}
+                            </div>
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Account Section */}
-                        <div className="bg-gray-50 rounded-lg p-5">
-                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-5 bg-blue-600 rounded"></span>
-                                Account Information
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <form onSubmit={handleSubmit}>
+                        {/* Account Information Section */}
+                        <div className="mb-6">
+                            <div className="flex items-center mb-4">
+                                <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
+                                <h3 className="text-base font-medium text-gray-900">
+                                    Account Information
+                                </h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Email{' '}
-                                        <span className="text-red-500">*</span>
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
+                                        Email Address{' '}
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="email"
@@ -425,15 +700,20 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.email}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="user@example.com"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="Enter email address"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Password {editingUser && '(optional)'}{' '}
-                                        <span className="text-red-500">*</span>
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
+                                        Password{' '}
+                                        <span className="text-red-600">*</span>
+                                        {editingUser && (
+                                            <span className="text-gray-500 text-xs ml-1">
+                                                (leave blank to keep current)
+                                            </span>
+                                        )}
                                     </label>
                                     <input
                                         type="password"
@@ -441,46 +721,50 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.password}
                                         onChange={handleInputChange}
                                         required={!editingUser}
-                                        placeholder="••••••••"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="Enter password"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Role{' '}
-                                        <span className="text-red-500">*</span>
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
+                                        User Role{' '}
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <select
                                         name="role"
                                         value={formData.role}
                                         onChange={handleInputChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
                                     >
                                         <option value="Employee">
-                                            👤 Employee
+                                            Employee
                                         </option>
                                         <option value="Supervisor">
-                                            👥 Supervisor
+                                            Supervisor
                                         </option>
-                                        <option value="Admin">⚙️ Admin</option>
+                                        <option value="Admin">
+                                            Administrator
+                                        </option>
                                     </select>
                                 </div>
                             </div>
                         </div>
 
                         {/* Personal Information - English */}
-                        <div className="bg-gray-50 rounded-lg p-5">
-                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-5 bg-green-600 rounded"></span>
-                                Personal Information (English)
-                            </h3>
+                        <div className="mb-6">
+                            <div className="flex items-center mb-4">
+                                <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
+                                <h3 className="text-base font-medium text-gray-900">
+                                    Personal Information (English)
+                                </h3>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         First Name{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -488,15 +772,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.first_name_en}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="John"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="First name"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         Last Name{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -504,15 +788,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.last_name_en}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="Doe"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="Last name"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         Nickname{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -520,24 +804,26 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.nickname_en}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="Johnny"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="Nickname"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
                             </div>
                         </div>
 
                         {/* Personal Information - Lao */}
-                        <div className="bg-gray-50 rounded-lg p-5">
-                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-5 bg-purple-600 rounded"></span>
-                                Personal Information (Lao)
-                            </h3>
+                        <div className="mb-6">
+                            <div className="flex items-center mb-4">
+                                <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
+                                <h3 className="text-base font-medium text-gray-900">
+                                    Personal Information (Lao)
+                                </h3>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         First Name{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -545,15 +831,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.first_name_la}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="ຈອນ"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="ຊື່"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         Last Name{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -561,15 +847,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.last_name_la}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="ໂດ"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="ນາມສະກຸນ"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         Nickname{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -577,84 +863,84 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         value={formData.nickname_la}
                                         onChange={handleInputChange}
                                         required
-                                        placeholder="ຈອນນີ"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        placeholder="ຊື່ຫຍໍ້"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Additional Details */}
-                        <div className="bg-gray-50 rounded-lg p-5">
-                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-5 bg-orange-600 rounded"></span>
-                                Additional Details
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Basic Information */}
+                        <div className="mb-6">
+                            <div className="flex items-center mb-4">
+                                <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
+                                <h3 className="text-base font-medium text-gray-900">
+                                    Basic Information
+                                </h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
                                         Gender{' '}
-                                        <span className="text-red-500">*</span>
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <select
                                         name="gender"
                                         value={formData.gender}
                                         onChange={handleInputChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
                                     >
-                                        <option value="Male">♂️ Male</option>
-                                        <option value="Female">
-                                            ♀️ Female
-                                        </option>
-                                        <option value="Other">⚧ Other</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Date of Birth{' '}
-                                        <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="date_of_birth"
+                                    <DatePicker
+                                        label="Date of Birth"
                                         value={formData.date_of_birth}
-                                        onChange={handleInputChange}
+                                        onChange={(date) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                date_of_birth: date,
+                                            }))
+                                        }
                                         required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Start Work Date{' '}
-                                        <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="start_work"
+                                    <DatePicker
+                                        label="Start Work"
                                         value={formData.start_work}
-                                        onChange={handleInputChange}
+                                        onChange={(date) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                start_work: date,
+                                            }))
+                                        }
                                         required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Work Information */}
-                        <div className="bg-gray-50 rounded-lg p-5">
-                            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                <span className="w-1 h-5 bg-indigo-600 rounded"></span>
-                                Work Information
-                            </h3>
+                        {/* Employment Details */}
+                        <div className="mb-6">
+                            <div className="flex items-center mb-4">
+                                <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
+                                <h3 className="text-base font-medium text-gray-900">
+                                    Employment Details
+                                </h3>
+                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="block text-sm font-normal text-gray-700">
                                             Department{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-red-600">
                                                 *
                                             </span>
                                         </label>
@@ -663,10 +949,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onClick={() =>
                                                 setDepartmentModalOpen(true)
                                             }
-                                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors"
+                                            className="text-xs text-[#1F3A5F] hover:text-[#152642] flex items-center gap-1"
                                         >
                                             <HiPlus className="w-3 h-3" />
-                                            Add
+                                            Add New
                                         </button>
                                     </div>
                                     <select
@@ -675,12 +961,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         onChange={handleInputChange}
                                         required
                                         disabled={loadingDepartments}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white disabled:bg-gray-100"
                                     >
                                         <option value="">
                                             {loadingDepartments
-                                                ? 'Loading...'
-                                                : 'Select Department'}
+                                                ? 'Loading departments...'
+                                                : 'Select department'}
                                         </option>
                                         {departments.map((dept) => (
                                             <option
@@ -694,10 +980,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 </div>
 
                                 <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-medium text-gray-700">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="block text-sm font-normal text-gray-700">
                                             Position{' '}
-                                            <span className="text-red-500">
+                                            <span className="text-red-600">
                                                 *
                                             </span>
                                         </label>
@@ -710,10 +996,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 !formData.department_id ||
                                                 loadingPositions
                                             }
-                                            className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                            className="text-xs text-[#1F3A5F] hover:text-[#152642] flex items-center gap-1 disabled:text-gray-400 disabled:cursor-not-allowed"
                                         >
                                             <HiPlus className="w-3 h-3" />
-                                            Add
+                                            Add New
                                         </button>
                                     </div>
                                     <select
@@ -725,17 +1011,17 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             !formData.department_id ||
                                             loadingPositions
                                         }
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white disabled:bg-gray-100"
                                     >
                                         <option value="">
                                             {loadingPositions
-                                                ? 'Loading positions...'
+                                                ? 'Loading...'
                                                 : !formData.department_id
                                                   ? 'Select department first'
                                                   : filteredPositions.length ===
                                                       0
-                                                    ? 'No positions found'
-                                                    : 'Select Position'}
+                                                    ? 'No positions available'
+                                                    : 'Select position'}
                                         </option>
                                         {filteredPositions.map((pos) => (
                                             <option
@@ -746,22 +1032,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             </option>
                                         ))}
                                     </select>
-                                    {formData.department_id &&
-                                        filteredPositions.length > 0 && (
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Found {filteredPositions.length}{' '}
-                                                position(s)
-                                            </p>
-                                        )}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        💰 Base Salary{' '}
-                                        <span className="text-red-500">*</span>
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
+                                        Base Salary (LAK){' '}
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">
                                             ₭
                                         </span>
                                         <input
@@ -771,10 +1050,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleSalaryChange}
                                             required
                                             placeholder="0.00"
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                         />
                                         {formData.base_salary > 0 && (
-                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500 italic">
+                                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
                                                 {formatCurrency(
                                                     formData.base_salary,
                                                 )}
@@ -784,8 +1063,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Vacation Days
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
+                                        Annual Vacation Days
                                     </label>
                                     <input
                                         type="number"
@@ -794,30 +1073,28 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         onChange={handleInputChange}
                                         min="0"
                                         placeholder="0"
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Status{' '}
-                                        <span className="text-red-500">*</span>
+                                    <label className="block text-sm font-normal text-gray-700 mb-1">
+                                        Employment Status{' '}
+                                        <span className="text-red-600">*</span>
                                     </label>
                                     <select
                                         name="status"
                                         value={formData.status}
                                         onChange={handleInputChange}
                                         required
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
                                     >
-                                        <option value="Active">
-                                            ✅ Active
-                                        </option>
+                                        <option value="Active">Active</option>
                                         <option value="Inactive">
-                                            ❌ Inactive
+                                            Inactive
                                         </option>
                                         <option value="On Leave">
-                                            🏖️ On Leave
+                                            On Leave
                                         </option>
                                     </select>
                                 </div>
@@ -825,48 +1102,50 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
-                            <button
-                                type="button"
-                                onClick={handleClose}
-                                className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors inline-flex items-center gap-2"
-                            >
-                                {loading ? (
-                                    <>
-                                        <svg
-                                            className="animate-spin h-4 w-4"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle
-                                                className="opacity-25"
-                                                cx="12"
-                                                cy="12"
-                                                r="10"
-                                                stroke="currentColor"
-                                                strokeWidth="4"
+                        <div className="pt-6 border-t border-gray-300">
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleClose}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] border border-[#1F3A5F] rounded-sm hover:bg-[#152642] disabled:bg-gray-400 disabled:border-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <svg
+                                                className="animate-spin h-4 w-4 text-white"
                                                 fill="none"
-                                            />
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            />
-                                        </svg>
-                                        Processing...
-                                    </>
-                                ) : editingUser ? (
-                                    'Update User'
-                                ) : (
-                                    'Create User'
-                                )}
-                            </button>
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                />
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                />
+                                            </svg>
+                                            Processing...
+                                        </>
+                                    ) : editingUser ? (
+                                        'Update User'
+                                    ) : (
+                                        'Register User'
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -888,29 +1167,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                         : ''
                 }
             />
-
-            <style>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { 
-                        opacity: 0;
-                        transform: translateY(20px);
-                    }
-                    to { 
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-                .animate-fadeIn {
-                    animation: fadeIn 0.2s ease-out;
-                }
-                .animate-slideUp {
-                    animation: slideUp 0.3s ease-out;
-                }
-            `}</style>
         </div>
     )
 }

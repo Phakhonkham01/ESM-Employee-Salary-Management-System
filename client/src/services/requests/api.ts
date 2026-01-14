@@ -16,17 +16,19 @@ export interface User {
     nickname_la: string
 }
 
+// ในไฟล์ services/requests/api.ts
 export interface RequestData {
-    _id: string
-    user_id: User | string
-    supervisor_id: string | User
-    date: string
-    title: 'OT' | 'FIELD_WORK'
-    start_hour: number
-    end_hour: number
-    reason: string
-    status: 'Pending' | 'Accept' | 'Reject'
-    created_at: string
+  _id: string;
+  user_id: User | string;
+  supervisor_id: User | string;
+  date: string; // ISO string
+  title: 'OT' | 'FIELD_WORK';
+  start_hour: string; // "HH:mm" format
+  end_hour: string; // "HH:mm" format
+  fuel?: number;
+  reason: string;
+  status: 'Pending' | 'Accept' | 'Reject';
+  created_at: string;
 }
 
 export interface CreateRequestPayload {

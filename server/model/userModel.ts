@@ -19,6 +19,8 @@ export interface IUser extends Document {
   status: "Active" | "Inactive" | "On Leave";
   base_salary: number;
   created_at: Date;
+  // 添加缺少的字段
+  employee_id: string; // 添加这一行
 }
 
 const userSchema: Schema = new Schema({
@@ -47,20 +49,16 @@ const userSchema: Schema = new Schema({
   date_of_birth: { type: Date, required: true },
   start_work: { type: Date, required: true },
   vacation_days: { type: Number, default: 0 },
-
   base_salary: {
     type: Number,
     default: 0,
     min: 0,
   },
-
   gender: {
     type: String,
     enum: ["Male", "Female", "Other"],
     required: true,
   },
-
-
   position_id: {
     type: Schema.Types.ObjectId,
     ref: "Position",
@@ -71,7 +69,6 @@ const userSchema: Schema = new Schema({
     ref: "Department",
     required: true,
   },
-
   status: {
     type: String,
     enum: ["Active", "Inactive", "On Leave"],
@@ -80,6 +77,13 @@ const userSchema: Schema = new Schema({
   created_at: {
     type: Date,
     default: Date.now,
+  },
+  // 添加 employee_id 字段到 Schema
+  employee_id: {
+    type: String,
+    unique: true,
+    sparse: true, // 允许多个文档没有此字段或为 null
+    trim: true,
   },
 });
 

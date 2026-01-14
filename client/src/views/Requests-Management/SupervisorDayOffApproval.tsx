@@ -6,9 +6,30 @@ import axios from 'axios'
 
 export interface DayOffItem {
     _id: string
-    user_id: string
-    employee_id: string
-    supervisor_id: string
+    user_id:
+        | string
+        | {
+              _id: string
+              first_name_en?: string
+              last_name_en?: string
+              email?: string
+          }
+    employee_id:
+        | string
+        | {
+              _id: string
+              employee_id?: string
+              first_name_en?: string
+              last_name_en?: string
+          }
+    supervisor_id:
+        | string
+        | {
+              _id: string
+              employee_id?: string
+              first_name_en?: string
+              last_name_en?: string
+          }
     day_off_type: 'FULL_DAY' | 'HALF_DAY'
     start_date_time: string
     end_date_time: string
@@ -30,11 +51,128 @@ interface Props {
 
 const formatDate = (dateStr: string) => {
     if (!dateStr) return 'N/A'
-    return new Date(dateStr).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    })
+    const date = new Date(dateStr)
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear()
+    return `${day}/${month}/${year}`
+}
+
+// Function to get employee DISPLAY NAME (not ID)
+const getEmployeeDisplayName = (employeeData: string | any): string => {
+    if (!employeeData) return 'Unknown Employee'
+
+    // If it's already a string (ObjectId or name), check if it looks like an ID
+    if (typeof employeeData === 'string') {
+        // Check if it's a MongoDB ObjectId (24 hex chars)
+        if (/^[0-9a-fA-F]{24}$/.test(employeeData)) {
+            return `EMP-${employeeData.substring(0, 6)}...`
+        }
+        return employeeData
+    }
+
+    // If it's an object with populated data
+    if (typeof employeeData === 'object' && employeeData !== null) {
+        // First priority: Use first_name_en + last_name_en
+        const firstName = employeeData.first_name_en || ''
+        const lastName = employeeData.last_name_en || ''
+
+        if (firstName && lastName) {
+            return `${firstName} ${lastName}`
+        } else if (firstName) {
+            return firstName
+        } else if (lastName) {
+            return lastName
+        }
+
+        // Second priority: Use email
+        if (employeeData.email) {
+            return employeeData.email.split('@')[0] // Just the username part
+        }
+
+        // Third priority: Use nickname if available
+        if (employeeData.nickname_en) {
+            return employeeData.nickname_en
+        }
+
+        // Fallback: Use employee_id if it exists
+        if (employeeData.employee_id) {
+            return `EMP-${employeeData.employee_id}`
+        }
+
+        // Last resort: Use part of _id
+        if (employeeData._id) {
+            return `EMP-${employeeData._id.toString().substring(0, 6)}...`
+        }
+    }
+
+    return 'Unknown Employee'
+}
+
+// Function to get employee ID (for display under name)
+const getEmployeeId = (employeeData: string | any): string => {
+    if (!employeeData) return 'N/A'
+
+    if (typeof employeeData === 'string') {
+        return employeeData
+    }
+
+    if (typeof employeeData === 'object' && employeeData !== null) {
+        // Try to get employee_id field
+        if (employeeData.employee_id) {
+            return employeeData.employee_id
+        }
+        // Fallback to _id
+        if (employeeData._id) {
+            return employeeData._id.toString()
+        }
+    }
+
+    return 'N/A'
+}
+
+// Function to get supervisor name
+const getSupervisorName = (supervisorData: string | any): string => {
+    if (!supervisorData) return 'Unknown Supervisor'
+
+    if (typeof supervisorData === 'string') {
+        // Check if it's a MongoDB ObjectId
+        if (/^[0-9a-fA-F]{24}$/.test(supervisorData)) {
+            return `SPV-${supervisorData.substring(0, 6)}...`
+        }
+        return supervisorData
+    }
+
+    if (typeof supervisorData === 'object' && supervisorData !== null) {
+        // Try to get supervisor name
+        const firstName = supervisorData.first_name_en || ''
+        const lastName = supervisorData.last_name_en || ''
+
+        if (firstName && lastName) {
+            return `${firstName} ${lastName}`
+        } else if (firstName) {
+            return firstName
+        } else if (lastName) {
+            return lastName
+        }
+
+        // Try email
+        if (supervisorData.email) {
+            return supervisorData.email.split('@')[0]
+        }
+
+        // Try employee_id
+        if (supervisorData.employee_id) {
+            return `SPV-${supervisorData.employee_id}`
+        }
+
+        // Fallback
+        if (supervisorData._id) {
+            return `SPV-${supervisorData._id.toString().substring(0, 6)}...`
+        }
+    }
+
+    return 'Unknown Supervisor'
 }
 
 /* ================= STYLED COMPONENTS ================= */
@@ -171,22 +309,127 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
     const [loading, setLoading] = useState<boolean>(!propDayOffs)
     const [dayOffs, setDayOffs] = useState<DayOffItem[]>(propDayOffs || [])
     const [error, setError] = useState<string>('')
+    const [supervisorId, setSupervisorId] = useState<string>('')
+    const [supervisorName, setSupervisorName] = useState<string>('')
+
+    // ดึง supervisor_id จาก localStorage
+    useEffect(() => {
+        const authData = localStorage.getItem('auth')
+        if (authData) {
+            try {
+                const auth = JSON.parse(authData)
+                const user = auth.user
+
+                console.log('👤 Current user data:', user)
+
+                if (user.role === 'Supervisor' && user._id) {
+                    console.log('✅ Supervisor found:', user._id)
+                    setSupervisorId(user._id)
+
+                    // Set supervisor name from user data
+                    if (user.first_name_en && user.last_name_en) {
+                        setSupervisorName(
+                            `${user.first_name_en} ${user.last_name_en}`,
+                        )
+                    } else if (user.employee_id) {
+                        setSupervisorName(`S-${user.employee_id}`)
+                    } else {
+                        setSupervisorName(user.email || 'Supervisor')
+                    }
+                } else {
+                    console.warn('⚠️ User is not a Supervisor')
+                    setError(
+                        'Access denied. Only supervisors can view this page.',
+                    )
+                }
+            } catch (error) {
+                console.error('❌ Error parsing auth data:', error)
+                setError('Failed to load user data')
+            }
+        } else {
+            console.warn('⚠️ No auth data in localStorage')
+            setError('Please login to access this page')
+        }
+    }, [])
 
     // Fetch data from API
     const fetchDayOffRequests = async () => {
+        if (!supervisorId) {
+            console.log('⏳ Waiting for supervisor ID...')
+            return
+        }
+
         try {
             setLoading(true)
             setError('')
+
+            // ใช้ API ใหม่ที่ส่งข้อมูลผู้คนมาอย่างถูกต้อง
             const response = await axios.get('/api/day-off-requests/allusers')
 
+            console.log('📥 API Response:', response.data)
+
             if (response.data.success) {
-                setDayOffs(response.data.requests || [])
+                const allRequests = response.data.requests || []
+
+                // Debug: ดูโครงสร้างข้อมูล
+                if (allRequests.length > 0) {
+                    console.log('🔍 First request structure:', allRequests[0])
+                    console.log(
+                        '👤 Employee data type:',
+                        typeof allRequests[0].employee_id,
+                    )
+                    console.log(
+                        '👤 Employee data value:',
+                        allRequests[0].employee_id,
+                    )
+
+                    // Check if we have employee_name field
+                    if (allRequests[0].employee_name) {
+                        console.log(
+                            '✅ We have employee_name:',
+                            allRequests[0].employee_name,
+                        )
+                    }
+                }
+
+                // Filter เฉพาะของ supervisor นี้
+                const filteredRequests = allRequests.filter((req: any) => {
+                    // Try different ways to match supervisor
+                    const supervisorIdValue = req.supervisor_id || ''
+                    const supervisorNameValue = req.supervisor_name || ''
+
+                    // Check if supervisorId matches
+                    if (supervisorIdValue === supervisorId) return true
+
+                    // If it's an object, check _id
+                    if (
+                        typeof supervisorIdValue === 'object' &&
+                        supervisorIdValue._id === supervisorId
+                    ) {
+                        return true
+                    }
+
+                    // Check if current supervisor name matches
+                    if (
+                        supervisorName &&
+                        supervisorNameValue.includes(
+                            supervisorName.split(' ')[0],
+                        )
+                    ) {
+                        return true
+                    }
+
+                    return false
+                })
+
+                console.log('✅ Filtered requests:', filteredRequests.length)
+                setDayOffs(filteredRequests)
             } else {
                 setError('Failed to fetch data')
                 setDayOffs([])
             }
         } catch (err: any) {
-            console.error('Error fetching day off requests:', err)
+            console.error('❌ Error fetching day off requests:', err)
             setError(err.response?.data?.message || 'Network error')
             setDayOffs([])
         } finally {
@@ -196,6 +439,10 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
 
     // Handle approve
     const handleApprove = async (id: string) => {
+        if (!window.confirm('Are you sure you want to approve this request?')) {
+            return
+        }
+
         try {
             const response = await axios.patch(
                 `/api/day-off-requests/${id}/status`,
@@ -206,11 +453,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
 
             if (response.data.success) {
                 alert('Request approved successfully!')
-                if (propRefetch) {
-                    propRefetch()
-                } else {
-                    fetchDayOffRequests()
-                }
+                fetchDayOffRequests()
                 if (propOnApprove) propOnApprove(id)
             }
         } catch (err: any) {
@@ -220,6 +463,10 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
 
     // Handle reject
     const handleReject = async (id: string) => {
+        if (!window.confirm('Are you sure you want to reject this request?')) {
+            return
+        }
+
         try {
             const response = await axios.patch(
                 `/api/day-off-requests/${id}/status`,
@@ -230,11 +477,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
 
             if (response.data.success) {
                 alert('Request rejected successfully!')
-                if (propRefetch) {
-                    propRefetch()
-                } else {
-                    fetchDayOffRequests()
-                }
+                fetchDayOffRequests()
                 if (propOnReject) propOnReject(id)
             }
         } catch (err: any) {
@@ -242,13 +485,14 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
         }
     }
 
+    // Fetch เมื่อมี supervisorId
     useEffect(() => {
-        if (!propDayOffs) {
+        if (!propDayOffs && supervisorId) {
             fetchDayOffRequests()
-        } else {
+        } else if (propDayOffs) {
             setDayOffs(propDayOffs)
         }
-    }, [propDayOffs])
+    }, [propDayOffs, supervisorId])
 
     // Filter data
     const filteredDayOffs = dayOffs.filter((d) => {
@@ -281,12 +525,28 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
         <div className="min-h-screen bg-gray-50 p-6">
             {/* Header */}
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    Day Off Management
-                </h1>
-                <p className="text-gray-600">
-                    Manage and approve employee day off requests
-                </p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                            Day Off Management
+                        </h1>
+                        <p className="text-gray-600">
+                            Manage and approve employee day off requests
+                        </p>
+                    </div>
+
+                    {/* Supervisor Info */}
+                    {supervisorName && (
+                        <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                            <p className="text-sm text-blue-800 font-medium">
+                                👨‍💼 Supervisor: {supervisorName}
+                            </p>
+                            <p className="text-xs text-blue-600">
+                                Total Requests: {dayOffs.length}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Error Alert */}
@@ -313,7 +573,28 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                 </div>
             )}
 
-            {loading ? (
+            {!supervisorId && !loading ? (
+                <Card>
+                    <CardBody>
+                        <div className="flex flex-col items-center justify-center py-16">
+                            <div className="text-5xl mb-4">🔒</div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                Access Restricted
+                            </h3>
+                            <p className="text-gray-600 text-center max-w-md mb-6">
+                                You need to be logged in as a Supervisor to
+                                access this page.
+                            </p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Reload Page
+                            </button>
+                        </div>
+                    </CardBody>
+                </Card>
+            ) : loading ? (
                 <Card>
                     <CardBody>
                         <div className="flex flex-col items-center justify-center py-16">
@@ -357,8 +638,9 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                         Day Off Requests
                                     </h2>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        {filteredDayOffs.length} of{' '}
-                                        {dayOffs.length} requests
+                                        Showing {filteredDayOffs.length} of{' '}
+                                        {dayOffs.length} requests for your
+                                        approval
                                     </p>
                                 </div>
 
@@ -426,9 +708,9 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                         No Requests Found
                                     </h3>
                                     <p className="text-gray-600 text-center max-w-md">
-                                        There are no day off requests matching
-                                        your filters. Try adjusting your search
-                                        criteria.
+                                        {dayOffs.length === 0
+                                            ? 'You have no day off requests waiting for your approval.'
+                                            : 'There are no day off requests matching your filters. Try adjusting your search criteria.'}
                                     </p>
                                 </div>
                             ) : (
@@ -437,7 +719,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                         <thead>
                                             <tr className="border-b border-gray-200">
                                                 <th className="text-left py-4 px-4 font-semibold text-xs text-gray-700 uppercase tracking-wider">
-                                                    Employee ID
+                                                    Employee
                                                 </th>
                                                 <th className="text-left py-4 px-4 font-semibold text-xs text-gray-700 uppercase tracking-wider">
                                                     Type
@@ -474,16 +756,37 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                           ? 'success'
                                                           : 'danger'
 
+                                                // Get employee display name (not ID)
+                                                const employeeDisplayName =
+                                                    getEmployeeDisplayName(
+                                                        d.employee_id,
+                                                    )
+
+                                                // Get employee ID for subtext
+                                                const employeeId =
+                                                    getEmployeeId(d.employee_id)
+
                                                 return (
                                                     <tr
                                                         key={d._id}
                                                         className="hover:bg-gray-50 transition-colors"
                                                     >
                                                         <td className="py-4 px-4">
-                                                            <span className="font-semibold text-sm text-gray-900">
-                                                                {d.employee_id ||
-                                                                    'N/A'}
-                                                            </span>
+                                                            <div>
+                                                                <span className="font-semibold text-sm text-gray-900 block">
+                                                                    {
+                                                                        employeeDisplayName
+                                                                    }
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">
+                                                                    ID:{' '}
+                                                                    {employeeId.substring(
+                                                                        0,
+                                                                        8,
+                                                                    )}
+                                                                    ...
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td className="py-4 px-4">
                                                             <span className="text-sm text-gray-700">

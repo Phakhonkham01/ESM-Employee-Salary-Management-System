@@ -2,7 +2,11 @@ import React, { useState } from 'react'
 import UserList from './UserList'
 import UserFormModal from './UserFormModal'
 import type { UserData } from '../../services/Create_user/api'
-import { HiUserAdd } from 'react-icons/hi'
+import {
+    HiUserAdd,
+    HiOutlineOfficeBuilding,
+    HiOutlineUserGroup,
+} from 'react-icons/hi'
 
 const MainComponent: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -29,64 +33,120 @@ const MainComponent: React.FC = () => {
     }
 
     return (
-        <div style={{}}>
-            {/* Header */}
-            <div
-                style={{
-                    marginBottom: '5px',
-                    padding: '5px',
+        <div className="min-h-screen bg-gray-50 font-sans">
+            {/* Top Navigation Bar */}
+            {/* <div className="bg-white border-b border-gray-300 px-6 py-3">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <HiOutlineOfficeBuilding className="w-6 h-6 text-[#1F3A5F]" />
+                        <div>
+                            <h1 className="text-lg font-medium text-gray-900">
+                                Human Resources Management System
+                            </h1>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                                User Administration Module
+                            </p>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-xs text-gray-600">
+                            System ID: HRMS-2024
+                        </p>
+                        <p className="text-xs text-gray-600 mt-0.5">
+                            Version: 2.4.1
+                        </p>
+                    </div>
+                </div>
+            </div> */}
 
-                    borderRadius: '12px',
-                }}
-            >
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                    }}
-                >
-                    <h1
-                        style={{
-                            margin: 0,
-                            fontSize: '10px',
-                            fontWeight: '400',
-                            color: '#1f2937',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                        }}
-                    ></h1>
-                    {/* <button
-                        onClick={handleCreateUser}
-                        style={{
-                            padding: '10px 20px',
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            transition: 'all 0.3s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                        }}
-                        onMouseEnter={(e) =>
-                            (e.currentTarget.style.backgroundColor = '#2563eb')
-                        }
-                        onMouseLeave={(e) =>
-                            (e.currentTarget.style.backgroundColor = '#3b82f6')
-                        }
-                    >
-                        <HiUserAdd size={18} />
-                        Create New User
-                    </button> */}
+            {/* Main Content Area */}
+            <div className="">
+                {/* Left Sidebar Navigation */}
+                {/* <div className="w-64 bg-white border-r border-gray-300 min-h-[calc(100vh-64px)]">
+                    <div className="p-5 border-b border-gray-300">
+                        <div className="flex items-center gap-2 text-[#1F3A5F]">
+                            <HiOutlineUserGroup className="w-5 h-5" />
+                            <span className="font-medium text-sm">
+                                User Management
+                            </span>
+                        </div>
+                    </div>
+
+                    <nav className="p-3">
+                        <ul className="space-y-1">
+                            <li>
+                                <button
+                                    onClick={handleCreateUser}
+                                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm bg-[#1F3A5F] text-white hover:bg-[#152642] transition-colors rounded-sm"
+                                >
+                                    <HiUserAdd className="w-4 h-4" />
+                                    Register New User
+                                </button>
+                            </li>
+                            <li>
+                                <a
+                                    href="#"
+                                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors rounded-sm"
+                                >
+                                    <span className="w-4 h-4 flex items-center justify-center">
+                                        📋
+                                    </span>
+                                    Active Users
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#"
+                                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors rounded-sm"
+                                >
+                                    <span className="w-4 h-4 flex items-center justify-center">
+                                        📊
+                                    </span>
+                                    User Reports
+                                </a>
+                            </li>
+                            <li>
+                                <a
+                                    href="#"
+                                    className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors rounded-sm"
+                                >
+                                    <span className="w-4 h-4 flex items-center justify-center">
+                                        ⚙️
+                                    </span>
+                                    System Settings
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div className="mt-auto p-5 border-t border-gray-300">
+                        <div className="text-xs text-gray-500">
+                            <p className="mb-2">
+                                Last Updated:{' '}
+                                {new Date().toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                })}
+                            </p>
+                            <p>© 2024 Company HR System</p>
+                        </div>
+                    </div>
+                </div> */}
+
+                {/* Main Content */}
+                <div className="">
+                    {/* User List Component */}
+                    <div className="bg-white border border-gray-300 rounded-sm">
+                        <UserList
+                            onEdit={handleEditUser}
+                            key={refreshTrigger}
+                        />
+                    </div>
+
+                    {/* Footer Note */}
                 </div>
             </div>
-
-            {/* User List */}
-            <UserList onEdit={handleEditUser} key={refreshTrigger} />
 
             {/* User Form Modal */}
             <UserFormModal
@@ -95,23 +155,6 @@ const MainComponent: React.FC = () => {
                 editingUser={editingUser}
                 onSuccess={handleSuccess}
             />
-
-            {/* Footer */}
-            {/* <div
-                style={{
-                    marginTop: '30px',
-                    padding: '20px',
-                    textAlign: 'center',
-                    color: '#6b7280',
-                    fontSize: '13px',
-                    borderTop: '1px solid #e5e7eb',
-                }}
-            >
-                <p style={{ margin: 0 }}>
-                    User Management System v1.0 • Created with React &
-                    TypeScript
-                </p>
-            </div> */}
         </div>
     )
 }
