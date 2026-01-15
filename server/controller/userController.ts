@@ -1,7 +1,13 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../model/userModel.js";
 import bcrypt from "bcryptjs";
-
+interface AuthRequest extends Request {
+  user?: {
+    _id: string;
+    role: string;
+    email: string;
+  };
+}
 // Create User
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -105,6 +111,118 @@ const user = await User.findById(id)
     res.status(200).json({ user });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+};
+// ในไฟล์ userController.js
+// ต้อง import Model User
+
+export const updateVacationDays = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { vacation_days, updated_by, update_reason } = req.body;
+
+    // ตรวจสอบข้อมูลที่จำเป็น
+    if (vacation_days === undefined || vacation_days === null) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "ต้องระบุจำนวนวันลา (vacation_days)" 
+      });
+    }
+
+    // ตรวจสอบว่าผู้ใช้มีอยู่หรือไม่
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "ไม่พบผู้ใช้" 
+      });
+    }
+
+    // คำนวณวันขาด (ถ้าวันลาใหม่ติดลบ)
+    const absentDays = vacation_days < 0 ? Math.abs(vacation_days) : 0;
+    const daysReduced = user.vacation_days - vacation_days;
+    
+    // ใช้ค่า updated_by จาก body หรือจาก req.user (ถ้ามี)
+    const updatedBy = updated_by || (req.user ? req.user._id : null);
+
+    // อัพเดทวันลาพักร้อน (สามารถติดลบได้)
+    const updateData: any = { 
+      vacation_days: vacation_days,
+      $push: {
+        vacation_day_updates: {
+          old_vacation_days: user.vacation_days,
+          new_vacation_days: vacation_days,
+          updated_by: updatedBy,
+          update_reason: update_reason || 
+            (vacation_days < 0 
+              ? `ขาดงานเกินวันลา (ขาดเพิ่ม ${Math.abs(vacation_days)} วัน)` 
+              : "อัพเดทจากระบบคำนวณเงินเดือน"),
+          updated_at: new Date()
+        }
+      }
+    };
+
+    // เพิ่ม vacation_stats ถ้ามี
+    if (user.vacation_stats) {
+      updateData.$inc = { 
+        "vacation_stats.total_absent_days": absentDays 
+      };
+      updateData.$set = {
+        "vacation_stats.last_calculation_date": new Date()
+      };
+    }
+
+    // อัพเดทข้อมูล
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      updateData,
+      { 
+        new: true, 
+        runValidators: true 
+      }
+    ).select("-password");
+
+    // ตรวจสอบว่า updatedUser ไม่ใช่ null
+    if (!updatedUser) {
+      return res.status(500).json({ 
+        success: false, 
+        message: "ไม่สามารถอัพเดทข้อมูลผู้ใช้ได้" 
+      });
+    }
+
+    // สร้างข้อความตอบกลับ
+    let message = "อัพเดทวันลาพักร้อนสำเร็จ";
+    let details = "";
+    
+    if (vacation_days < 0) {
+      details = `พนักงานขาดงานเกินวันลาไป ${Math.abs(vacation_days)} วัน`;
+    } else if (vacation_days === 0) {
+      details = "วันลาหมดแล้ว";
+    } else {
+      details = `เหลือวันลาอีก ${vacation_days} วัน`;
+    }
+
+    res.json({ 
+      success: true, 
+      message: message,
+      details: details,
+      data: {
+        ...updatedUser.toObject(),
+        summary: {
+          previous_days: user.vacation_days,
+          current_days: vacation_days,
+          days_changed: daysReduced,
+          is_in_deficit: vacation_days < 0,
+          deficit_days: vacation_days < 0 ? Math.abs(vacation_days) : 0
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error("ข้อผิดพลาดในการอัพเดทวันลา:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "เกิดข้อผิดพลาดในการอัพเดทวันลา" 
+    });
   }
 };
 

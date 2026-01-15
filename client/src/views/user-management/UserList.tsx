@@ -376,12 +376,12 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
             </main>
 
             {/* Footer */}
-            <footer className="w-full bg-white border-t border-[#E5E7EB] px-8 py-4">
+            {/* <footer className="w-full bg-white border-t border-[#E5E7EB] px-8 py-4">
                 <div className="flex justify-between items-center text-sm text-[#6B7280]">
                     <div>User Management System</div>
                     <div>Last Updated: {new Date().toLocaleDateString()}</div>
                 </div>
-            </footer>
+            </footer> */}
 
             {/* Delete Confirmation Dialog */}
             {deleteConfirmUser && (

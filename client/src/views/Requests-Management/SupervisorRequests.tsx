@@ -246,7 +246,7 @@ const SupervisorRequests: FC = () => {
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
             {/* Header */}
-            <div className="bg-[#1F3A5F] text-white">
+            {/* <div className="bg-[#1F3A5F] text-white">
                 <div className="px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div>
@@ -281,7 +281,7 @@ const SupervisorRequests: FC = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             <div className="p-6">
                 {/* Error Message */}

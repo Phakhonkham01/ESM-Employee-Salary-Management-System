@@ -4,6 +4,34 @@ import Salary, { ISalary } from "../model/salaryModel.js";
 import User from "../model/userModel.js";
 import RequestModel from "../model/requestModel.js";
 import DayOffRequestModel from "../model/dayOffRequestModel.js";
+import Department from "../model/departmentModel.js";
+import Position from "../model/posistionModel.js";
+
+// Interface สำหรับข้อมูล
+interface DepartmentData {
+  _id: mongoose.Types.ObjectId;
+  department_name: string;
+}
+interface OTDetail {
+  date: Date;
+  title: string;
+  start_hour: string;
+  end_hour: string;
+  total_hours: number;
+  ot_type: 'weekday' | 'weekend';
+  hourly_rate: number;
+  rate_per_day: number;
+  amount: number;
+  description?: string;
+  request_id?: mongoose.Types.ObjectId;
+  is_manual: boolean;
+  days?: number;
+}
+
+interface PositionData {
+  _id: mongoose.Types.ObjectId;
+  position_name: string;
+}
 
 /**
  * Helper function to get current month/year
@@ -11,13 +39,13 @@ import DayOffRequestModel from "../model/dayOffRequestModel.js";
 const getCurrentMonthYear = () => {
   const now = new Date();
   return {
-    month: now.getMonth() + 1,
+    month: now.getMonth() + 1,  
     year: now.getFullYear()
   };
 };
 
 /**
- * Helper function to calculate OT from requests (แบบใหม่ ไม่ใช้ multiplier)
+ * Helper function to calculate OT from requests
  */
 const calculateOTWithoutMultiplier = async (
   userId: string, 
@@ -124,6 +152,7 @@ const calculateOTWithoutMultiplier = async (
     };
   }
 };
+
 /**
  * Helper function to calculate fuel costs from FIELD_WORK requests
  */
@@ -147,7 +176,7 @@ const calculateFuelCosts = async (
       fuel: { $exists: true, $ne: null }
     });
 
-    // ✅ รวมค่า fuel จากทุก request
+    // รวมค่า fuel จากทุก request
     const totalFuelCost = fieldWorkRequests.reduce(
       (sum, req) => sum + (req.fuel || 0),
       0
@@ -241,8 +270,13 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
 
     // ✅ ถ้ามี salary ในเดือน/ปีนี้แล้ว
     if (existingSalary) {
-      // ... existing validation code ...
-
+      if (existingSalary.status !== 'pending') {
+        res.status(400).json({ 
+          message: `Salary for ${currentMonth}/${currentYear} has already been ${existingSalary.status}. Cannot modify.`, 
+          salary: null 
+        });
+        return;
+      }
       console.log('Updating existing salary for month:', currentMonth, 'year:', currentYear);
     }
 
@@ -253,10 +287,10 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // 📊 คำนวณค่าต่างๆ (ถ้าไม่ได้ส่งมาจาก frontend ให้คำนวณจากระบบ)
+    // 📊 คำนวณค่าต่างๆ
     const finalBaseSalary = base_salary || user.base_salary || 0;
     
-    // แยก OT details เป็น manual และ auto (ถ้ามี)
+    // แยก OT details เป็น manual และ auto
     const manualOTDetails = Array.isArray(ot_details) 
       ? ot_details.filter((detail: any) => detail.is_manual === true)
       : [];
@@ -265,16 +299,24 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
       ? ot_details.filter((detail: any) => !detail.is_manual)
       : [];
 
-    // คำนวณ OT จากระบบ (ถ้ามีคำขอ OT ที่อนุมัติแล้ว)
-    let autoOTCalculation = { 
-      total_amount: 0, 
-      total_hours: 0, 
-      details: [],
-      weekday_ot_hours: 0,
-      weekend_ot_hours: 0,
-      weekday_ot_amount: 0,
-      weekend_ot_amount: 0
-    };
+let autoOTCalculation: {
+  total_amount: number;
+  total_hours: number;
+  details: OTDetail[]; // ✅
+  weekday_ot_hours: number;
+  weekend_ot_hours: number;
+  weekday_ot_amount: number;
+  weekend_ot_amount: number;
+} = {
+  total_amount: 0,
+  total_hours: 0,
+  details: [], // OK แล้ว
+  weekday_ot_hours: 0,
+  weekend_ot_hours: 0,
+  weekday_ot_amount: 0,
+  weekend_ot_amount: 0
+};
+
     
     if (autoOTDetails.length === 0) {
       // ถ้าไม่มี auto OT details จาก frontend ให้คำนวณจากระบบ
@@ -311,13 +353,13 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
     const manualWeekendOTAmount = manualWeekendDetails.reduce((sum: number, detail: any) => sum + (detail.amount || 0), 0);
     const manualWeekendOTDays = manualWeekendDetails.reduce((sum: number, detail: any) => sum + (detail.days || 0), 0);
 
-    // รวม OT ทั้งหมด (manual + auto)
+    // รวม OT ทั้งหมด
     const finalOTAmount = (ot_amount !== undefined ? ot_amount : (autoOTCalculation.total_amount + manualOTAmount));
     const finalOTHours = (ot_hours !== undefined ? ot_hours : (autoOTCalculation.total_hours + manualOTHours));
     
     // รวม OT แยกประเภท
     const finalWeekdayOTHours = autoOTCalculation.weekday_ot_hours + manualWeekdayOTHours;
-    const finalWeekendOTHours = autoOTCalculation.weekend_ot_hours + (manualWeekendOTDays * 8); // แปลงวันเป็นชั่วโมง
+    const finalWeekendOTHours = autoOTCalculation.weekend_ot_hours + (manualWeekendOTDays * 8);
     const finalWeekdayOTAmount = autoOTCalculation.weekday_ot_amount + manualWeekdayOTAmount;
     const finalWeekendOTAmount = autoOTCalculation.weekend_ot_amount + manualWeekendOTAmount;
     
@@ -327,7 +369,7 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
       ...manualOTDetails
     ];
 
-    // คำนวณ fuel costs (ถ้าไม่ได้ส่งมาจาก frontend)
+    // คำนวณ fuel costs
     const finalFuelCosts = fuel_costs !== undefined ? fuel_costs : await calculateFuelCosts(user_id, currentMonth, currentYear);
     
     const day_off_days = await calculateDayOffDays(user_id, currentMonth, currentYear);
@@ -360,7 +402,6 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
         ot_amount: finalOTAmount,
         ot_hours: finalOTHours,
         ot_details: allOTDetails,
-        // OT แยกประเภท
         weekday_ot_hours: finalWeekdayOTHours,
         weekend_ot_hours: finalWeekendOTHours,
         weekday_ot_amount: finalWeekdayOTAmount,
@@ -403,13 +444,8 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // 🆕 CREATE ใหม่ (กรณีไม่มี salary ในเดือน/ปีนี้)
+    // 🆕 CREATE ใหม่
     console.log('Creating new salary for month:', currentMonth, 'year:', currentYear);
-    console.log('OT Details:', {
-      weekday: { hours: finalWeekdayOTHours, amount: finalWeekdayOTAmount },
-      weekend: { hours: finalWeekendOTHours, amount: finalWeekendOTAmount },
-      total: { hours: finalOTHours, amount: finalOTAmount }
-    });
 
     const newSalary = await Salary.create({
       user_id,
@@ -419,7 +455,6 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
       ot_amount: finalOTAmount,
       ot_hours: finalOTHours,
       ot_details: allOTDetails,
-      // OT แยกประเภท
       weekday_ot_hours: finalWeekdayOTHours,
       weekend_ot_hours: finalWeekendOTHours,
       weekday_ot_amount: finalWeekdayOTAmount,
@@ -474,162 +509,187 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
   }
 };
 
-// ใน salaryController.ts เพิ่มฟังก์ชันนี้
 /**
- * GET - Get OT summary by type
- * GET /api/salaries/ot-summary/:userId
+ * GET - Get all salaries with department and position names
+ * GET /api/salaries
  */
-export const getOTSummaryByType = async (req: Request, res: Response): Promise<void> => {
+export const getAllSalaries = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { userId } = req.params;
-    const { month, year } = req.query;
+    const { month, year, status, userId } = req.query;
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      res.status(400).json({ 
-        message: "Invalid user ID",
-        summary: null
+    const filter: any = {};
+
+    if (month) filter.month = parseInt(month as string);
+    if (year) filter.year = parseInt(year as string);
+    if (status) filter.status = status;
+    if (userId) filter.user_id = userId;
+
+    // ดึงข้อมูล salaries
+    const salaries = await Salary.find(filter)
+      .populate("user_id", "first_name_en last_name_en email role department_id position_id")
+      .populate("created_by", "first_name_en last_name_en")
+      .sort({ year: -1, month: -1, created_at: -1 })
+      .lean();
+
+    // ถ้าไม่มีข้อมูล
+    if (salaries.length === 0) {
+      res.status(200).json({
+        message: "No salaries found",
+        count: 0,
+        salaries: []
       });
       return;
     }
 
-    const currentMonth = month ? parseInt(month as string) : getCurrentMonthYear().month;
-    const currentYear = year ? parseInt(year as string) : getCurrentMonthYear().year;
+    // ดึง department IDs ทั้งหมด
+    const departmentIds: string[] = [];
+    const positionIds: string[] = [];
 
-    // หา salary ของเดือน/ปีนั้น
-    const salary = await Salary.findOne({
-      user_id: userId,
-      month: currentMonth,
-      year: currentYear
+    salaries.forEach(salary => {
+      const user = salary.user_id as any;
+      if (user?.department_id) {
+        departmentIds.push(user.department_id.toString());
+      }
+      if (user?.position_id) {
+        positionIds.push(user.position_id.toString());
+      }
     });
+
+    // ดึงข้อมูล departments และ positions
+    const [departments, positions] = await Promise.all([
+      Department.find({ _id: { $in: departmentIds } }, "_id department_name").lean(),
+      Position.find({ _id: { $in: positionIds } }, "_id position_name").lean()
+    ]);
+
+    // สร้าง lookup maps
+    const deptMap: Record<string, string> = {};
+    departments.forEach((dept: any) => {
+      deptMap[dept._id.toString()] = dept.department_name;
+    });
+
+    const posMap: Record<string, string> = {};
+    positions.forEach((pos: any) => {
+      posMap[pos._id.toString()] = pos.position_name;
+    });
+
+    // แปลงข้อมูล salaries
+    const formattedSalaries = salaries.map(salary => {
+      const user = salary.user_id as any;
+      
+      return {
+        ...salary,
+        user_id: {
+          _id: user?._id || '',
+          first_name_en: user?.first_name_en || '',
+          last_name_en: user?.last_name_en || '',
+          email: user?.email || '',
+          role: user?.role || 'Employee',
+          department_id: user?.department_id ? {
+            _id: user.department_id,
+            name: deptMap[user.department_id.toString()] || `Dept ID: ${user.department_id}`
+          } : null,
+          position_id: user?.position_id ? {
+            _id: user.position_id,
+            name: posMap[user.position_id.toString()] || `Pos ID: ${user.position_id}`
+          } : null
+        }
+      };
+    });
+
+    res.status(200).json({
+      message: "Salaries retrieved successfully",
+      count: formattedSalaries.length,
+      salaries: formattedSalaries
+    });
+  } catch (error: any) {
+    console.error("Error fetching salaries:", error);
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      salaries: []
+    });
+  }
+};
+
+/**
+ * GET - Get salary by ID with details
+ * GET /api/salaries/:id
+ */
+export const getSalaryById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      res.status(400).json({ 
+        message: "Invalid salary ID",
+        salary: null
+      });
+      return;
+    }
+
+    const salary = await Salary.findById(id)
+      .populate("user_id", "first_name_en last_name_en email role department_id position_id")
+      .populate("created_by", "first_name_en last_name_en");
 
     if (!salary) {
       res.status(404).json({ 
-        message: "Salary not found for this month/year",
-        summary: null
+        message: "Salary not found",
+        salary: null
       });
       return;
     }
 
-    // สรุปข้อมูล OT
-    const otSummary = {
-      total: {
-        hours: salary.ot_hours,
-        amount: salary.ot_amount
-      },
-      weekday: {
-        hours: salary.weekday_ot_hours,
-        amount: salary.weekday_ot_amount,
-        details: salary.ot_details.filter((detail: any) => detail.ot_type === 'weekday')
-      },
-      weekend: {
-        hours: salary.weekend_ot_hours,
-        amount: salary.weekend_ot_amount,
-        details: salary.ot_details.filter((detail: any) => detail.ot_type === 'weekend')
-      },
-      manual_count: salary.ot_details.filter((detail: any) => detail.is_manual === true).length,
-      auto_count: salary.ot_details.filter((detail: any) => !detail.is_manual).length
+    // ดึงข้อมูล department และ position
+    const user = salary.user_id as any;
+    let departmentInfo = null;
+    let positionInfo = null;
+
+    if (user?.department_id) {
+      const department = await Department.findById(user.department_id, "department_name");
+      if (department) {
+        departmentInfo = {
+          _id: department._id,
+          name: department.department_name
+        };
+      }
+    }
+
+    if (user?.position_id) {
+      const position = await Position.findById(user.position_id, "position_name");
+      if (position) {
+        positionInfo = {
+          _id: position._id,
+          name: position.position_name
+        };
+      }
+    }
+
+    // Format ข้อมูล
+    const formattedSalary = {
+      ...salary.toObject(),
+      user_id: {
+        ...user,
+        department_id: departmentInfo,
+        position_id: positionInfo
+      }
     };
 
     res.status(200).json({
-      message: "OT summary retrieved successfully",
-      summary: otSummary,
-      salary_id: salary._id
+      message: "Salary retrieved successfully",
+      salary: formattedSalary
     });
   } catch (error: any) {
-    console.error("Error getting OT summary:", error);
+    console.error("Error fetching salary:", error);
     res.status(500).json({ 
       message: "Server error", 
       error: error.message,
-      summary: null
+      salary: null
     });
   }
 };
 
 /**
- * GET - Get all OT by type for user
- * GET /api/salaries/ot-by-type/:userId
- */
-export const getAllOTByType = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { userId } = req.params;
-    const { startMonth, startYear, endMonth, endYear } = req.query;
-
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      res.status(400).json({ 
-        message: "Invalid user ID",
-        ot_data: null
-      });
-      return;
-    }
-
-    const filter: any = { user_id: userId };
-    
-    if (startMonth && startYear && endMonth && endYear) {
-      filter.$or = [
-        {
-          $and: [
-            { year: parseInt(startYear as string) },
-            { month: { $gte: parseInt(startMonth as string) } }
-          ]
-        },
-        {
-          $and: [
-            { year: { $gt: parseInt(startYear as string) } },
-            { year: { $lt: parseInt(endYear as string) } }
-          ]
-        },
-        {
-          $and: [
-            { year: parseInt(endYear as string) },
-            { month: { $lte: parseInt(endMonth as string) } }
-          ]
-        }
-      ];
-    }
-
-    const salaries = await Salary.find(filter)
-      .select("month year ot_amount ot_hours weekday_ot_hours weekend_ot_hours weekday_ot_amount weekend_ot_amount")
-      .sort({ year: 1, month: 1 });
-
-    // สรุปข้อมูลทั้งหมด
-    const summary = salaries.reduce((acc, salary) => {
-      acc.total_ot_amount += salary.ot_amount;
-      acc.total_ot_hours += salary.ot_hours;
-      acc.total_weekday_ot_amount += salary.weekday_ot_amount;
-      acc.total_weekday_ot_hours += salary.weekday_ot_hours;
-      acc.total_weekend_ot_amount += salary.weekend_ot_amount;
-      acc.total_weekend_ot_hours += salary.weekend_ot_hours;
-      acc.months_count++;
-      return acc;
-    }, {
-      total_ot_amount: 0,
-      total_ot_hours: 0,
-      total_weekday_ot_amount: 0,
-      total_weekday_ot_hours: 0,
-      total_weekend_ot_amount: 0,
-      total_weekend_ot_hours: 0,
-      months_count: 0
-    });
-
-    res.status(200).json({
-      message: "OT by type retrieved successfully",
-      data: {
-        salaries,
-        summary,
-        count: salaries.length
-      }
-    });
-  } catch (error: any) {
-    console.error("Error getting OT by type:", error);
-    res.status(500).json({ 
-      message: "Server error", 
-      error: error.message,
-      data: null
-    });
-  }
-};
-/**
- * GET - Get salary data for form (pre-fill data)
+ * GET - Get prefill data for salary form
  * GET /api/salaries/prefill/:userId
  */
 export const getPrefillData = async (req: Request, res: Response): Promise<void> => {
@@ -650,7 +710,9 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
 
     // Get user data
     const user = await User.findById(userId)
-      .select("first_name_en last_name_en base_salary vacation_days");
+      .select("first_name_en last_name_en base_salary vacation_days role department_id position_id")
+      .populate("department_id", "department_name")
+      .populate("position_id", "position_name");
 
     if (!user) {
       res.status(404).json({ 
@@ -660,22 +722,34 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Calculate OT (แบบใหม่ ไม่ใช้ multiplier)
+    // Calculate OT
     const otCalculation = await calculateOTWithoutMultiplier(userId, currentMonth, currentYear);
     const fuel_costs = await calculateFuelCosts(userId, currentMonth, currentYear);
     const day_off_days = await calculateDayOffDays(userId, currentMonth, currentYear);
     const remaining_vacation_days = Math.max(
-      0,
+      -365,
       (user.vacation_days || 0) - day_off_days
     );
 
     // Determine color for vacation days
-    let vacationColor = 'green'; // Default green
+    let vacationColor = 'green';
     if (remaining_vacation_days < 0) {
       vacationColor = 'red';
     } else if (remaining_vacation_days <= 5) {
       vacationColor = 'yellow';
     }
+
+    // Get department and position info
+    const userObj = user.toObject() as any;
+    const departmentInfo = userObj.department_id ? {
+      _id: userObj.department_id._id,
+      name: userObj.department_id.department_name
+    } : null;
+
+    const positionInfo = userObj.position_id ? {
+      _id: userObj.position_id._id,
+      name: userObj.position_id.position_name
+    } : null;
 
     res.status(200).json({
       message: "Prefill data retrieved successfully",
@@ -684,7 +758,10 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
           _id: user._id,
           name: `${user.first_name_en} ${user.last_name_en}`,
           base_salary: user.base_salary || 0,
-          vacation_days: user.vacation_days || 0
+          vacation_days: user.vacation_days || 0,
+          role: user.role || 'Employee',
+          department_id: departmentInfo,
+          position_id: positionInfo
         },
         calculated: {
           ot_amount: otCalculation.total_amount,
@@ -709,84 +786,6 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
       message: "Server error", 
       error: error.message,
       data: null
-    });
-  }
-};
-
-
-/**
- * GET - Get all salaries
- * GET /api/salaries
- */
-export const getAllSalaries = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { month, year, status, userId } = req.query;
-
-    const filter: any = {};
-
-    if (month) filter.month = parseInt(month as string);
-    if (year) filter.year = parseInt(year as string);
-    if (status) filter.status = status;
-    if (userId) filter.user_id = userId;
-
-    const salaries = await Salary.find(filter)
-      .populate("user_id", "first_name_en last_name_en email")
-      .populate("created_by", "first_name_en last_name_en")
-      .sort({ year: -1, month: -1, created_at: -1 });
-
-    res.status(200).json({
-      message: "Salaries retrieved successfully",
-      count: salaries.length,
-      salaries
-    });
-  } catch (error: any) {
-    console.error("Error fetching salaries:", error);
-    res.status(500).json({ 
-      message: "Server error", 
-      error: error.message,
-      salaries: []
-    });
-  }
-};
-
-/**
- * GET - Get salary by ID
- * GET /api/salaries/:id
- */
-export const getSalaryById = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      res.status(400).json({ 
-        message: "Invalid salary ID",
-        salary: null
-      });
-      return;
-    }
-
-    const salary = await Salary.findById(id)
-      .populate("user_id", "first_name_en last_name_en email base_salary vacation_days")
-      .populate("created_by", "first_name_en last_name_en");
-
-    if (!salary) {
-      res.status(404).json({ 
-        message: "Salary not found",
-        salary: null
-      });
-      return;
-    }
-
-    res.status(200).json({
-      message: "Salary retrieved successfully",
-      salary
-    });
-  } catch (error: any) {
-    console.error("Error fetching salary:", error);
-    res.status(500).json({ 
-      message: "Server error", 
-      error: error.message,
-      salary: null
     });
   }
 };
@@ -1034,6 +1033,160 @@ export const getSalarySummary = async (req: Request, res: Response): Promise<voi
       message: "Server error", 
       error: error.message,
       summary: null
+    });
+  }
+};
+
+/**
+ * GET - Get OT summary by type
+ * GET /api/salaries/ot-summary/:userId
+ */
+export const getOTSummaryByType = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { month, year } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(400).json({ 
+        message: "Invalid user ID",
+        summary: null
+      });
+      return;
+    }
+
+    const currentMonth = month ? parseInt(month as string) : getCurrentMonthYear().month;
+    const currentYear = year ? parseInt(year as string) : getCurrentMonthYear().year;
+
+    // หา salary ของเดือน/ปีนั้น
+    const salary = await Salary.findOne({
+      user_id: userId,
+      month: currentMonth,
+      year: currentYear
+    });
+
+    if (!salary) {
+      res.status(404).json({ 
+        message: "Salary not found for this month/year",
+        summary: null
+      });
+      return;
+    }
+
+    // สรุปข้อมูล OT
+    const otSummary = {
+      total: {
+        hours: salary.ot_hours,
+        amount: salary.ot_amount
+      },
+      weekday: {
+        hours: salary.weekday_ot_hours,
+        amount: salary.weekday_ot_amount,
+        details: salary.ot_details.filter((detail: any) => detail.ot_type === 'weekday')
+      },
+      weekend: {
+        hours: salary.weekend_ot_hours,
+        amount: salary.weekend_ot_amount,
+        details: salary.ot_details.filter((detail: any) => detail.ot_type === 'weekend')
+      },
+      manual_count: salary.ot_details.filter((detail: any) => detail.is_manual === true).length,
+      auto_count: salary.ot_details.filter((detail: any) => !detail.is_manual).length
+    };
+
+    res.status(200).json({
+      message: "OT summary retrieved successfully",
+      summary: otSummary,
+      salary_id: salary._id
+    });
+  } catch (error: any) {
+    console.error("Error getting OT summary:", error);
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      summary: null
+    });
+  }
+};
+
+/**
+ * GET - Get all OT by type for user
+ * GET /api/salaries/ot-by-type/:userId
+ */
+export const getAllOTByType = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { startMonth, startYear, endMonth, endYear } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(400).json({ 
+        message: "Invalid user ID",
+        ot_data: null
+      });
+      return;
+    }
+
+    const filter: any = { user_id: userId };
+    
+    if (startMonth && startYear && endMonth && endYear) {
+      filter.$or = [
+        {
+          $and: [
+            { year: parseInt(startYear as string) },
+            { month: { $gte: parseInt(startMonth as string) } }
+          ]
+        },
+        {
+          $and: [
+            { year: { $gt: parseInt(startYear as string) } },
+            { year: { $lt: parseInt(endYear as string) } }
+          ]
+        },
+        {
+          $and: [
+            { year: parseInt(endYear as string) },
+            { month: { $lte: parseInt(endMonth as string) } }
+          ]
+        }
+      ];
+    }
+
+    const salaries = await Salary.find(filter)
+      .select("month year ot_amount ot_hours weekday_ot_hours weekend_ot_hours weekday_ot_amount weekend_ot_amount")
+      .sort({ year: 1, month: 1 });
+
+    // สรุปข้อมูลทั้งหมด
+    const summary = salaries.reduce((acc, salary) => {
+      acc.total_ot_amount += salary.ot_amount;
+      acc.total_ot_hours += salary.ot_hours;
+      acc.total_weekday_ot_amount += salary.weekday_ot_amount;
+      acc.total_weekday_ot_hours += salary.weekday_ot_hours;
+      acc.total_weekend_ot_amount += salary.weekend_ot_amount;
+      acc.total_weekend_ot_hours += salary.weekend_ot_hours;
+      acc.months_count++;
+      return acc;
+    }, {
+      total_ot_amount: 0,
+      total_ot_hours: 0,
+      total_weekday_ot_amount: 0,
+      total_weekday_ot_hours: 0,
+      total_weekend_ot_amount: 0,
+      total_weekend_ot_hours: 0,
+      months_count: 0
+    });
+
+    res.status(200).json({
+      message: "OT by type retrieved successfully",
+      data: {
+        salaries,
+        summary,
+        count: salaries.length
+      }
+    });
+  } catch (error: any) {
+    console.error("Error getting OT by type:", error);
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      data: null
     });
   }
 };

@@ -71,9 +71,9 @@ function AuthProvider({ children }: AuthProviderProps) {
         setToken('')
         setUser({})
         setSessionSignedIn(false)
-        
-    // ✅ CLEAR STORAGE
-    localStorage.removeItem('auth')
+
+        // ✅ CLEAR STORAGE
+        localStorage.removeItem('auth')
     }
 
     const signIn = async (values: SignInCredential): AuthResult => {
@@ -85,7 +85,7 @@ function AuthProvider({ children }: AuthProviderProps) {
                 // แปลง user data จาก database ให้ตรงกับ format ที่ app ต้องการ
                 const userData: User = {
                     email: resp.user.email,
-                    userName: `${resp.user.name} ${resp.user.lastname}`,
+                    userName: `${resp.user} ${resp.user}`,
                     authority: [resp.user.role], // ['Admin'], ['Supervisor'], ['Employee']
                     avatar: '', // ถ้ามี avatar ให้เพิ่มใน database
                 }
@@ -94,13 +94,13 @@ function AuthProvider({ children }: AuthProviderProps) {
                 const token = 'mock-token-' + resp.user._id
 
                 // ✅ SAVE LOGIN DATA
-            localStorage.setItem(
-                'auth',
-                JSON.stringify({
-                    token,
-                    user: resp.user, // full DB user (id, role, etc.)
-                })
-            )
+                localStorage.setItem(
+                    'auth',
+                    JSON.stringify({
+                        token,
+                        user: resp.user, // full DB user (id, role, etc.)
+                    }),
+                )
                 handleSignIn({ accessToken: token }, userData)
                 redirect()
                 return {

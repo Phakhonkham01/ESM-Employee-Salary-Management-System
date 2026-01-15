@@ -1,9 +1,21 @@
-import React, { useState, useEffect } from 'react'
-import { Search, Plus, AlertCircle, Calendar } from 'lucide-react'
+'use client'
+
+import type React from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import {
+    Search,
+    Plus,
+    AlertCircle,
+    Calendar,
+    Users,
+    DollarSign,
+    Briefcase,
+    ChevronDown,
+} from 'lucide-react'
 import axios from 'axios'
 import SalaryCalculator from './SalaryCalculator'
 
-// Interface สำหรับผู้ใช้
+// Interface for users
 interface User {
     _id: string
     first_name_en: string
@@ -23,7 +35,7 @@ interface User {
     vacation_days?: number
 }
 
-// Interface สำหรับเงินเดือนที่มีอยู่แล้ว
+// Interface for existing salaries
 interface ExistingSalary {
     _id: string
     month: number
@@ -39,7 +51,11 @@ const SalaryListUser: React.FC = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // State สำหรับ Dialog
+    const [filterDepartment, setFilterDepartment] = useState<string>('all')
+    const [filterPosition, setFilterPosition] = useState<string>('all')
+    const [filterStatus, setFilterStatus] = useState<string>('all')
+
+    // State for Dialog
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [openCalculator, setOpenCalculator] = useState(false)
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
@@ -53,7 +69,37 @@ const SalaryListUser: React.FC = () => {
         new Date().getFullYear(),
     )
 
-    // ดึงข้อมูลผู้ใช้
+    const departments = useMemo(() => {
+        const deptSet = new Set<string>()
+        users.forEach((user) => {
+            if (user.department_id?.department_name) {
+                deptSet.add(user.department_id.department_name)
+            }
+        })
+        return Array.from(deptSet).sort()
+    }, [users])
+
+    const positions = useMemo(() => {
+        const posSet = new Set<string>()
+        users.forEach((user) => {
+            if (user.position_id?.position_name) {
+                posSet.add(user.position_id.position_name)
+            }
+        })
+        return Array.from(posSet).sort()
+    }, [users])
+
+    const statuses = useMemo(() => {
+        const statusSet = new Set<string>()
+        users.forEach((user) => {
+            if (user.status) {
+                statusSet.add(user.status)
+            }
+        })
+        return Array.from(statusSet).sort()
+    }, [users])
+
+    // Fetch users
     const fetchUsers = async () => {
         try {
             setLoading(true)
@@ -70,7 +116,7 @@ const SalaryListUser: React.FC = () => {
         }
     }
 
-    // ดึงข้อมูลเงินเดือนที่มีอยู่สำหรับผู้ใช้ที่เลือก
+    // Fetch existing salaries for selected user
     const fetchExistingSalaries = async (userId: string) => {
         try {
             const response = await axios.get(`/api/salaries?userId=${userId}`)
@@ -87,10 +133,11 @@ const SalaryListUser: React.FC = () => {
     }, [])
 
     useEffect(() => {
-        if (searchTerm.trim() === '') {
-            setFilteredUsers(users)
-        } else {
-            const filtered = users.filter(
+        let filtered = users
+
+        // Search filter
+        if (searchTerm.trim() !== '') {
+            filtered = filtered.filter(
                 (user) =>
                     `${user.first_name_en} ${user.last_name_en}`
                         .toLowerCase()
@@ -100,11 +147,32 @@ const SalaryListUser: React.FC = () => {
                         .includes(searchTerm.toLowerCase()) ||
                     user.role.toLowerCase().includes(searchTerm.toLowerCase()),
             )
-            setFilteredUsers(filtered)
         }
-    }, [searchTerm, users])
 
-    // ตรวจสอบว่าเงินเดือนสำหรับเดือนที่เลือกมีอยู่แล้วหรือไม่
+        // Department filter
+        if (filterDepartment !== 'all') {
+            filtered = filtered.filter(
+                (user) =>
+                    user.department_id?.department_name === filterDepartment,
+            )
+        }
+
+        // Position filter
+        if (filterPosition !== 'all') {
+            filtered = filtered.filter(
+                (user) => user.position_id?.position_name === filterPosition,
+            )
+        }
+
+        // Status filter
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter((user) => user.status === filterStatus)
+        }
+
+        setFilteredUsers(filtered)
+    }, [searchTerm, users, filterDepartment, filterPosition, filterStatus])
+
+    // Check if salary for selected month already exists
     const checkExistingSalary = (
         userId: string,
         month: number,
@@ -139,27 +207,27 @@ const SalaryListUser: React.FC = () => {
         fetchUsers()
     }
 
-    const getStatusColor = (status: string) => {
+    const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Active':
-                return 'bg-green-100 text-green-800'
+                return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             case 'Inactive':
-                return 'bg-red-100 text-red-800'
+                return 'bg-red-50 text-red-700 border border-red-200'
             default:
-                return 'bg-gray-100 text-gray-800'
+                return 'bg-gray-50 text-gray-700 border border-gray-200'
         }
     }
 
-    const getRoleColor = (role: string) => {
+    const getRoleBadge = (role: string) => {
         switch (role) {
             case 'Admin':
-                return 'bg-red-100 text-red-800'
+                return 'bg-red-50 text-red-700 border border-red-200'
             case 'Supervisor':
-                return 'bg-yellow-100 text-yellow-800'
+                return 'bg-amber-50 text-amber-700 border border-amber-200'
             case 'User':
-                return 'bg-blue-100 text-blue-800'
+                return 'bg-blue-50 text-blue-700 border border-blue-200'
             default:
-                return 'bg-gray-100 text-gray-800'
+                return 'bg-gray-50 text-gray-700 border border-gray-200'
         }
     }
 
@@ -190,18 +258,26 @@ const SalaryListUser: React.FC = () => {
         return months[month - 1] || ''
     }
 
+    // Summary statistics
+    const totalUsers = users.length
+    const activeUsers = users.filter((u) => u.status === 'Active').length
+    const totalBaseSalary = users.reduce(
+        (sum, u) => sum + (u.base_salary || 0),
+        0,
+    )
+
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="text-lg text-gray-600">Loading users...</div>
+            <div className="min-h-screen bg-[#F9FAFB] flex justify-center items-center">
+                <div className="text-[#6B7280]">Loading users...</div>
             </div>
         )
     }
 
     if (error) {
         return (
-            <div className="p-4">
-                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center gap-2">
+            <div className="min-h-screen bg-[#F9FAFB] p-6">
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center gap-2">
                     <AlertCircle className="w-5 h-5" />
                     <span>{error}</span>
                 </div>
@@ -210,206 +286,379 @@ const SalaryListUser: React.FC = () => {
     }
 
     return (
-        <div className="p-6">
+        <div className="min-h-screen bg-[#F9FAFB]">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">
-                    Salary Calculation
-                </h1>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                        type="text"
-                        placeholder="Search by name, email, or role"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+
+            <div className="p-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-[#1F3A5F]/10 rounded flex items-center justify-center">
+                                <Users className="w-5 h-5 text-[#1F3A5F]" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-[#6B7280]">
+                                    Total Employees
+                                </p>
+                                <p className="text-xl font-semibold text-[#1F3A5F]">
+                                    {totalUsers}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-emerald-50 rounded flex items-center justify-center">
+                                <Briefcase className="w-5 h-5 text-emerald-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-[#6B7280]">
+                                    Active Employees
+                                </p>
+                                <p className="text-xl font-semibold text-[#1F3A5F]">
+                                    {activeUsers}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-50 rounded flex items-center justify-center">
+                                <DollarSign className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-[#6B7280]">
+                                    Total Base Salary
+                                </p>
+                                <p className="text-xl font-semibold text-[#1F3A5F]">
+                                    {formatCurrency(totalBaseSalary)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Information Alert */}
-            <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6 flex items-start gap-2">
-                <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                <span>
-                    Select an employee to calculate salary for the current month
-                    ({getMonthName(selectedMonth)} {selectedYear}). Click the
-                    "Calculate Salary" button to start.
-                </span>
-            </div>
+                {/* Info Alert */}
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6 flex items-start gap-2 text-sm">
+                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <span>
+                        Select an employee to calculate salary for the current
+                        month ({getMonthName(selectedMonth)} {selectedYear}).
+                        Click the "Calculate Salary" button to start.
+                    </span>
+                </div>
 
-            {/* Users Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    No.
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Name
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Email
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Role
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Department
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Position
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Base Salary
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Vacation Days
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Action
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredUsers.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={10}
-                                        className="px-6 py-4 text-center text-gray-500"
+                {/* Search and Filter */}
+                <div className="bg-white border border-[#E5E7EB] rounded mb-6">
+                    <div className="p-4 border-b border-[#E5E7EB]">
+                        <div className="flex flex-col gap-4">
+                            {/* Search row */}
+                            <div className="flex items-center gap-4">
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9CA3AF] w-4 h-4" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by name, email, or role..."
+                                        value={searchTerm}
+                                        onChange={(e) =>
+                                            setSearchTerm(e.target.value)
+                                        }
+                                        className="w-full pl-10 pr-4 py-2 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
+                                    />
+                                </div>
+                                <span className="text-sm text-[#6B7280]">
+                                    Showing {filteredUsers.length} of{' '}
+                                    {totalUsers} employees
+                                </span>
+                            </div>
+
+                            {/* Filter row */}
+                            <div className="flex items-center gap-4 flex-wrap">
+                                <span className="text-sm font-medium text-[#6B7280]">
+                                    Filter by:
+                                </span>
+
+                                {/* Department Filter */}
+                                <div className="relative">
+                                    <select
+                                        value={filterDepartment}
+                                        onChange={(e) =>
+                                            setFilterDepartment(e.target.value)
+                                        }
+                                        className="appearance-none pl-3 pr-8 py-2 text-sm border border-[#E5E7EB] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[160px]"
                                     >
-                                        No users found
-                                    </td>
+                                        <option value="all">
+                                            All Departments
+                                        </option>
+                                        {departments.map((dept) => (
+                                            <option key={dept} value={dept}>
+                                                {dept}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+                                </div>
+
+                                {/* Position Filter */}
+                                <div className="relative">
+                                    <select
+                                        value={filterPosition}
+                                        onChange={(e) =>
+                                            setFilterPosition(e.target.value)
+                                        }
+                                        className="appearance-none pl-3 pr-8 py-2 text-sm border border-[#E5E7EB] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[160px]"
+                                    >
+                                        <option value="all">
+                                            All Positions
+                                        </option>
+                                        {positions.map((pos) => (
+                                            <option key={pos} value={pos}>
+                                                {pos}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+                                </div>
+
+                                {/* Status Filter */}
+                                <div className="relative">
+                                    <select
+                                        value={filterStatus}
+                                        onChange={(e) =>
+                                            setFilterStatus(e.target.value)
+                                        }
+                                        className="appearance-none pl-3 pr-8 py-2 text-sm border border-[#E5E7EB] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[140px]"
+                                    >
+                                        <option value="all">All Status</option>
+                                        {statuses.map((status) => (
+                                            <option key={status} value={status}>
+                                                {status}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
+                                </div>
+
+                                {/* Clear Filters Button */}
+                                {(filterDepartment !== 'all' ||
+                                    filterPosition !== 'all' ||
+                                    filterStatus !== 'all') && (
+                                    <button
+                                        onClick={() => {
+                                            setFilterDepartment('all')
+                                            setFilterPosition('all')
+                                            setFilterStatus('all')
+                                        }}
+                                        className="px-3 py-2 text-sm font-medium text-[#1F3A5F] border border-[#1F3A5F] rounded hover:bg-[#1F3A5F] hover:text-white transition-colors"
+                                    >
+                                        Clear Filters
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Table */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                                    <th className="px-4 py-3 text-left font-medium text-[#6B7280]">
+                                        No.
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium text-[#6B7280]">
+                                        Name
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium text-[#6B7280]">
+                                        Email
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium text-[#6B7280]">
+                                        Role
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium text-[#6B7280]">
+                                        Department
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium text-[#6B7280]">
+                                        Position
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium text-[#6B7280]">
+                                        Base Salary
+                                    </th>
+                                    <th className="px-4 py-3 text-center font-medium text-[#6B7280]">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-center font-medium text-[#6B7280]">
+                                        Vacation
+                                    </th>
+                                    <th className="px-4 py-3 text-center font-medium text-[#6B7280]">
+                                        Action
+                                    </th>
                                 </tr>
-                            ) : (
-                                filteredUsers.map((user, index) => (
-                                    <tr
-                                        key={user._id}
-                                        className="hover:bg-gray-50"
-                                    >
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {index + 1}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">
-                                                {user.first_name_en}{' '}
-                                                {user.last_name_en}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {user.email}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(user.role)}`}
-                                            >
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {user.department_id
-                                                ?.department_name || '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {user.position_id?.position_name ||
-                                                '-'}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {formatCurrency(user.base_salary)}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(user.status)}`}
-                                            >
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border border-gray-300 text-gray-700">
-                                                {user.vacation_days || 0} days
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <button
-                                                onClick={() =>
-                                                    handleOpenCalculator(user)
-                                                }
-                                                disabled={
-                                                    user.status !== 'Active'
-                                                }
-                                                className={`inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium ${
-                                                    user.status === 'Active'
-                                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                                }`}
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                                Calculate Salary
-                                            </button>
+                            </thead>
+                            <tbody>
+                                {filteredUsers.length === 0 ? (
+                                    <tr>
+                                        <td
+                                            colSpan={10}
+                                            className="px-4 py-8 text-center text-[#6B7280]"
+                                        >
+                                            No users found
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    filteredUsers.map((user, index) => (
+                                        <tr
+                                            key={user._id}
+                                            className="border-b border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
+                                        >
+                                            <td className="px-4 py-3 text-[#6B7280]">
+                                                {index + 1}
+                                            </td>
+                                            <td className="px-4 py-3 font-medium text-[#1F2937]">
+                                                {user.first_name_en}{' '}
+                                                {user.last_name_en}
+                                            </td>
+                                            <td className="px-4 py-3 text-[#6B7280]">
+                                                {user.email}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span
+                                                    className={`px-2 py-0.5 text-xs font-medium rounded ${getRoleBadge(user.role)}`}
+                                                >
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-[#6B7280]">
+                                                {user.department_id
+                                                    ?.department_name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-[#6B7280]">
+                                                {user.position_id
+                                                    ?.position_name || '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-medium text-[#1F2937]">
+                                                {formatCurrency(
+                                                    user.base_salary,
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span
+                                                    className={`px-2 py-0.5 text-xs font-medium rounded ${getStatusBadge(user.status)}`}
+                                                >
+                                                    {user.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="px-2 py-0.5 text-xs font-medium rounded bg-gray-50 text-gray-700 border border-gray-200">
+                                                    {user.vacation_days || 0}{' '}
+                                                    days
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleOpenCalculator(
+                                                            user,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        user.status !== 'Active'
+                                                    }
+                                                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                                                        user.status === 'Active'
+                                                            ? 'bg-[#1F3A5F] text-white hover:bg-[#2D4A6F]'
+                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                >
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    Calculate
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
             {/* Confirmation Dialog */}
             {openConfirmDialog && (
-                <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-xl font-semibold text-gray-800">
-                                Calculate Salary for{' '}
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded shadow-xl w-full max-w-lg">
+                        {/* Dialog Header */}
+                        <div className="bg-[#1F3A5F] text-white px-6 py-4 rounded-t">
+                            <h2 className="text-lg font-semibold">
+                                Calculate Salary
+                            </h2>
+                            <p className="text-sm text-white/70">
                                 {selectedUser?.first_name_en}{' '}
                                 {selectedUser?.last_name_en}
-                            </h2>
+                            </p>
                         </div>
 
-                        <div className="px-6 py-4">
-                            <div className="mb-4">
-                                <p className="text-gray-700 mb-3">
-                                    You are about to calculate salary for:
-                                </p>
-                                <div className="space-y-2 text-sm text-gray-600">
-                                    <p>
-                                        • Name: {selectedUser?.first_name_en}{' '}
-                                        {selectedUser?.last_name_en}
-                                    </p>
-                                    <p>• Email: {selectedUser?.email}</p>
-                                    <p>
-                                        • Base Salary:{' '}
-                                        {formatCurrency(
-                                            selectedUser?.base_salary,
-                                        )}
-                                    </p>
-                                    <p>
-                                        • Month: {getMonthName(selectedMonth)}{' '}
-                                        {selectedYear}
-                                    </p>
+                        <div className="p-6">
+                            {/* Employee Info */}
+                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded p-4 mb-4">
+                                <h3 className="text-sm font-medium text-[#1F2937] mb-3">
+                                    Employee Information
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <span className="text-[#6B7280]">
+                                            Name:
+                                        </span>
+                                        <span className="ml-2 text-[#1F2937] font-medium">
+                                            {selectedUser?.first_name_en}{' '}
+                                            {selectedUser?.last_name_en}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[#6B7280]">
+                                            Email:
+                                        </span>
+                                        <span className="ml-2 text-[#1F2937]">
+                                            {selectedUser?.email}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[#6B7280]">
+                                            Base Salary:
+                                        </span>
+                                        <span className="ml-2 text-[#1F2937] font-medium">
+                                            {formatCurrency(
+                                                selectedUser?.base_salary,
+                                            )}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-[#6B7280]">
+                                            Period:
+                                        </span>
+                                        <span className="ml-2 text-[#1F2937]">
+                                            {getMonthName(selectedMonth)}{' '}
+                                            {selectedYear}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* แสดงเงินเดือนที่มีอยู่แล้ว */}
+                            {/* Existing Salaries */}
                             {existingSalaries.length > 0 && (
-                                <div className="mt-4 mb-4">
-                                    <p className="text-sm font-medium text-gray-700 mb-2">
-                                        Existing Salaries:
-                                    </p>
+                                <div className="mb-4">
+                                    <h3 className="text-sm font-medium text-[#1F2937] mb-2">
+                                        Existing Salaries
+                                    </h3>
                                     <div className="flex flex-wrap gap-2">
                                         {existingSalaries.map((salary) => (
                                             <span
                                                 key={salary._id}
-                                                className={`px-3 py-1 text-xs font-medium rounded-full border ${
+                                                className={`px-2 py-1 text-xs font-medium rounded border ${
                                                     salary.status === 'paid'
-                                                        ? 'border-green-300 bg-green-50 text-green-800'
-                                                        : 'border-blue-300 bg-blue-50 text-blue-800'
+                                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                        : 'border-blue-200 bg-blue-50 text-blue-700'
                                                 }`}
                                             >
                                                 {getMonthName(salary.month)}{' '}
@@ -422,16 +671,16 @@ const SalaryListUser: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* ตรวจสอบว่าเงินเดือนสำหรับเดือนนี้มีอยู่แล้วหรือไม่ */}
+                            {/* Warning for existing salary */}
                             {selectedUser &&
                                 checkExistingSalary(
                                     selectedUser._id,
                                     selectedMonth,
                                     selectedYear,
                                 ) && (
-                                    <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg flex items-start gap-2 mb-4">
+                                    <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded flex items-start gap-2 mb-4 text-sm">
                                         <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                                        <span className="text-sm">
+                                        <span>
                                             Salary for{' '}
                                             {getMonthName(selectedMonth)}{' '}
                                             {selectedYear} already exists! You
@@ -441,20 +690,20 @@ const SalaryListUser: React.FC = () => {
                                     </div>
                                 )}
 
-                            {/* เลือกเดือน/ปี */}
-                            <div className="grid grid-cols-2 gap-4 mt-4">
+                            {/* Month/Year Selection */}
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-[#1F2937] mb-1">
                                         Month
                                     </label>
                                     <select
                                         value={selectedMonth}
                                         onChange={(e) =>
                                             setSelectedMonth(
-                                                parseInt(e.target.value),
+                                                Number.parseInt(e.target.value),
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
                                     >
                                         {Array.from(
                                             { length: 12 },
@@ -467,7 +716,7 @@ const SalaryListUser: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-[#1F2937] mb-1">
                                         Year
                                     </label>
                                     <input
@@ -475,26 +724,27 @@ const SalaryListUser: React.FC = () => {
                                         value={selectedYear}
                                         onChange={(e) =>
                                             setSelectedYear(
-                                                parseInt(e.target.value),
+                                                Number.parseInt(e.target.value),
                                             )
                                         }
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        className="w-full px-3 py-2 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                        {/* Dialog Footer */}
+                        <div className="px-6 py-4 bg-[#F9FAFB] border-t border-[#E5E7EB] flex justify-end gap-3 rounded-b">
                             <button
                                 onClick={() => setOpenConfirmDialog(false)}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                                className="px-4 py-2 text-sm font-medium text-[#6B7280] bg-white border border-[#E5E7EB] rounded hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleConfirmCalculate}
                                 disabled={!selectedUser}
-                                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] rounded hover:bg-[#2D4A6F] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                             >
                                 Proceed to Calculate
                             </button>

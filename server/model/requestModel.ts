@@ -8,7 +8,8 @@ export interface IRequest extends Document {
   start_hour: string; // ✅ "08:00"
   end_hour: string; // ✅ "17:30"
    fuel?: number;   // ✅ fuel price (money)
-
+  date_off?: Date;        // ✅ เพิ่ม
+  description?: string;  // ✅ เพิ่ม
   reason: string;
   status: "Pending" | "Accept" | "Reject";
   created_at: Date;
