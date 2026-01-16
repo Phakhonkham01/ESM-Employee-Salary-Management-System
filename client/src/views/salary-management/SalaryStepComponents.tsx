@@ -503,133 +503,138 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
     const daysToDeduct = Math.max(0, remainingVacation)
 
     return (
-        <div>
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
-                <Briefcase className="w-5 h-5 text-[#1F3A5F]" />
-                <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                    Employee Information
-                </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Employee Name
-                    </label>
-                    <input
-                        type="text"
-                        value={`${user.first_name_en} ${user.last_name_en}`}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Email
-                    </label>
-                    <input
-                        type="text"
-                        value={user.email}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Period
-                    </label>
-                    <input
-                        type="text"
-                        value={`${getMonthName(month)} ${year}`}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Base Salary
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
-                        <input
-                            type="text"
-                            value={prefillData.user.base_salary.toLocaleString()}
-                            disabled
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-6">
+        <div className="min-h-[600px]">
+            <div>
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
-                    <Calculator className="w-5 h-5 text-[#1F3A5F]" />
+                    <Briefcase className="w-5 h-5 text-[#1F3A5F]" />
                     <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                        Auto-calculated Components
+                        Employee Information
                     </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border border-gray-300 rounded bg-white p-4">
-                        <div className="flex items-center mb-2">
-                            <DollarSign className="w-5 h-5 text-[#1F3A5F] mr-2" />
-                            <span className="text-sm font-medium text-gray-700">
-                                OT Amount (System)
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Employee Name
+                        </label>
+                        <input
+                            type="text"
+                            value={`${user.first_name_en} ${user.last_name_en}`}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email
+                        </label>
+                        <input
+                            type="text"
+                            value={user.email}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Period
+                        </label>
+                        <input
+                            type="text"
+                            value={`${getMonthName(month)} ${year}`}
+                            disabled
+                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Base Salary
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
                             </span>
-                        </div>
-                        <p className="text-2xl font-bold text-[#1F3A5F]">
-                            ${prefillData.calculated.ot_amount.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                            {prefillData.calculated.ot_hours} hours
-                        </p>
-                        <div className="mt-2 text-xs text-gray-500">
-                            <div>
-                                Weekday:{' '}
-                                {prefillData.calculated.weekday_ot_hours || 0}{' '}
-                                hrs
-                            </div>
-                            <div>
-                                Weekend:{' '}
-                                {prefillData.calculated.weekend_ot_hours || 0}{' '}
-                                hrs
-                            </div>
+                            <input
+                                type="text"
+                                value={prefillData.user.base_salary.toLocaleString()}
+                                disabled
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            />
                         </div>
                     </div>
-                    <div className="border border-gray-300 rounded bg-white p-4">
-                        <div className="flex items-center mb-2">
-                            <Fuel className="w-5 h-5 text-green-600 mr-2" />
-                            <span className="text-sm font-medium text-gray-700">
-                                Fuel Costs
-                            </span>
-                        </div>
-                        <p className="text-2xl font-bold text-green-600">
-                            $
-                            {prefillData.calculated.fuel_costs.toLocaleString()}
-                        </p>
+                </div>
+
+                <div className="mt-6">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
+                        <Calculator className="w-5 h-5 text-[#1F3A5F]" />
+                        <h3 className="text-lg font-semibold text-[#1F3A5F]">
+                            Auto-calculated Components
+                        </h3>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>วันขาดเดือนนี้</div>
-                        <div>{calculated.day_off_days_this_month} วัน</div>
-
-                        <div>ใช้วันลาไปแล้ว</div>
-                        <div>
-                            {calculated.used_vacation_days_this_year} /{' '}
-                            {calculated.total_vacation_days} วัน
-                        </div>
-
-                        <div>วันลาคงเหลือ</div>
-                        <div
-                            className={`font-bold text-${calculated.vacation_color}-600`}
-                        >
-                            {calculated.remaining_vacation_days} วัน
-                        </div>
-
-                        {(calculated.exceed_days ?? 0) > 0 && (
-                            <div className="text-red-600 font-semibold">
-                                เกินสิทธิ์ {calculated.exceed_days} วัน
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border border-gray-300 rounded bg-white p-4">
+                            <div className="flex items-center mb-2">
+                                <DollarSign className="w-5 h-5 text-[#1F3A5F] mr-2" />
+                                <span className="text-sm font-medium text-gray-700">
+                                    OT Amount (System)
+                                </span>
                             </div>
-                        )}
+                            <p className="text-2xl font-bold text-[#1F3A5F]">
+                                $
+                                {prefillData.calculated.ot_amount.toLocaleString()}
+                            </p>
+                            <p className="text-sm text-gray-600 mt-1">
+                                {prefillData.calculated.ot_hours} hours
+                            </p>
+                            <div className="mt-2 text-xs text-gray-500">
+                                <div>
+                                    Weekday:{' '}
+                                    {prefillData.calculated.weekday_ot_hours ||
+                                        0}{' '}
+                                    hrs
+                                </div>
+                                <div>
+                                    Weekend:{' '}
+                                    {prefillData.calculated.weekend_ot_hours ||
+                                        0}{' '}
+                                    hrs
+                                </div>
+                            </div>
+                        </div>
+                        <div className="border border-gray-300 rounded bg-white p-4">
+                            <div className="flex items-center mb-2">
+                                <Fuel className="w-5 h-5 text-green-600 mr-2" />
+                                <span className="text-sm font-medium text-gray-700">
+                                    Fuel Costs
+                                </span>
+                            </div>
+                            <p className="text-2xl font-bold text-green-600">
+                                $
+                                {prefillData.calculated.fuel_costs.toLocaleString()}
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>วันขาดเดือนนี้</div>
+                            <div>{calculated.day_off_days_this_month} วัน</div>
+
+                            <div>ใช้วันลาไปแล้ว</div>
+                            <div>
+                                {calculated.used_vacation_days_this_year} /{' '}
+                                {calculated.total_vacation_days} วัน
+                            </div>
+
+                            <div>วันลาคงเหลือ</div>
+                            <div
+                                className={`font-bold text-${calculated.vacation_color}-600`}
+                            >
+                                {calculated.remaining_vacation_days} วัน
+                            </div>
+
+                            {(calculated.exceed_days ?? 0) > 0 && (
+                                <div className="text-red-600 font-semibold">
+                                    เกินสิทธิ์ {calculated.exceed_days} วัน
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -652,141 +657,157 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
         calculateManualOTSummary()
 
     return (
-        <div>
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
-                <Clock className="w-5 h-5 text-[#1F3A5F]" />
-                <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                    Overtime (OT)
-                </h3>
-            </div>
-
-            {/* System OT Summary */}
-            <div className="mb-6 p-4 bg-blue-50 border border-[#1F3A5F] rounded">
-                <div className="flex items-center gap-2 mb-2">
-                    <Calculator className="w-5 h-5 text-[#1F3A5F]" />
-                    <h4 className="font-medium text-[#1F3A5F]">
-                        Approved OT from System
-                    </h4>
+        <div className="min-h-[600px]">
+            <div>
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
+                    <Clock className="w-5 h-5 text-[#1F3A5F]" />
+                    <h3 className="text-lg font-semibold text-[#1F3A5F]">
+                        Overtime (OT)
+                    </h3>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <span className="text-gray-700">Weekday:</span>
-                        <span className="ml-2 font-bold text-[#1F3A5F]">
-                            {prefillData.calculated.weekday_ot_hours || 0} hours
-                        </span>
+
+                {/* System OT Summary */}
+                <div className="mb-6 p-4 bg-blue-50 border border-[#1F3A5F] rounded">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Calculator className="w-5 h-5 text-[#1F3A5F]" />
+                        <h4 className="font-medium text-[#1F3A5F]">
+                            Approved OT from System
+                        </h4>
                     </div>
-                    <div>
-                        <span className="text-gray-700">Weekend:</span>
-                        <span className="ml-2 font-bold text-amber-700">
-                            {prefillData.calculated.weekend_ot_hours || 0} hours
-                        </span>
-                    </div>
-                </div>
-                <div className="mt-2 text-sm text-gray-600">
-                    * OT hours from approved requests
-                </div>
-            </div>
-
-            {/* Manual OT Entry Section */}
-            <div className="mb-8">
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-                    <Plus className="w-5 h-5 text-[#1F3A5F]" />
-                    <h4 className="text-base font-semibold text-gray-800">
-                        Add Manual OT Hours
-                    </h4>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <WeekdayOTCard
-                        hours={manualOT.weekday.hours}
-                        rate_per_hour={manualOT.weekday.rate_per_hour}
-                        onHoursChange={(value) =>
-                            onManualOTChange('weekday', 'hours', value)
-                        }
-                        onRatePerHourChange={(value) =>
-                            onManualOTChange('weekday', 'rate_per_hour', value)
-                        }
-                    />
-
-                    <WeekendOTCard
-                        hours={manualOT.weekend.hours}
-                        days={manualOT.weekend.days}
-                        rate_per_hour={manualOT.weekend.rate_per_hour}
-                        rate_per_day={manualOT.weekend.rate_per_day}
-                        onHoursChange={(value) =>
-                            onManualOTChange('weekend', 'hours', value)
-                        }
-                        onDaysChange={(value) =>
-                            onManualOTChange('weekend', 'days', value)
-                        }
-                        onRatePerHourChange={(value) =>
-                            onManualOTChange('weekend', 'rate_per_hour', value)
-                        }
-                        onRatePerDayChange={(value) =>
-                            onManualOTChange('weekend', 'rate_per_day', value)
-                        }
-                    />
-                </div>
-
-                {/* Summary and Action Buttons */}
-                <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 border border-gray-200 rounded">
-                    <div>
-                        <h5 className="font-bold text-gray-700">
-                            Manual OT Summary
-                        </h5>
-                        <div className="text-sm text-gray-600 mt-1">
-                            <div>Weekday: {manualOT.weekday.hours} hrs</div>
-                            <div>
-                                Weekend (hrs): {manualOT.weekend.hours} hrs
-                            </div>
-                            <div>
-                                Weekend (days): {manualOT.weekend.days} days
-                            </div>
-                            <div className="font-bold mt-1 text-[#1F3A5F]">
-                                Total: ${totalAmount.toFixed(2)}
-                            </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <span className="text-gray-700">Weekday:</span>
+                            <span className="ml-2 font-bold text-[#1F3A5F]">
+                                {prefillData.calculated.weekday_ot_hours || 0}{' '}
+                                hours
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-700">Weekend:</span>
+                            <span className="ml-2 font-bold text-amber-700">
+                                {prefillData.calculated.weekend_ot_hours || 0}{' '}
+                                hours
+                            </span>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={clearManualOT}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded hover:bg-red-50 transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Clear
-                        </button>
-                        <button
-                            onClick={addManualOTDetail}
-                            disabled={
-                                (manualOT.weekday.hours === 0 &&
-                                    manualOT.weekend.hours === 0 &&
-                                    manualOT.weekend.days === 0) ||
-                                (manualOT.weekday.hours > 0 &&
-                                    manualOT.weekday.rate_per_hour === 0) ||
-                                (manualOT.weekend.hours > 0 &&
-                                    manualOT.weekend.rate_per_hour === 0) ||
-                                (manualOT.weekend.days > 0 &&
-                                    manualOT.weekend.rate_per_day === 0)
-                            }
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] rounded hover:bg-[#2d4a6f] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add OT
-                        </button>
+                    <div className="mt-2 text-sm text-gray-600">
+                        * OT hours from approved requests
                     </div>
                 </div>
-            </div>
 
-            {/* Display Manual OT Details */}
-            {manualOTDetails.length > 0 && (
-                <div className="mt-8">
-                    <OtDetailsTable
-                        otDetails={manualOTDetails}
-                        title="Manual OT Entries"
-                        showDate={false}
-                    />
+                {/* Manual OT Entry Section */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
+                        <Plus className="w-5 h-5 text-[#1F3A5F]" />
+                        <h4 className="text-base font-semibold text-gray-800">
+                            Add Manual OT Hours
+                        </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <WeekdayOTCard
+                            hours={manualOT.weekday.hours}
+                            rate_per_hour={manualOT.weekday.rate_per_hour}
+                            onHoursChange={(value) =>
+                                onManualOTChange('weekday', 'hours', value)
+                            }
+                            onRatePerHourChange={(value) =>
+                                onManualOTChange(
+                                    'weekday',
+                                    'rate_per_hour',
+                                    value,
+                                )
+                            }
+                        />
+
+                        <WeekendOTCard
+                            hours={manualOT.weekend.hours}
+                            days={manualOT.weekend.days}
+                            rate_per_hour={manualOT.weekend.rate_per_hour}
+                            rate_per_day={manualOT.weekend.rate_per_day}
+                            onHoursChange={(value) =>
+                                onManualOTChange('weekend', 'hours', value)
+                            }
+                            onDaysChange={(value) =>
+                                onManualOTChange('weekend', 'days', value)
+                            }
+                            onRatePerHourChange={(value) =>
+                                onManualOTChange(
+                                    'weekend',
+                                    'rate_per_hour',
+                                    value,
+                                )
+                            }
+                            onRatePerDayChange={(value) =>
+                                onManualOTChange(
+                                    'weekend',
+                                    'rate_per_day',
+                                    value,
+                                )
+                            }
+                        />
+                    </div>
+
+                    {/* Summary and Action Buttons */}
+                    <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 border border-gray-200 rounded">
+                        <div>
+                            <h5 className="font-bold text-gray-700">
+                                Manual OT Summary
+                            </h5>
+                            <div className="text-sm text-gray-600 mt-1">
+                                <div>Weekday: {manualOT.weekday.hours} hrs</div>
+                                <div>
+                                    Weekend (hrs): {manualOT.weekend.hours} hrs
+                                </div>
+                                <div>
+                                    Weekend (days): {manualOT.weekend.days} days
+                                </div>
+                                <div className="font-bold mt-1 text-[#1F3A5F]">
+                                    Total: ${totalAmount.toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={clearManualOT}
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded hover:bg-red-50 transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Clear
+                            </button>
+                            <button
+                                onClick={addManualOTDetail}
+                                disabled={
+                                    (manualOT.weekday.hours === 0 &&
+                                        manualOT.weekend.hours === 0 &&
+                                        manualOT.weekend.days === 0) ||
+                                    (manualOT.weekday.hours > 0 &&
+                                        manualOT.weekday.rate_per_hour === 0) ||
+                                    (manualOT.weekend.hours > 0 &&
+                                        manualOT.weekend.rate_per_hour === 0) ||
+                                    (manualOT.weekend.days > 0 &&
+                                        manualOT.weekend.rate_per_day === 0)
+                                }
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] rounded hover:bg-[#2d4a6f] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add OT
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            )}
+
+                {/* Display Manual OT Details */}
+                {manualOTDetails.length > 0 && (
+                    <div className="mt-8">
+                        <OtDetailsTable
+                            otDetails={manualOTDetails}
+                            title="Manual OT Entries"
+                            showDate={false}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -796,93 +817,95 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
     onInputChange,
 }) => {
     return (
-        <div>
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
-                <DollarSign className="w-5 h-5 text-[#1F3A5F]" />
-                <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                    Additional Income
-                </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Bonus
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
-                        <input
-                            type="number"
-                            name="bonus"
-                            value={formData.bonus}
-                            onChange={onInputChange}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
-                        />
+        <div className="min-h-[600px]">
+            <div>
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
+                    <DollarSign className="w-5 h-5 text-[#1F3A5F]" />
+                    <h3 className="text-lg font-semibold text-[#1F3A5F]">
+                        Additional Income
+                    </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Bonus
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                name="bonus"
+                                value={formData.bonus}
+                                onChange={onInputChange}
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Commission
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                name="commission"
+                                value={formData.commission}
+                                onChange={onInputChange}
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Holiday Allowance
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                name="money_not_spent_on_holidays"
+                                value={formData.money_not_spent_on_holidays}
+                                onChange={onInputChange}
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Other Income
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                name="other_income"
+                                value={formData.other_income}
+                                onChange={onInputChange}
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                            />
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Commission
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
-                        <input
-                            type="number"
-                            name="commission"
-                            value={formData.commission}
-                            onChange={onInputChange}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
-                        />
-                    </div>
+                <div className="mt-4 p-3 bg-blue-50 border border-[#1F3A5F] rounded">
+                    <p className="text-sm text-[#1F3A5F] font-medium">
+                        Total Additional Income: $
+                        {(
+                            formData.bonus +
+                            formData.commission +
+                            formData.money_not_spent_on_holidays +
+                            formData.other_income
+                        ).toLocaleString()}
+                    </p>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Holiday Allowance
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
-                        <input
-                            type="number"
-                            name="money_not_spent_on_holidays"
-                            value={formData.money_not_spent_on_holidays}
-                            onChange={onInputChange}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Other Income
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
-                        <input
-                            type="number"
-                            name="other_income"
-                            value={formData.other_income}
-                            onChange={onInputChange}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
-                        />
-                    </div>
-                </div>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 border border-[#1F3A5F] rounded">
-                <p className="text-sm text-[#1F3A5F] font-medium">
-                    Total Additional Income: $
-                    {(
-                        formData.bonus +
-                        formData.commission +
-                        formData.money_not_spent_on_holidays +
-                        formData.other_income
-                    ).toLocaleString()}
-                </p>
             </div>
         </div>
     )
@@ -894,84 +917,86 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
     calculateTotalDeductions,
 }) => {
     return (
-        <div>
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-red-600">
-                <UserX className="w-5 h-5 text-red-600" />
-                <h3 className="text-lg font-semibold text-red-600">
-                    Deductions
-                </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Office Expenses
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
+        <div className="min-h-[600px]">
+            <div>
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-red-600">
+                    <UserX className="w-5 h-5 text-red-600" />
+                    <h3 className="text-lg font-semibold text-red-600">
+                        Deductions
+                    </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Office Expenses
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                name="office_expenses"
+                                value={formData.office_expenses}
+                                onChange={onInputChange}
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Social Security
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                name="social_security"
+                                value={formData.social_security}
+                                onChange={onInputChange}
+                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Working Days
+                        </label>
                         <input
                             type="number"
-                            name="office_expenses"
-                            value={formData.office_expenses}
+                            name="working_days"
+                            value={formData.working_days}
                             onChange={onInputChange}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                            min="0"
+                            max="31"
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                            Number of days worked this month
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Notes
+                        </label>
+                        <textarea
+                            name="notes"
+                            value={formData.notes}
+                            onChange={onInputChange}
+                            rows={3}
+                            placeholder="Additional notes or comments..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent resize-none"
                         />
                     </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Social Security
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                            $
-                        </span>
-                        <input
-                            type="number"
-                            name="social_security"
-                            value={formData.social_security}
-                            onChange={onInputChange}
-                            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Working Days
-                    </label>
-                    <input
-                        type="number"
-                        name="working_days"
-                        value={formData.working_days}
-                        onChange={onInputChange}
-                        min="0"
-                        max="31"
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                        Number of days worked this month
+                <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
+                    <p className="text-sm text-red-700 font-medium">
+                        Total Deductions: $
+                        {calculateTotalDeductions().toLocaleString()}
                     </p>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Notes
-                    </label>
-                    <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={onInputChange}
-                        rows={3}
-                        placeholder="Additional notes or comments..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent resize-none"
-                    />
-                </div>
-            </div>
-            <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
-                <p className="text-sm text-red-700 font-medium">
-                    Total Deductions: $
-                    {calculateTotalDeductions().toLocaleString()}
-                </p>
             </div>
         </div>
     )
@@ -1228,325 +1253,349 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
         }
     }
     return (
-        <div>
-            {/* Header with buttons */}
-            <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-[#1F3A5F]">
-                <div className="flex items-center gap-2">
-                    <Calculator className="w-5 h-5 text-[#1F3A5F]" />
-                    <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                        Salary Summary
-                    </h3>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={exportToPNG}
-                        disabled={isExporting}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1F3A5F] bg-white border border-[#1F3A5F] rounded hover:bg-[#1F3A5F] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isExporting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Download className="w-4 h-4" />
-                        )}
-                        {isExporting ? 'Exporting...' : 'Export PNG'}
-                    </button>
-                    <button
-                        onClick={sendEmailWithPNG}
-                        disabled={isSendingEmail}
-                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isSendingEmail ? (
-                            <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Sending...
-                            </>
-                        ) : (
-                            <>
-                                <Mail className="w-4 h-4" />
-                                Send to Employee
-                            </>
-                        )}
-                    </button>
-                </div>
-            </div>
-
-            {/* Email Status Message */}
-            {emailStatus && (
-                <div
-                    className={`mb-4 p-3 rounded ${emailStatus.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
-                >
-                    <div
-                        className={`font-medium ${emailStatus.success ? 'text-green-800' : 'text-red-800'}`}
-                    >
-                        {emailStatus.success ? '✓ Success!' : '✗ Error'}
-                    </div>
-                    <div
-                        className={`text-sm ${emailStatus.success ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                        {emailStatus.message}
-                    </div>
-                </div>
-            )}
-
-            {/* Email Info */}
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                <div className="text-sm text-blue-800">
-                    <div className="font-medium mb-1">
-                        Email will be sent to:
-                    </div>
+        <div className="min-h-[600px]">
+            <div>
+                {/* Header with buttons */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-[#1F3A5F]">
                     <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        <span>{userEmail}</span>
+                        <Calculator className="w-5 h-5 text-[#1F3A5F]" />
+                        <h3 className="text-lg font-semibold text-[#1F3A5F]">
+                            Salary Summary
+                        </h3>
                     </div>
-                </div>
-            </div>
-
-            {/* Salary Summary Content */}
-            <div
-                ref={setSvgRef}
-                className="border border-gray-300 rounded-lg p-6 bg-white"
-            >
-                {/* Header */}
-                <div className="text-center mb-8 border-b pb-4">
-                    <h1 className="text-2xl font-bold text-[#1F3A5F]">
-                        Salary Summary
-                    </h1>
-                    <p className="text-gray-600 mt-1">
-                        {getMonthName(formData.month)} {formData.year}
-                    </p>
-                </div>
-
-                {/* Employee Information */}
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-[#1F3A5F] mb-3">
-                        Employee Information
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <span className="text-gray-600">Name:</span>
-                            <span className="ml-2 font-medium">{userName}</span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">Email:</span>
-                            <span className="ml-2 font-medium">
-                                {userEmail}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">Base Salary:</span>
-                            <span className="ml-2 font-bold text-[#1F3A5F]">
-                                ${formatCurrency(prefillData.user.base_salary)}
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">Working Days:</span>
-                            <span className="ml-2 font-medium">
-                                {formData.working_days || 0} days
-                            </span>
-                        </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={exportToPNG}
+                            disabled={isExporting}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1F3A5F] bg-white border border-[#1F3A5F] rounded hover:bg-[#1F3A5F] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isExporting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Download className="w-4 h-4" />
+                            )}
+                            {isExporting ? 'Exporting...' : 'Export PNG'}
+                        </button>
+                        <button
+                            onClick={sendEmailWithPNG}
+                            disabled={isSendingEmail}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSendingEmail ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Sending...
+                                </>
+                            ) : (
+                                <>
+                                    <Mail className="w-4 h-4" />
+                                    Send to Employee
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
 
-                {/* Salary Table */}
-                <div className="overflow-x-auto mb-8">
-                    <table className="min-w-full border border-gray-300 text-sm">
-                        <thead>
-                            <tr className="bg-[#1F3A5F] text-white">
-                                <th className="p-3 border text-left font-medium">
-                                    Income
-                                </th>
-                                <th className="p-3 border text-left font-medium">
-                                    Additional Income
-                                </th>
-                                <th className="p-3 border text-left font-medium">
-                                    Amount
-                                </th>
-                                <th className="p-3 border text-left font-medium">
-                                    Deductions
-                                </th>
-                                <th className="p-3 border text-left font-medium">
-                                    Amount
-                                </th>
-                                <th className="p-3 border text-left font-medium">
-                                    Payment Date
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* Base Salary Row */}
-                            <tr>
-                                <td className="p-3 border">Base Salary</td>
-                                <td className="p-3 border">-</td>
-                                <td className="p-3 border font-bold">
+                {/* Email Status Message */}
+                {emailStatus && (
+                    <div
+                        className={`mb-4 p-3 rounded ${emailStatus.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+                    >
+                        <div
+                            className={`font-medium ${emailStatus.success ? 'text-green-800' : 'text-red-800'}`}
+                        >
+                            {emailStatus.success ? '✓ Success!' : '✗ Error'}
+                        </div>
+                        <div
+                            className={`text-sm ${emailStatus.success ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                            {emailStatus.message}
+                        </div>
+                    </div>
+                )}
+
+                {/* Email Info */}
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <div className="text-sm text-blue-800">
+                        <div className="font-medium mb-1">
+                            Email will be sent to:
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            <span>{userEmail}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Salary Summary Content */}
+                <div
+                    ref={setSvgRef}
+                    className="border border-gray-300 rounded-lg p-6 bg-white"
+                >
+                    {/* Header */}
+                    <div className="text-center mb-8 border-b pb-4">
+                        <h1 className="text-2xl font-bold text-[#1F3A5F]">
+                            Salary Summary
+                        </h1>
+                        <p className="text-gray-600 mt-1">
+                            {getMonthName(formData.month)} {formData.year}
+                        </p>
+                    </div>
+
+                    {/* Employee Information */}
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <h3 className="font-bold text-[#1F3A5F] mb-3">
+                            Employee Information
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <span className="text-gray-600">Name:</span>
+                                <span className="ml-2 font-medium">
+                                    {userName}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">Email:</span>
+                                <span className="ml-2 font-medium">
+                                    {userEmail}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">
+                                    Base Salary:
+                                </span>
+                                <span className="ml-2 font-bold text-[#1F3A5F]">
                                     $
                                     {formatCurrency(
                                         prefillData.user.base_salary,
                                     )}
-                                </td>
-                                <td className="p-3 border">Absence</td>
-                                <td className="p-3 border">-</td>
-                                <td
-                                    className="p-3 border font-bold text-center"
-                                    rowSpan={7}
-                                >
-                                    {formatDate(currentDate)}
-                                </td>
-                            </tr>
-
-                            {/* Additional Income Rows */}
-                            <tr>
-                                <td className="p-3 border" rowSpan={6}>
-                                    Additional Income
-                                </td>
-                                <td className="p-3 border">Fuel Costs</td>
-                                <td className="p-3 border">
-                                    ${formatCurrency(additionalIncome.fuel)}
-                                </td>
-                                <td className="p-3 border" rowSpan={2}>
-                                    Social Security
-                                </td>
-                                <td className="p-3 border" rowSpan={2}>
-                                    ${formatCurrency(deductions.socialSecurity)}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="p-3 border">Commission</td>
-                                <td className="p-3 border">
-                                    $
-                                    {formatCurrency(
-                                        additionalIncome.commission,
-                                    )}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="p-3 border">Overtime (OT)</td>
-                                <td className="p-3 border">
-                                    ${formatCurrency(additionalIncome.ot)}
-                                </td>
-                                <td className="p-3 border" colSpan={2}></td>
-                            </tr>
-                            <tr>
-                                <td className="p-3 border">Bonus</td>
-                                <td className="p-3 border">
-                                    ${formatCurrency(additionalIncome.bonus)}
-                                </td>
-                                <td className="p-3 border" colSpan={2}></td>
-                            </tr>
-                            <tr>
-                                <td className="p-3 border">
-                                    Holiday Allowance
-                                </td>
-                                <td className="p-3 border">
-                                    $
-                                    {formatCurrency(
-                                        additionalIncome.holidayAllowance,
-                                    )}
-                                </td>
-                                <td className="p-3 border" colSpan={2}></td>
-                            </tr>
-                            <tr>
-                                <td className="p-3 border">Other</td>
-                                <td className="p-3 border">
-                                    ${formatCurrency(additionalIncome.other)}
-                                </td>
-                                <td className="p-3 border" colSpan={2}></td>
-                            </tr>
-
-                            {/* Totals Row */}
-                            <tr className="bg-gray-50 font-bold">
-                                <td
-                                    className="p-3 border text-right"
-                                    colSpan={2}
-                                >
-                                    Total Income:
-                                </td>
-                                <td className="p-3 border">
-                                    ${formatCurrency(totalIncome)}
-                                </td>
-                                <td
-                                    className="p-3 border text-right"
-                                    colSpan={1}
-                                >
-                                    Total Deductions:
-                                </td>
-                                <td className="p-3 border">
-                                    ${formatCurrency(totalDeductions)}
-                                </td>
-                                <td className="p-3 border"></td>
-                            </tr>
-
-                            {/* Net Salary Row */}
-                            <tr className="bg-[#1F3A5F] text-white font-bold">
-                                <td
-                                    className="p-4 border text-center text-lg"
-                                    colSpan={4}
-                                >
-                                    NET SALARY:
-                                </td>
-                                <td
-                                    className="p-4 border text-center text-xl"
-                                    colSpan={2}
-                                >
-                                    ${formatCurrency(netSalary)}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Additional Information */}
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 className="font-bold text-[#1F3A5F] mb-3">
-                        Additional Information
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <span className="text-gray-600">Working Days:</span>
-                            <span className="ml-2 font-medium">
-                                {formData.working_days || 0} days
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">
-                                Vacation Days Left:
-                            </span>
-                            <span className="ml-2 font-medium">
-                                {prefillData.calculated
-                                    .remaining_vacation_days || 0}{' '}
-                                days
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">OT Hours:</span>
-                            <span className="ml-2 font-medium">
-                                {prefillData.calculated.ot_hours || 0} hours
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-600">Day Off Days:</span>
-                            <span className="ml-2 font-medium">
-                                {prefillData.calculated.day_off_days || 0} days
-                            </span>
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">
+                                    Working Days:
+                                </span>
+                                <span className="ml-2 font-medium">
+                                    {formData.working_days || 0} days
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    {formData.notes && (
-                        <div className="mt-4 p-3 bg-white rounded border border-gray-300">
-                            <span className="font-medium text-gray-700">
-                                Notes:
-                            </span>
-                            <p className="mt-1 text-gray-600">
-                                {formData.notes}
-                            </p>
-                        </div>
-                    )}
-                </div>
 
-                {/* Footer */}
-                <div className="mt-8 pt-4 border-t text-center text-gray-500 text-sm">
-                    <p>
-                        Generated on {new Date().toLocaleDateString()} • This is
-                        an official salary statement
-                    </p>
+                    {/* Salary Table */}
+                    <div className="overflow-x-auto mb-8">
+                        <table className="min-w-full border border-gray-300 text-sm">
+                            <thead>
+                                <tr className="bg-[#1F3A5F] text-white">
+                                    <th className="p-3 border text-left font-medium">
+                                        Income
+                                    </th>
+                                    <th className="p-3 border text-left font-medium">
+                                        Additional Income
+                                    </th>
+                                    <th className="p-3 border text-left font-medium">
+                                        Amount
+                                    </th>
+                                    <th className="p-3 border text-left font-medium">
+                                        Deductions
+                                    </th>
+                                    <th className="p-3 border text-left font-medium">
+                                        Amount
+                                    </th>
+                                    <th className="p-3 border text-left font-medium">
+                                        Payment Date
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {/* Base Salary Row */}
+                                <tr>
+                                    <td className="p-3 border">Base Salary</td>
+                                    <td className="p-3 border">-</td>
+                                    <td className="p-3 border font-bold">
+                                        $
+                                        {formatCurrency(
+                                            prefillData.user.base_salary,
+                                        )}
+                                    </td>
+                                    <td className="p-3 border">Absence</td>
+                                    <td className="p-3 border">-</td>
+                                    <td
+                                        className="p-3 border font-bold text-center"
+                                        rowSpan={7}
+                                    >
+                                        {formatDate(currentDate)}
+                                    </td>
+                                </tr>
+
+                                {/* Additional Income Rows */}
+                                <tr>
+                                    <td className="p-3 border" rowSpan={6}>
+                                        Additional Income
+                                    </td>
+                                    <td className="p-3 border">Fuel Costs</td>
+                                    <td className="p-3 border">
+                                        ${formatCurrency(additionalIncome.fuel)}
+                                    </td>
+                                    <td className="p-3 border" rowSpan={2}>
+                                        Social Security
+                                    </td>
+                                    <td className="p-3 border" rowSpan={2}>
+                                        $
+                                        {formatCurrency(
+                                            deductions.socialSecurity,
+                                        )}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="p-3 border">Commission</td>
+                                    <td className="p-3 border">
+                                        $
+                                        {formatCurrency(
+                                            additionalIncome.commission,
+                                        )}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="p-3 border">
+                                        Overtime (OT)
+                                    </td>
+                                    <td className="p-3 border">
+                                        ${formatCurrency(additionalIncome.ot)}
+                                    </td>
+                                    <td className="p-3 border" colSpan={2}></td>
+                                </tr>
+                                <tr>
+                                    <td className="p-3 border">Bonus</td>
+                                    <td className="p-3 border">
+                                        $
+                                        {formatCurrency(additionalIncome.bonus)}
+                                    </td>
+                                    <td className="p-3 border" colSpan={2}></td>
+                                </tr>
+                                <tr>
+                                    <td className="p-3 border">
+                                        Holiday Allowance
+                                    </td>
+                                    <td className="p-3 border">
+                                        $
+                                        {formatCurrency(
+                                            additionalIncome.holidayAllowance,
+                                        )}
+                                    </td>
+                                    <td className="p-3 border" colSpan={2}></td>
+                                </tr>
+                                <tr>
+                                    <td className="p-3 border">Other</td>
+                                    <td className="p-3 border">
+                                        $
+                                        {formatCurrency(additionalIncome.other)}
+                                    </td>
+                                    <td className="p-3 border" colSpan={2}></td>
+                                </tr>
+
+                                {/* Totals Row */}
+                                <tr className="bg-gray-50 font-bold">
+                                    <td
+                                        className="p-3 border text-right"
+                                        colSpan={2}
+                                    >
+                                        Total Income:
+                                    </td>
+                                    <td className="p-3 border">
+                                        ${formatCurrency(totalIncome)}
+                                    </td>
+                                    <td
+                                        className="p-3 border text-right"
+                                        colSpan={1}
+                                    >
+                                        Total Deductions:
+                                    </td>
+                                    <td className="p-3 border">
+                                        ${formatCurrency(totalDeductions)}
+                                    </td>
+                                    <td className="p-3 border"></td>
+                                </tr>
+
+                                {/* Net Salary Row */}
+                                <tr className="bg-[#1F3A5F] text-white font-bold">
+                                    <td
+                                        className="p-4 border text-center text-lg"
+                                        colSpan={4}
+                                    >
+                                        NET SALARY:
+                                    </td>
+                                    <td
+                                        className="p-4 border text-center text-xl"
+                                        colSpan={2}
+                                    >
+                                        ${formatCurrency(netSalary)}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Additional Information */}
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <h3 className="font-bold text-[#1F3A5F] mb-3">
+                            Additional Information
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <span className="text-gray-600">
+                                    Working Days:
+                                </span>
+                                <span className="ml-2 font-medium">
+                                    {formData.working_days || 0} days
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">
+                                    Vacation Days Left:
+                                </span>
+                                <span className="ml-2 font-medium">
+                                    {prefillData.calculated
+                                        .remaining_vacation_days || 0}{' '}
+                                    days
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">OT Hours:</span>
+                                <span className="ml-2 font-medium">
+                                    {prefillData.calculated.ot_hours || 0} hours
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-gray-600">
+                                    Day Off Days:
+                                </span>
+                                <span className="ml-2 font-medium">
+                                    {prefillData.calculated
+                                        .day_off_days_this_month || 0}{' '}
+                                    days
+                                </span>
+                            </div>
+                        </div>
+                        {formData.notes && (
+                            <div className="mt-4 p-3 bg-white rounded border border-gray-300">
+                                <span className="font-medium text-gray-700">
+                                    Notes:
+                                </span>
+                                <p className="mt-1 text-gray-600">
+                                    {formData.notes}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-8 pt-4 border-t text-center text-gray-500 text-sm">
+                        <p>
+                            Generated on {new Date().toLocaleDateString()} •
+                            This is an official salary statement
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
