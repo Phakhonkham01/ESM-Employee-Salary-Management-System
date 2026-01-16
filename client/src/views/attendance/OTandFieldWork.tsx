@@ -429,7 +429,7 @@ const OTandFieldWork: React.FC = () => {
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 text-white hover:bg-gray-700"
                           >
-                            <FaEye className="text-xs" /> Detail
+                            <FaEye className="text-xs" /> Details
                           </button>
                           <button
                             onClick={() => handleDelete(request._id)}

@@ -1,17 +1,106 @@
-type ActionButtonProps = {
-  label: string
-  onClick?: () => void
+// HelperComponents.tsx - Add these components
+
+import { ReactNode } from 'react'
+
+// Stats Card Component
+export const StatsCard = ({
+    title,
+    value,
+    icon,
+    change,
+    trend,
+    color = 'blue'
+}: {
+    title: string
+    value: number
+    icon: ReactNode
+    change: string
+    trend: 'up' | 'down'
+    color: 'blue' | 'green' | 'amber' | 'purple'
+}) => {
+    const colorClasses = {
+        blue: 'bg-blue-500',
+        green: 'bg-green-500',
+        amber: 'bg-amber-500',
+        purple: 'bg-purple-500'
+    }
+
+    const textColorClasses = {
+        blue: 'text-blue-700',
+        green: 'text-green-700',
+        amber: 'text-amber-700',
+        purple: 'text-purple-700'
+    }
+
+    return (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+                <div className={`p-3 rounded-lg ${colorClasses[color]} bg-opacity-10`}>
+                    <span className={`text-xl ${textColorClasses[color]}`}>{icon}</span>
+                </div>
+                <span className={`text-sm font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                    {change}
+                </span>
+            </div>
+            <div className="text-3xl font-bold text-slate-900">{value}</div>
+            <div className="text-sm text-slate-600 mt-1">{title}</div>
+        </div>
+    )
 }
 
-const ActionButton = ({ label, onClick }: ActionButtonProps) => (
-  <button
-    onClick={onClick}
-    className="px-4 py-2 rounded-lg bg-green-500 text-white font-semibold
-               shadow-sm hover:bg-green-600 hover:shadow-md transition"
-  >
-    {label}
-  </button>
-)
+// Quick Actions Component
+export const QuickActions = ({ actions }: { actions: any[] }) => {
+    return (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 gap-3">
+                {actions.map((action, index) => (
+                    <button
+                        key={index}
+                        onClick={action.onClick}
+                        className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
+                    >
+                        <div className={`${action.color} text-white p-3 rounded-lg mb-3 group-hover:scale-110 transition-transform`}>
+                            {action.icon}
+                        </div>
+                        <div className="font-medium text-slate-900">{action.label}</div>
+                        <div className="text-xs text-slate-500 mt-1">{action.description}</div>
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// Updated ActionButton with icon support
+export const ActionButton = ({ 
+    label, 
+    onClick, 
+    icon,
+    variant = 'primary' 
+}: { 
+    label: string; 
+    onClick: () => void;
+    icon?: ReactNode;
+    variant?: 'primary' | 'secondary';
+}) => {
+    return (
+        <button
+            onClick={onClick}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-colors ${
+                variant === 'primary' 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+        >
+            {icon && <span>{icon}</span>}
+            {label}
+        </button>
+    )
+}
+
+// Keep existing ProfileField and formatDate functions...
+
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return undefined
@@ -45,4 +134,4 @@ const ProfileField = ({
  const toDecimalHour = (hour: number, minute: number) => {
     return hour + minute / 60
   }
-export { ActionButton, ProfileField, formatDate, toDecimalHour }
+export { ProfileField, formatDate, toDecimalHour }

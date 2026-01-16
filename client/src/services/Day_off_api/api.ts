@@ -13,16 +13,12 @@ export interface DayOffRequest {
   user_id: UserRef;
   supervisor_id: UserRef;
   employee_id?: UserRef;
-
   day_off_type: "FULL_DAY" | "HALF_DAY";
-
   start_date_time: string; // ISO string
   end_date_time: string;   // ISO string
-
   date_off_number: number;
   title: string;
-
-  status: "Pending" | "Accept" | "Reject";
+  status: "Pending" | "Accepted" | "Rejected";
   created_at: string;
 }
 
@@ -44,7 +40,7 @@ export interface CreateDayOffRequestPayload {
 // GET ALL DAY OFF REQUESTS
 export const getAllDayOffRequests = async (): Promise<{ requests: DayOffRequest[] }> => {
   try {
-    const response = await fetch(`${API_URL}/day-off-requests/allusers`, {
+    const response = await fetch(`${API_URL}/day-off-requests/allrequests`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -54,8 +50,8 @@ export const getAllDayOffRequests = async (): Promise<{ requests: DayOffRequest[
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
     const data = await response.json();
+
     return { requests: data.requests };
 
   } catch (error) {
@@ -63,6 +59,7 @@ export const getAllDayOffRequests = async (): Promise<{ requests: DayOffRequest[
     throw error;
   }
 };
+
 
 // CREATE DAY OFF REQUEST
 export const createDayOffRequest = async (
@@ -93,7 +90,7 @@ export const createDayOffRequest = async (
 // UPDATE STATUS
 export const updateDayOffStatus = async (
   requestId: string,
-  status: "Accept" | "Reject"
+  status: "Accepted" | "Rejected"
 ) => {
   try {
     const response = await fetch(`${API_URL}/day-off-requests/${requestId}/status`, {

@@ -70,7 +70,7 @@ const Attendance: React.FC = () => {
             const employeeId = typeof req.employee_id === 'string' ? req.employee_id : req.employee_id?._id
 
             const matchesUser = requestUserId === userId || employeeId === userId
-            if (!matchesUser || req.status !== 'Accept') return false
+            if (!matchesUser || req.status !== 'Accepted') return false
 
             const startDate = new Date(req.start_date_time)
             const requestYear = startDate.getFullYear()

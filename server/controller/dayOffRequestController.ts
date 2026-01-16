@@ -120,15 +120,15 @@ export const getDayOffRequestsAllUser = async (
     // Format the response
     const formattedRequests = requests.map((request) => {
       const reqObj = request.toObject();
-      
+
       // Get employee_id from populated data
-      const employeeId = 
-        (reqObj.employee_id as any)?.employee_id || 
+      const employeeId =
+        (reqObj.employee_id as any)?.employee_id ||
         reqObj.employee_id?.toString();
-      
+
       // Get supervisor_id from populated data
-      const supervisorId = 
-        (reqObj.supervisor_id as any)?.employee_id || 
+      const supervisorId =
+        (reqObj.supervisor_id as any)?.employee_id ||
         reqObj.supervisor_id?.toString();
 
       return {
@@ -149,10 +149,37 @@ export const getDayOffRequestsAllUser = async (
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+/**
+ * ======================================================
+ * GET ALL DAY OFF REQUESTS
+ * ======================================================
+ */
+
+export const getAllDayOffRequests = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const requests = await DayOffRequestModel.find()
+      .populate("employee_id", "first_name_en last_name_en email")
+      .populate("supervisor_id", "first_name_en last_name_en email")
+      .populate("user_id", "first_name_en last_name_en email")
+      .sort({ created_at: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: requests.length,
+      requests, // ✅ return populated objects DIRECTLY
+    });
+  } catch (error) {
+    console.error("GET DAY OFF REQUESTS ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 
 /**
  * ======================================================
- * GET DAY OFF REQUESTS BY USER
+ * GET DAY OFF REQUESTS BY USER (FIXED)
  * ======================================================
  */
 export const getDayOffRequestsByUser = async (
@@ -167,39 +194,18 @@ export const getDayOffRequestsByUser = async (
       return;
     }
 
-    // Query by employee_id or user_id
     const requests = await DayOffRequestModel.find({
       $or: [{ employee_id: userId }, { user_id: userId }],
     })
-      .populate("user_id", "username email")
-      .populate("supervisor_id", "employee_id username")
-      .populate("employee_id", "employee_id username")
+      .populate("user_id", "first_name_en last_name_en email")
+      .populate("employee_id", "first_name_en last_name_en employee_id")
+      .populate("supervisor_id", "first_name_en last_name_en employee_id")
       .sort({ created_at: -1 });
-
-    // Format the response
-    const formattedRequests = requests.map((request) => {
-      const reqObj = request.toObject();
-      
-      const employeeId = 
-        (reqObj.employee_id as any)?.employee_id || 
-        reqObj.employee_id?.toString();
-      
-      const supervisorId = 
-        (reqObj.supervisor_id as any)?.employee_id || 
-        reqObj.supervisor_id?.toString();
-
-      return {
-        ...reqObj,
-        employee_id: employeeId,
-        supervisor_id: supervisorId,
-        user_id: reqObj.user_id?._id?.toString(),
-      };
-    });
 
     res.status(200).json({
       success: true,
-      count: formattedRequests.length,
-      requests: formattedRequests,
+      count: requests.length,
+      requests, // ✅ DO NOT MODIFY populated fields
     });
   } catch (error) {
     console.error("GET DAY OFF REQUESTS ERROR:", error);
@@ -247,12 +253,12 @@ export const updateDayOffRequestStatus = async (
 
     // Format response
     const reqObj = updated.toObject();
-    const employeeId = 
-      (reqObj.employee_id as any)?.employee_id || 
+    const employeeId =
+      (reqObj.employee_id as any)?.employee_id ||
       reqObj.employee_id?.toString();
-    
-    const supervisorId = 
-      (reqObj.supervisor_id as any)?.employee_id || 
+
+    const supervisorId =
+      (reqObj.supervisor_id as any)?.employee_id ||
       reqObj.supervisor_id?.toString();
 
     const formattedRequest = {
@@ -374,12 +380,12 @@ export const updateDayOffRequest = async (
       .populate("employee_id", "employee_id username");
 
     const reqObj = updatedRequest?.toObject() || request.toObject();
-    const employeeId = 
-      (reqObj.employee_id as any)?.employee_id || 
+    const employeeId =
+      (reqObj.employee_id as any)?.employee_id ||
       reqObj.employee_id?.toString();
-    
-    const supervisorId = 
-      (reqObj.supervisor_id as any)?.employee_id || 
+
+    const supervisorId =
+      (reqObj.supervisor_id as any)?.employee_id ||
       reqObj.supervisor_id?.toString();
 
     const formattedRequest = {
