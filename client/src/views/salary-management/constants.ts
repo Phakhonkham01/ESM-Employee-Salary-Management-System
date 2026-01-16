@@ -1,11 +1,11 @@
 // constants.ts
 
 export const steps = [
-    'ข้อมูลพื้นฐาน',
-    'กำหนดอัตราค่า OT',
-    'รายรับเพิ่มเติม',
-    'รายจ่าย',
-    'สรุป',
+    'Basic Information',
+    'Set OT Rates',
+    'Additional Income',
+    'Deductions',
+    'Summary',
 ]
 
 export const getMonthName = (monthNum: number) => {

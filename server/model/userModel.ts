@@ -1,5 +1,28 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+// 1. สร้าง Schema สำหรับบันทึกประวัติการอัพเดทวันลา
+const vacationDayUpdateSchema: Schema = new Schema({
+  old_vacation_days: { 
+    type: Number, 
+    required: true 
+  },
+  new_vacation_days: { 
+    type: Number, 
+    required: true 
+  },
+  updated_by: { 
+    type: Schema.Types.ObjectId, 
+    ref: "User" 
+  },
+  update_reason: { 
+    type: String 
+  },
+  updated_at: { 
+    type: Date, 
+    default: Date.now 
+  }
+});
+
 export interface IUser extends Document {
   email: string;
   password: string;
@@ -12,13 +35,26 @@ export interface IUser extends Document {
   nickname_la: string;
   date_of_birth: Date;
   start_work: Date;
-  vacation_days: number;
+  vacation_days: number; // สามารถติดลบได้
   gender: "Male" | "Female" | "Other";
   position_id: mongoose.Types.ObjectId;
   department_id: mongoose.Types.ObjectId;
   status: "Active" | "Inactive" | "On Leave";
   base_salary: number;
   created_at: Date;
+  employee_id: string;
+  vacation_day_updates: Array<{
+    old_vacation_days: number;
+    new_vacation_days: number;
+    updated_by: mongoose.Types.ObjectId;
+    update_reason: string;
+    updated_at: Date;
+  }>;
+  // เพิ่มฟิลด์สำหรับติดตามสถิติ
+  vacation_stats?: {
+    total_absent_days: number;  // รวมวันขาดทั้งหมด
+    last_calculation_date: Date; // วันที่คำนวณล่าสุด
+  };
 }
 
 const userSchema: Schema = new Schema({
@@ -46,21 +82,21 @@ const userSchema: Schema = new Schema({
   nickname_la: { type: String, required: true },
   date_of_birth: { type: Date, required: true },
   start_work: { type: Date, required: true },
-  vacation_days: { type: Number, default: 0 },
-
+  vacation_days: { 
+    type: Number, 
+    default: 0,
+    // เอา min: 0 ออกเพื่อให้สามารถติดลบได้
+  },
   base_salary: {
     type: Number,
     default: 0,
     min: 0,
   },
-
   gender: {
     type: String,
     enum: ["Male", "Female", "Other"],
     required: true,
   },
-
-
   position_id: {
     type: Schema.Types.ObjectId,
     ref: "Position",
@@ -71,7 +107,6 @@ const userSchema: Schema = new Schema({
     ref: "Department",
     required: true,
   },
-
   status: {
     type: String,
     enum: ["Active", "Inactive", "On Leave"],
@@ -81,6 +116,20 @@ const userSchema: Schema = new Schema({
     type: Date,
     default: Date.now,
   },
+  employee_id: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true,
+  },
+  vacation_day_updates: [vacationDayUpdateSchema],
+  // เพิ่มฟิลด์สำหรับสถิติ
+  vacation_stats: {
+    total_absent_days: { type: Number, default: 0 },
+    last_calculation_date: { type: Date }
+  }
+}, { 
+  timestamps: true
 });
 
 const User = mongoose.model<IUser>("User", userSchema);

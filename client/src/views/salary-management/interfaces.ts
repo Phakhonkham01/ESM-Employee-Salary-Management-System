@@ -8,6 +8,7 @@ export interface SalaryFormData {
     year: number
     bonus: number
     commission: number
+    fuel_costs: number
     money_not_spent_on_holidays: number
     other_income: number
     office_expenses: number
@@ -48,6 +49,7 @@ export interface PrefillData {
         vacation_days: number
     }
     calculated: {
+        // ===== ของเดิม (ไม่แตะ) =====
         ot_amount: number
         ot_hours: number
         ot_details: any[]
@@ -55,13 +57,19 @@ export interface PrefillData {
         day_off_days: number
         remaining_vacation_days: number
         vacation_color: 'red' | 'yellow' | 'green'
-        // แยกชั่วโมงตามประเภท
         weekday_ot_hours: number
-        weekend_ot_hours: number  // ชั่วโมง OT เสาร์-อาทิตย์จากระบบ
+        weekend_ot_hours: number
+
+        // ===== เพิ่มใหม่ (ไม่กระทบของเดิม) =====
+        day_off_days_this_month?: number
+        used_vacation_days_this_year?: number
+        total_vacation_days?: number
+        exceed_days?: number
     }
     month: number
     year: number
 }
+
 // Interface สำหรับ Manual OT State แบบใหม่
 export interface ManualOTState {
     weekday: {
@@ -117,4 +125,25 @@ export interface SalaryData {
     created_by: string
     created_at: Date
     updated_at: Date
+}
+export interface PrefillCalculated {
+    // OT
+    ot_amount: number
+    ot_hours: number
+    ot_details: any[]
+    weekday_ot_hours: number
+    weekend_ot_hours: number
+
+    // ค่าใช้จ่าย
+    fuel_costs: number
+
+    // วันลา (NEW)
+    day_off_days_this_month: number
+    used_vacation_days_this_year: number
+    total_vacation_days: number
+    remaining_vacation_days: number
+    exceed_days: number
+
+    // UX
+    vacation_color: 'red' | 'yellow' | 'green'
 }

@@ -26,6 +26,7 @@ const authRoute: Routes = [
         component: lazy(() => import('@/views/auth/ResetPassword')),
         authority: [],
     },
+
 ]
 
 export default authRoute

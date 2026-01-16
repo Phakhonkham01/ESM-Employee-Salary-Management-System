@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import DayOffRequestModel from "../model/dayOffRequestModel.js";
+import User from "../model/userModel.js";
+import mongoose from "mongoose";
 
 /**
  * ======================================================
@@ -103,7 +105,7 @@ export const createDayOffRequest = async (
 
 /**
  * ======================================================
- * GET DAY OFF REQUESTS ALL USER
+ * GET ALL DAY OFF REQUESTS FOR ALL USERS
  * ======================================================
  */
 export const getDayOffRequestsAllUser = async (
@@ -112,10 +114,24 @@ export const getDayOffRequestsAllUser = async (
 ): Promise<void> => {
   try {
     const requests = await DayOffRequestModel.find({})
-      .populate("user_id", "username email")
-      .populate("supervisor_id", "employee_id username")
-      .populate("employee_id", "employee_id username")
+      .populate({
+        path: "user_id",
+        select: "first_name_en last_name_en email employee_id",
+        model: User
+      })
+      .populate({
+        path: "supervisor_id",
+        select: "first_name_en last_name_en email employee_id",
+        model: User
+      })
+      .populate({
+        path: "employee_id",
+        select: "first_name_en last_name_en email employee_id",
+        model: User
+      })
       .sort({ created_at: -1 });
+
+    console.log("🔍 Raw populated requests:", JSON.stringify(requests[0], null, 2));
 
     // Format the response
     const formattedRequests = requests.map((request) => {
@@ -130,12 +146,46 @@ export const getDayOffRequestsAllUser = async (
       const supervisorId =
         (reqObj.supervisor_id as any)?.employee_id ||
         reqObj.supervisor_id?.toString();
+      
+      // Helper function to extract user info
+      const extractUserInfo = (userData: any) => {
+        if (!userData) {
+          return { id: '', name: 'Unknown', employeeId: '' };
+        }
+        
+        // If it's already a string (ObjectId)
+        if (typeof userData === 'string') {
+          return { id: userData, name: 'Unknown', employeeId: '' };
+        }
+        
+        // If it's populated object
+        return {
+          id: userData._id?.toString() || '',
+          name: `${userData.first_name_en || ''} ${userData.last_name_en || ''}`.trim(),
+          employeeId: userData.employee_id || ''
+        };
+      };
+
+      const employeeInfo = extractUserInfo(reqObj.employee_id);
+      const supervisorInfo = extractUserInfo(reqObj.supervisor_id);
 
       return {
-        ...reqObj,
-        employee_id: employeeId,
-        supervisor_id: supervisorId,
-        user_id: reqObj.user_id?._id?.toString(),
+        _id: reqObj._id,
+        user_id: reqObj.user_id?._id?.toString() || reqObj.user_id,
+        employee_id: employeeInfo.employeeId || employeeInfo.id,
+        employee_name: employeeInfo.name,
+        supervisor_id: supervisorInfo.employeeId || supervisorInfo.id,
+        supervisor_name: supervisorInfo.name,
+        day_off_type: reqObj.day_off_type,
+        start_date_time: reqObj.start_date_time,
+        end_date_time: reqObj.end_date_time,
+        date_off_number: reqObj.date_off_number,
+        title: reqObj.title,
+        status: reqObj.status,
+        created_at: reqObj.created_at,
+        // Keep original for debugging
+        _original_employee: reqObj.employee_id,
+        _original_supervisor: reqObj.supervisor_id
       };
     });
 
@@ -180,6 +230,120 @@ export const getAllDayOffRequests = async (
 /**
  * ======================================================
  * GET DAY OFF REQUESTS BY USER (FIXED)
+ * GET DAY OFF REQUESTS FOR SUPERVISOR DASHBOARD
+ * ======================================================
+ */
+export const getDayOffRequestsForSupervisorDashboard = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { supervisorId } = req.params;
+
+    if (!supervisorId) {
+      res.status(400).json({ success: false, message: "Supervisor ID is required" });
+      return;
+    }
+
+    // Find supervisor by ID or employee_id
+    const supervisor = await User.findById(supervisorId);
+    
+    if (!supervisor) {
+      res.status(404).json({ success: false, message: "Supervisor not found" });
+      return;
+    }
+
+    // Query day off requests for this supervisor
+    const requests = await DayOffRequestModel.find({
+      $or: [
+        { supervisor_id: supervisor._id },
+        { 'supervisor_id': supervisorId }
+      ]
+    })
+      .populate({
+        path: 'user_id',
+        select: 'first_name_en last_name_en email',
+        model: User
+      })
+      .populate({
+        path: 'supervisor_id',
+        select: 'first_name_en last_name_en email employee_id',
+        model: User
+      })
+      .populate({
+        path: 'employee_id',
+        select: 'first_name_en last_name_en email employee_id',
+        model: User
+      })
+      .sort({ created_at: -1 });
+
+    // Format response
+    const formattedRequests = requests.map(request => {
+      const reqObj = request.toObject();
+      
+      // Helper function
+      const getUserDisplayInfo = (userField: any) => {
+        if (!userField) return { id: '', display: 'Unknown', employeeId: '' };
+        
+        if (typeof userField === 'string') {
+          return { id: userField, display: userField.substring(0, 8), employeeId: '' };
+        }
+        
+        if (userField._id) {
+          const name = `${userField.first_name_en || ''} ${userField.last_name_en || ''}`.trim();
+          const display = name || userField.email || userField._id.toString().substring(0, 8);
+          return {
+            id: userField._id.toString(),
+            display: display,
+            employeeId: userField.employee_id || ''
+          };
+        }
+        
+        return { id: '', display: 'Unknown', employeeId: '' };
+      };
+
+      const employee = getUserDisplayInfo(reqObj.employee_id);
+      const supervisorInfo = getUserDisplayInfo(reqObj.supervisor_id);
+
+      return {
+        _id: reqObj._id,
+        user_id: reqObj.user_id?._id?.toString(),
+        employee_id: employee.employeeId || employee.id,
+        employee_name: employee.display,
+        supervisor_id: supervisorInfo.employeeId || supervisorInfo.id,
+        supervisor_name: supervisorInfo.display,
+        day_off_type: reqObj.day_off_type,
+        start_date_time: reqObj.start_date_time,
+        end_date_time: reqObj.end_date_time,
+        date_off_number: reqObj.date_off_number,
+        title: reqObj.title,
+        status: reqObj.status,
+        created_at: reqObj.created_at,
+        // Keep original for reference
+        original_employee: reqObj.employee_id,
+        original_supervisor: reqObj.supervisor_id
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      supervisor: {
+        id: supervisor._id,
+        name: `${supervisor.first_name_en} ${supervisor.last_name_en}`,
+        employee_id: supervisor.employee_id
+      },
+      count: formattedRequests.length,
+      requests: formattedRequests,
+    });
+  } catch (error) {
+    console.error("GET SUPERVISOR DASHBOARD REQUESTS ERROR:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+/**
+ * ======================================================
+ * GET DAY OFF REQUESTS BY USER
  * ======================================================
  */
 export const getDayOffRequestsByUser = async (
@@ -231,7 +395,6 @@ export const updateDayOffRequestStatus = async (
       return;
     }
 
-    // ✅ ใช้สถานะที่ตรงกับ frontend
     if (!["Pending", "Accepted", "Rejected"].includes(status)) {
       res.status(400).json({ success: false, message: "Invalid status" });
       return;
@@ -242,9 +405,21 @@ export const updateDayOffRequestStatus = async (
       { status },
       { new: true }
     )
-      .populate("user_id", "username email")
-      .populate("supervisor_id", "employee_id username")
-      .populate("employee_id", "employee_id username");
+      .populate({
+        path: 'user_id',
+        select: 'first_name_en last_name_en email',
+        model: User
+      })
+      .populate({
+        path: 'supervisor_id',
+        select: 'first_name_en last_name_en email employee_id',
+        model: User
+      })
+      .populate({
+        path: 'employee_id',
+        select: 'first_name_en last_name_en email employee_id',
+        model: User
+      });
 
     if (!updated) {
       res.status(404).json({ success: false, message: "Request not found" });
@@ -260,12 +435,34 @@ export const updateDayOffRequestStatus = async (
     const supervisorId =
       (reqObj.supervisor_id as any)?.employee_id ||
       reqObj.supervisor_id?.toString();
+    
+    const formatUser = (user: any) => {
+      if (!user) return { id: '', name: 'Unknown', employeeId: '' };
+      if (typeof user === 'string') return { id: user, name: user.substring(0, 8), employeeId: '' };
+      return {
+        id: user._id?.toString() || '',
+        name: `${user.first_name_en || ''} ${user.last_name_en || ''}`.trim(),
+        employeeId: user.employee_id || ''
+      };
+    };
+
+    const employee = formatUser(reqObj.employee_id);
+    const supervisor = formatUser(reqObj.supervisor_id);
 
     const formattedRequest = {
-      ...reqObj,
-      employee_id: employeeId,
-      supervisor_id: supervisorId,
+      _id: reqObj._id,
       user_id: reqObj.user_id?._id?.toString(),
+      employee_id: employee.employeeId || employee.id,
+      employee_name: employee.name,
+      supervisor_id: supervisor.employeeId || supervisor.id,
+      supervisor_name: supervisor.name,
+      day_off_type: reqObj.day_off_type,
+      start_date_time: reqObj.start_date_time,
+      end_date_time: reqObj.end_date_time,
+      date_off_number: reqObj.date_off_number,
+      title: reqObj.title,
+      status: reqObj.status,
+      created_at: reqObj.created_at,
     };
 
     res.status(200).json({

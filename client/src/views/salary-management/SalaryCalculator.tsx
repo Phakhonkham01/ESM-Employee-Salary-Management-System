@@ -1,4 +1,3 @@
-// SalaryCalculator.tsx
 import React, { useState, useEffect } from 'react'
 import {
     X,
@@ -41,12 +40,12 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
 
-    // State สำหรับฟอร์ม
     const [formData, setFormData] = useState<SalaryFormData>({
         user_id: user._id,
         month,
         year,
         bonus: 0,
+        fuel_costs: 0,
         commission: 0,
         money_not_spent_on_holidays: 0,
         other_income: 0,
@@ -57,23 +56,21 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         notes: '',
     })
 
-    // State สำหรับ Manual OT (แบบใหม่)
     const [manualOT, setManualOT] = useState<ManualOTState>({
         weekday: {
             hours: 0,
             rate_per_hour: 0,
         },
         weekend: {
-            hours: 0, // Add this
+            hours: 0,
             days: 0,
-            rate_per_hour: 0, // Add this
+            rate_per_hour: 0,
             rate_per_day: 0,
         },
     })
-    // State สำหรับ Manual OT Details
+
     const [manualOTDetails, setManualOTDetails] = useState<any[]>([])
 
-    // ดึงข้อมูล prefill เมื่อเปิด dialog
     useEffect(() => {
         if (open) {
             fetchPrefillData()
@@ -137,7 +134,6 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                     },
                 }
             } else {
-                // สำหรับ weekend
                 return {
                     ...prev,
                     weekend: {
@@ -151,16 +147,16 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
             }
         })
     }
+
     const addManualOTDetail = () => {
         const details = []
 
-        // เพิ่ม Weekday OT ถ้ามี
         if (manualOT.weekday.hours > 0 && manualOT.weekday.rate_per_hour > 0) {
             const amount =
                 manualOT.weekday.hours * manualOT.weekday.rate_per_hour
             details.push({
                 date: new Date(year, month - 1, 1).toISOString(),
-                title: 'Manual OT - วันทำงานปกติ',
+                title: 'Manual OT - Weekday',
                 start_hour: '09:00',
                 end_hour: `${17 + manualOT.weekday.hours}:00`,
                 total_hours: manualOT.weekday.hours,
@@ -169,18 +165,17 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 days: 0,
                 rate_per_day: 0,
                 amount: amount,
-                description: `OT วันทำงานปกติ ${manualOT.weekday.hours} ชม. @ ฿${manualOT.weekday.rate_per_hour}/ชม.`,
+                description: `Weekday OT: ${manualOT.weekday.hours} hours @ ฿${manualOT.weekday.rate_per_hour}/hour`,
                 is_manual: true,
             })
         }
 
-        // เพิ่ม Weekend OT Hours ถ้ามี
         if (manualOT.weekend.hours > 0 && manualOT.weekend.rate_per_hour > 0) {
             const amount =
                 manualOT.weekend.hours * manualOT.weekend.rate_per_hour
             details.push({
                 date: new Date(year, month - 1, 1).toISOString(),
-                title: 'Manual OT - เสาร์-อาทิตย์ (ชั่วโมง)',
+                title: 'Manual OT - Weekend (Hours)',
                 start_hour: '09:00',
                 end_hour: `${17 + manualOT.weekend.hours}:00`,
                 total_hours: manualOT.weekend.hours,
@@ -189,26 +184,25 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 days: 0,
                 rate_per_day: 0,
                 amount: amount,
-                description: `OT เสาร์-อาทิตย์ ${manualOT.weekend.hours} ชม. @ ฿${manualOT.weekend.rate_per_hour}/ชม.`,
+                description: `Weekend OT: ${manualOT.weekend.hours} hours @ ฿${manualOT.weekend.rate_per_hour}/hour`,
                 is_manual: true,
             })
         }
 
-        // เพิ่ม Weekend OT Days ถ้ามี
         if (manualOT.weekend.days > 0 && manualOT.weekend.rate_per_day > 0) {
             const amount = manualOT.weekend.days * manualOT.weekend.rate_per_day
             details.push({
                 date: new Date(year, month - 1, 1).toISOString(),
-                title: 'Manual OT - เสาร์-อาทิตย์ (วัน)',
+                title: 'Manual OT - Weekend (Days)',
                 start_hour: '09:00',
                 end_hour: '17:00',
-                total_hours: manualOT.weekend.days * 8, // 1 วัน = 8 ชม.
+                total_hours: manualOT.weekend.days * 8,
                 ot_type: 'weekend',
                 hourly_rate: 0,
                 days: manualOT.weekend.days,
                 rate_per_day: manualOT.weekend.rate_per_day,
                 amount: amount,
-                description: `OT เสาร์-อาทิตย์ ${manualOT.weekend.days} วัน @ ฿${manualOT.weekend.rate_per_day}/วัน`,
+                description: `Weekend OT: ${manualOT.weekend.days} days @ ฿${manualOT.weekend.rate_per_day}/day`,
                 is_manual: true,
             })
         }
@@ -222,9 +216,9 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         setManualOT({
             weekday: { hours: 0, rate_per_hour: 0 },
             weekend: {
-                hours: 0, // Add this
+                hours: 0,
                 days: 0,
-                rate_per_hour: 0, // Add this
+                rate_per_hour: 0,
                 rate_per_day: 0,
             },
         })
@@ -239,22 +233,20 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         setActiveStep((prevStep) => prevStep - 1)
     }
 
+    // SalaryCalculator.tsx - ส่วน handleSubmit ที่แก้ไขแล้ว
     const handleSubmit = async () => {
         try {
             setLoading(true)
             setError(null)
 
-            // ดึง user_id ของคนที่ login จาก localStorage หรือ context
             const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
             const created_by = currentUser._id || currentUser.id || user._id
 
-            // รวม OT ทั้งหมด
             const allOTDetails = [
                 ...(prefillData?.calculated.ot_details || []),
                 ...manualOTDetails,
             ]
 
-            // คำนวณ OT รวม
             const totalOTAmount = allOTDetails.reduce(
                 (sum, detail) => sum + detail.amount,
                 0,
@@ -287,36 +279,90 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                     `Manual OT: ${manualOTDetails.length > 0 ? 'Yes' : 'No'}`,
             }
 
-            console.log('🚀 Submitting payload:', payload)
-
+            // Step 1: 提交薪资记录
             const response = await axios.post('/api/salaries', payload)
 
             if (response.status === 201 || response.status === 200) {
-                setSuccess(true)
-                onSuccess()
-                setTimeout(() => {
-                    handleClose()
-                }, 2000)
+                // Step 2: 成功提交薪资后，更新用户的 vacation_days
+                try {
+                    const remainingVacationDays =
+                        prefillData?.calculated.remaining_vacation_days || 0
+
+                    // ตรวจสอบสถานะวันลา
+                    let updateReason = ''
+                    let vacationMessage = ''
+
+                    if (remainingVacationDays < 0) {
+                        updateReason = `คำนวณเงินเดือน ${getMonthName(month)} ${year} - ขาดงานเกินวันลา ${Math.abs(remainingVacationDays)} วัน`
+                        vacationMessage = `พนักงานขาดงานเกินวันลา ${Math.abs(remainingVacationDays)} วัน`
+                    } else if (remainingVacationDays === 0) {
+                        updateReason = `คำนวณเงินเดือน ${getMonthName(month)} ${year} - วันลาหมดแล้ว`
+                        vacationMessage = 'วันลาหมดแล้ว'
+                    } else {
+                        updateReason = `คำนวณเงินเดือน ${getMonthName(month)} ${year} - เหลือวันลา ${remainingVacationDays} วัน`
+                        vacationMessage = `เหลือวันลา ${remainingVacationDays} วัน`
+                    }
+
+                    // เรียก API อัพเดทวันลา (สามารถติดลบได้)
+                    await axios.put(
+                        `/api/users/${user._id}/update-vacation-days`,
+                        {
+                            vacation_days: remainingVacationDays,
+                            updated_by: created_by,
+                            update_reason: updateReason,
+                        },
+                    )
+
+                    // Step 3: แสดงสถานะสำเร็จ
+                    setSuccess(true)
+
+                    // แสดงข้อความตามสถานะวันลา (เป็นข้อความสำเร็จ ไม่ใช่ error)
+                    console.log(`คำนวณเงินเดือนสำเร็จ! ${updateReason}`)
+
+                    // แสดงข้อความใน UI (ถ้าต้องการ)
+                    if (remainingVacationDays < 0) {
+                        // แสดงเป็น warning message
+                        console.warn(
+                            `คำนวณเงินเดือนสำเร็จ แต่ ${vacationMessage}`,
+                        )
+                    }
+
+                    onSuccess()
+                    setTimeout(() => {
+                        handleClose()
+                    }, 3000)
+                } catch (updateError: any) {
+                    console.warn(
+                        'คำนวณเงินเดือนสำเร็จ แต่ไม่สามารถอัพเดทวันลาได้:',
+                        updateError,
+                    )
+                    setSuccess(true)
+                    // แสดงเฉพาะข้อความแจ้งเตือน
+                    console.log(
+                        'คำนวณเงินเดือนสำเร็จ แต่ไม่สามารถอัพเดทวันลาได้' +
+                            (updateError.response?.data?.message
+                                ? ` (${updateError.response.data.message})`
+                                : ''),
+                    )
+                    onSuccess()
+                    setTimeout(() => {
+                        handleClose()
+                    }, 3000)
+                }
             }
         } catch (err: any) {
-            console.error('❌ Error details:', {
-                message: err.response?.data?.message,
-                error: err.response?.data?.error,
-                status: err.response?.status,
-            })
-            setError(
-                err.response?.data?.message || 'Failed to calculate salary',
-            )
+            console.error('คำนวณเงินเดือนล้มเหลว:', err.response?.data)
+            setError(err.response?.data?.message || 'คำนวณเงินเดือนล้มเหลว')
         } finally {
             setLoading(false)
         }
     }
-
     const handleClose = () => {
         setActiveStep(0)
         setFormData({
             user_id: user._id,
             salary: 0,
+            fuel_costs: 0,
             month,
             year,
             bonus: 0,
@@ -346,7 +392,6 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         onClose()
     }
 
-    // คำนวณผลรวมต่างๆ
     const calculateTotalIncome = () => {
         if (!prefillData) return 0
 
@@ -355,13 +400,11 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         const { bonus, commission, money_not_spent_on_holidays, other_income } =
             formData
 
-        // คำนวณ OT จาก manual
         const manualOTAmount = manualOTDetails.reduce(
             (sum, detail) => sum + detail.amount,
             0,
         )
 
-        // รวมกับ OT จากระบบ
         const otAmount =
             (prefillData.calculated.ot_amount || 0) + manualOTAmount
 
@@ -384,27 +427,23 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         return calculateTotalIncome() - calculateTotalDeductions()
     }
 
-    // คำนวณจำนวนชั่วโมง OT และเงิน OT รวม
     const calculateManualOTSummary = () => {
         let totalHours = 0
         let totalWeekendDays = 0
         let totalAmount = 0
 
-        // Weekday
         if (manualOT.weekday.hours > 0 && manualOT.weekday.rate_per_hour > 0) {
             totalHours += manualOT.weekday.hours
             totalAmount +=
                 manualOT.weekday.hours * manualOT.weekday.rate_per_hour
         }
 
-        // Weekend Hours
         if (manualOT.weekend.hours > 0 && manualOT.weekend.rate_per_hour > 0) {
             totalHours += manualOT.weekend.hours
             totalAmount +=
                 manualOT.weekend.hours * manualOT.weekend.rate_per_hour
         }
 
-        // Weekend Days
         if (manualOT.weekend.days > 0 && manualOT.weekend.rate_per_day > 0) {
             totalWeekendDays += manualOT.weekend.days
             totalAmount += manualOT.weekend.days * manualOT.weekend.rate_per_day
@@ -451,71 +490,65 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
     if (!open) return null
 
     return (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white border border-gray-300 w-full max-w-5xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600">
-                    <div className="flex justify-between items-center">
+                <div className="bg-[#1F3A5F] px-6 py-4 flex items-center justify-between border-b border-[#152642]">
+                    <div className="flex items-center gap-3 text-white">
+                        <div className="p-1">
+                            <Calculator className="w-5 h-5" />
+                        </div>
                         <div>
-                            <div className="flex items-center gap-2">
-                                <Calculator className="w-6 h-6 text-white" />
-                                <h2 className="text-xl font-bold text-white">
-                                    Salary Calculator
-                                </h2>
-                            </div>
-                            <p className="text-sm text-blue-100 mt-1">
-                                {user.first_name_en} {user.last_name_en} •{' '}
+                            <h2 className="text-lg font-medium">
+                                Payroll Calculation System
+                            </h2>
+                            <p className="text-gray-300 text-xs mt-0.5">
+                                {user.first_name_en} {user.last_name_en} |{' '}
                                 {getMonthName(month)} {year}
                             </p>
                         </div>
-                        <button
-                            onClick={handleClose}
-                            className="text-white hover:text-blue-100 transition-colors"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
                     </div>
+                    <button
+                        onClick={handleClose}
+                        className="text-white hover:bg-white/10 p-2 rounded transition-colors"
+                        title="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 </div>
 
                 {/* Content */}
-                <div className="px-6 py-6">
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50">
                     {loading && activeStep === 0 ? (
                         <div className="flex justify-center items-center min-h-[300px]">
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
-                                <span className="text-gray-600 font-medium">
-                                    Loading prefill data...
+                            <div className="flex flex-col items-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1F3A5F] mb-4"></div>
+                                <span className="text-gray-600 text-sm">
+                                    Loading calculation data...
                                 </span>
                             </div>
                         </div>
                     ) : (
                         <>
+                            {/* Error Display */}
                             {error && (
-                                <div className="bg-red-50 border-l-4 border-red-500 text-red-800 px-4 py-3 rounded-r-lg flex items-start gap-3 mb-4 shadow-sm">
-                                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <p className="font-medium">Error</p>
-                                        <p className="text-sm">{error}</p>
+                                <div className="mb-6 p-3 bg-[#FDE8E8] border border-[#9B1C1C] text-[#9B1C1C] text-sm rounded-sm">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span>{error}</span>
                                     </div>
-                                    <button
-                                        onClick={() => setError(null)}
-                                        className="text-red-500 hover:text-red-700"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
                                 </div>
                             )}
 
+                            {/* Success Display */}
                             {success && (
-                                <div className="bg-green-50 border-l-4 border-green-500 text-green-800 px-4 py-3 rounded-r-lg flex items-center gap-3 mb-4 shadow-sm">
-                                    <CheckCircle2 className="w-6 h-6 flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <p className="font-semibold">
-                                            Success!
-                                        </p>
-                                        <p className="text-sm">
-                                            Salary calculated successfully!
-                                        </p>
+                                <div className="mb-6 p-3 bg-[#E6F4EA] border border-[#2E7D32] text-[#2E7D32] text-sm rounded-sm">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        <span>
+                                            Payroll calculation completed
+                                            successfully.
+                                        </span>
                                     </div>
                                 </div>
                             )}
@@ -527,22 +560,22 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                                         <React.Fragment key={label}>
                                             <div className="flex flex-col items-center flex-1">
                                                 <div
-                                                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-all ${
+                                                    className={`w-10 h-10 rounded-sm flex items-center justify-center text-sm font-medium border ${
                                                         index <= activeStep
-                                                            ? 'bg-blue-600 text-white shadow-lg'
-                                                            : 'bg-gray-200 text-gray-500'
+                                                            ? 'bg-[#1F3A5F] text-white border-[#1F3A5F]'
+                                                            : 'bg-white text-gray-500 border-gray-300'
                                                     }`}
                                                 >
                                                     {index < activeStep ? (
-                                                        <CheckCircle2 className="w-6 h-6" />
+                                                        <CheckCircle2 className="w-4 h-4" />
                                                     ) : (
                                                         index + 1
                                                     )}
                                                 </div>
                                                 <span
-                                                    className={`text-xs mt-2 text-center font-medium ${
+                                                    className={`text-xs mt-2 text-center ${
                                                         index <= activeStep
-                                                            ? 'text-blue-600'
+                                                            ? 'text-gray-900 font-medium'
                                                             : 'text-gray-500'
                                                     }`}
                                                 >
@@ -553,14 +586,14 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                                                 <div
                                                     className="flex-1 flex items-center"
                                                     style={{
-                                                        marginBottom: '28px',
+                                                        marginBottom: '24px',
                                                     }}
                                                 >
                                                     <div
-                                                        className={`h-2 w-full rounded transition-all ${
+                                                        className={`h-[1px] w-full ${
                                                             index < activeStep
-                                                                ? 'bg-blue-600'
-                                                                : 'bg-gray-200'
+                                                                ? 'bg-[#1F3A5F]'
+                                                                : 'bg-gray-300'
                                                         }`}
                                                     ></div>
                                                 </div>
@@ -570,37 +603,38 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                                 </div>
                             </div>
 
+                            {/* Step Content */}
                             {renderStepContent(activeStep)}
                         </>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-between items-center">
                     <button
                         onClick={handleBack}
                         disabled={activeStep === 0 || loading || success}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed shadow-sm"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                     >
                         <ChevronLeft className="w-4 h-4" />
-                        Back
+                        Previous
                     </button>
 
                     {activeStep === steps.length - 1 ? (
                         <button
                             onClick={handleSubmit}
                             disabled={loading || success || !prefillData}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-md"
+                            className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] hover:bg-[#152642] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                         >
                             {loading ? (
                                 <>
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                                    Calculating...
+                                    Processing...
                                 </>
                             ) : (
                                 <>
-                                    <Calculator className="w-4 h-4" />
-                                    Confirm and Save
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Confirm Calculation
                                 </>
                             )}
                         </button>
@@ -608,9 +642,9 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         <button
                             onClick={handleNext}
                             disabled={!prefillData && activeStep === 0}
-                            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed shadow-md"
+                            className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] hover:bg-[#152642] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                         >
-                            Next
+                            Next Step
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     )}

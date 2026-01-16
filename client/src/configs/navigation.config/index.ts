@@ -75,7 +75,7 @@ const navigationConfig: NavigationTree[] = [
         path: '',
         title: 'Salary Management',
         translateKey: '',
-        icon: 'collapseMenu',
+        icon: 'moneysalary',
         type: NAV_ITEM_TYPE_COLLAPSE,
         authority: [],
         subMenu: [
