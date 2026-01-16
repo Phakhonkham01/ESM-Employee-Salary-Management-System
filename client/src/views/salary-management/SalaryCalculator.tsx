@@ -45,6 +45,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         month,
         year,
         bonus: 0,
+        fuel_costs: 0,
         commission: 0,
         money_not_spent_on_holidays: 0,
         other_income: 0,
@@ -361,6 +362,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         setFormData({
             user_id: user._id,
             salary: 0,
+            fuel_costs: 0,
             month,
             year,
             bonus: 0,

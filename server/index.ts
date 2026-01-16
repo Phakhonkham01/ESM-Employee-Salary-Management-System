@@ -11,7 +11,7 @@ import requestRoutes from "./routes/requestRoutes.js";
 import dayOffRequestRoutes from "./routes/dayOffRequestRoutes.js";
 import salaryRoutes from "./routes/salaryRoutes.js";
 import AttendanceSummaryRoutes from "./routes/attendanceSummary.js";
-
+import emailRoutes from './routes/emailRoutest.js'
 dotenv.config();
 
 const app: Application = express();
@@ -52,4 +52,4 @@ app.use("/api/requests", requestRoutes);
 app.use("/api/day-off-requests", dayOffRequestRoutes);
 app.use("/api/salaries", salaryRoutes);
 app.use("/api/attendance", AttendanceSummaryRoutes);
-
+app.use('/api/salary', emailRoutes); // Email route: POST /api/salary/send-email

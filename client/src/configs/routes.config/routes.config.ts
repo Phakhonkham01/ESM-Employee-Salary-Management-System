@@ -41,6 +41,12 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
+        key: 'send-email.salary.report',
+        path: 'send-salary-email',
+        component: lazy(() => import('@/views/')),
+        authority: [],
+    },
+    {
         key: 'groupMenu.single',
         path: '/group-single-menu-item-view',
         component: lazy(() =>

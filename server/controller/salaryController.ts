@@ -152,6 +152,35 @@ const calculateOTWithoutMultiplier = async (
     };
   }
 };
+/**
+ * Helper function: calculate used vacation days in a year
+ */
+const calculateUsedVacationDaysInYear = async (
+  userId: string,
+  year: number
+): Promise<number> => {
+  try {
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date(year, 11, 31, 23, 59, 59);
+
+    const requests = await DayOffRequestModel.find({
+      user_id: userId,
+      status: "Accepted",
+      created_at: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    });
+
+    return requests.reduce(
+      (sum, r) => sum + (r.date_off_number || 0),
+      0
+    );
+  } catch (error) {
+    console.error("Error calculating yearly vacation:", error);
+    return 0;
+  }
+};
 
 /**
  * Helper function to calculate fuel costs from FIELD_WORK requests
@@ -725,11 +754,25 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
     // Calculate OT
     const otCalculation = await calculateOTWithoutMultiplier(userId, currentMonth, currentYear);
     const fuel_costs = await calculateFuelCosts(userId, currentMonth, currentYear);
-    const day_off_days = await calculateDayOffDays(userId, currentMonth, currentYear);
-    const remaining_vacation_days = Math.max(
-      -365,
-      (user.vacation_days || 0) - day_off_days
-    );
+   const day_off_days_this_month =
+  await calculateDayOffDays(userId, currentMonth, currentYear);
+
+const used_vacation_days_this_year =
+  await calculateUsedVacationDaysInYear(userId, currentYear);
+
+const total_vacation_days = user.vacation_days || 0;
+
+// วันลาคงเหลือหลังหักเดือนนี้
+const remaining_vacation_days =
+  total_vacation_days - day_off_days_this_month;
+
+// วันเกินสิทธิ์ (ถ้ามี)
+const exceed_days = Math.max(
+  0,
+  day_off_days_this_month - total_vacation_days
+);
+
+
 
     // Determine color for vacation days
     let vacationColor = 'green';
@@ -768,8 +811,13 @@ export const getPrefillData = async (req: Request, res: Response): Promise<void>
           ot_hours: otCalculation.total_hours,
           ot_details: otCalculation.details,
           fuel_costs,
-          day_off_days,
-          remaining_vacation_days,
+        day_off_days_this_month,
+  used_vacation_days_this_year,
+  total_vacation_days,
+  remaining_vacation_days,
+  exceed_days,
+  
+        
           vacation_color: vacationColor,
           weekday_ot_hours: otCalculation.weekday_ot_hours,
           weekend_ot_hours: otCalculation.weekend_ot_hours,

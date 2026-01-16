@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Download, Mail, Loader2 } from 'lucide-react'
-
+import { useSendSalaryEmail } from '../salary-management/email/send-salary-email/useSendSalaryEmail'
 // SalaryStepComponents.tsx
 import type React from 'react'
 import {
@@ -17,7 +17,64 @@ import {
 } from 'lucide-react'
 import type { PrefillData, SalaryFormData, ManualOTState } from './interfaces'
 import { getMonthName, getVacationTextColor, getOtTypeColor } from './constants'
+interface Step5SummaryProps {
+    user: {
+        email: string
+        first_name_en: string
+        last_name_en: string
+    }
+    prefillData: {
+        user: {
+            base_salary: number
+            name?: string
+        }
+        calculated: {
+            remaining_vacation_days: number
+            ot_hours: number
+            day_off_days: number
+            fuel_costs: number
+        }
+    } | null
+    formData: {
+        month: number
+        year: number
+        working_days: number
+        bonus: number
+        commission: number
+        money_not_spent_on_holidays: number
+        other_income: number
+        social_security: number
+        notes: string
+    }
+    manualOTDetails: any[]
+    calculateNetSalary: () => number
+}
+export interface SalaryEmailRequest {
+    to: string
+    subject?: string
+    employeeName?: string
+    month?: string
+    year?: number
+    baseSalary?: number
+    totalIncome?: number
+    totalDeductions?: number
+    netSalary?: number
+    image?: string
+    fileName?: string
+    fileSizeMB?: string
+}
 
+export interface EmailResponse {
+    success: boolean
+    message: string
+    error?: string
+    data?: {
+        to: string
+        subject: string
+        messageId?: string
+        timestamp?: string
+    }
+}
 interface StepComponentsProps {
     // Step 0
     user: any
@@ -432,13 +489,18 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
     prefillData,
 }) => {
     if (!prefillData) return null
+    const calculated = prefillData.calculated
 
-    const dayOffThisMonth = prefillData.calculated.day_off_days ?? 0
+    calculated.day_off_days_this_month
+    calculated.used_vacation_days_this_year
+    calculated.total_vacation_days
+    calculated.remaining_vacation_days
+    calculated.exceed_days
 
     const remainingVacation =
         prefillData.calculated.remaining_vacation_days ?? 0
 
-    const daysToDeduct = Math.max(0, dayOffThisMonth - remainingVacation)
+    const daysToDeduct = Math.max(0, remainingVacation)
 
     return (
         <div>
@@ -546,30 +608,28 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                             {prefillData.calculated.fuel_costs.toLocaleString()}
                         </p>
                     </div>
-                    <div className="border border-gray-300 rounded bg-white p-4">
-                        <div className="flex items-center mb-2">
-                            <CalendarX className="w-5 h-5 text-amber-600 mr-2" />
-                            <span className="text-sm font-medium text-gray-700">
-                                Day Off Days
-                            </span>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>วันขาดเดือนนี้</div>
+                        <div>{calculated.day_off_days_this_month} วัน</div>
+
+                        <div>ใช้วันลาไปแล้ว</div>
+                        <div>
+                            {calculated.used_vacation_days_this_year} /{' '}
+                            {calculated.total_vacation_days} วัน
                         </div>
-                        <p>วันขาดของเดือนนี้: {dayOffThisMonth} วัน</p>
-                    </div>
-                    <div
-                        className={`border border-gray-300 rounded bg-white p-4`}
-                    >
-                        <div className="flex items-center mb-2">
-                            <UserX
-                                className={`w-5 h-5 mr-2 ${getVacationTextColor(prefillData.calculated.vacation_color)}`}
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                                Vacation Days Left
-                            </span>
+
+                        <div>วันลาคงเหลือ</div>
+                        <div
+                            className={`font-bold text-${calculated.vacation_color}-600`}
+                        >
+                            {calculated.remaining_vacation_days} วัน
                         </div>
-                        <p>วันขาดรวมทั้งหมด: {dayOffThisMonth} วัน</p>
-                        <p className="text-red-600 font-bold">
-                            วันขาดที่ต้องตัดเงิน: {daysToDeduct} วัน
-                        </p>
+
+                        {(calculated.exceed_days ?? 0) > 0 && (
+                            <div className="text-red-600 font-semibold">
+                                เกินสิทธิ์ {calculated.exceed_days} วัน
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -916,8 +976,8 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
         </div>
     )
 }
-
 export const Step5Summary: React.FC<StepComponentsProps> = ({
+    user,
     prefillData,
     formData,
     calculateTotalIncome,
@@ -925,6 +985,14 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
     calculateNetSalary,
     manualOTDetails,
 }) => {
+    const [svgRef, setSvgRef] = useState<HTMLDivElement | null>(null)
+    const [isExporting, setIsExporting] = useState(false)
+    const [isSendingEmail, setIsSendingEmail] = useState(false)
+    const [emailStatus, setEmailStatus] = useState<{
+        success: boolean
+        message: string
+    } | null>(null)
+
     if (!prefillData) return null
 
     const allOTDetails = [
@@ -936,285 +1004,549 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
         (sum, detail) => sum + detail.amount,
         0,
     )
-    const totalOTHours = allOTDetails
-        .filter((d) => d.ot_type === 'weekday')
-        .reduce((sum, detail) => sum + (detail.total_hours || 0), 0)
-    const totalOTDays = allOTDetails
-        .filter((d) => d.ot_type === 'weekend')
-        .reduce((sum, detail) => sum + (detail.days || 0), 0)
 
-    const manualOT = allOTDetails.filter((detail) => detail.is_manual === true)
-    const autoOT = allOTDetails.filter((detail) => !detail.is_manual)
+    // Format date for payment
+    const formatDate = (date: Date) => {
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        })
+    }
 
+    const currentDate = new Date()
+
+    // Calculate additional income - using formData
+    const additionalIncome = {
+        fuel: prefillData.calculated.fuel_costs || 0,
+        computer: 0,
+        ot: totalOTAmount,
+        bonus: formData.bonus,
+        holidayAllowance: formData.money_not_spent_on_holidays,
+        officeExpenses: 0,
+        other: formData.other_income,
+        commission: formData.commission,
+    }
+
+    // Calculate deductions
+    const deductions = {
+        absence: 0,
+        socialSecurity: formData.social_security,
+    }
+
+    // Calculate totals
+    const totalAdditionalIncome = Object.values(additionalIncome).reduce(
+        (a, b) => a + b,
+        0,
+    )
+    const totalDeductions = Object.values(deductions).reduce((a, b) => a + b, 0)
+    const totalIncome = prefillData.user.base_salary + totalAdditionalIncome
+    const netSalary = totalIncome - totalDeductions
+
+    // Function to format currency
+    const formatCurrency = (amount: number) => {
+        return amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })
+    }
+
+    // Extract name from user object
+    const userName =
+        `${user?.first_name_en || ''} ${user?.last_name_en || ''}`.trim()
+
+    // Use actual email from user object
+    const userEmail = user?.email || 'employee@company.com'
+
+    // Function to export as PNG
+    const exportToPNG = async () => {
+        if (!svgRef) return
+
+        try {
+            setIsExporting(true)
+            const html2canvas = (await import('html2canvas')).default
+
+            const canvas = await html2canvas(svgRef, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false,
+            })
+
+            const link = document.createElement('a')
+            const fileName = `salary-summary-${userName.replace(/\s+/g, '-')}-${getMonthName(formData.month)}-${formData.year}.png`
+
+            link.download = fileName
+            link.href = canvas.toDataURL('image/png')
+            link.click()
+
+            URL.revokeObjectURL(link.href)
+        } catch (error) {
+            console.error('Failed to export PNG:', error)
+            alert('Failed to export PNG. Please try again.')
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
+    // Function to send email with PNG attachment
+    // Function to send email with PNG attachment - แก้ไขเวอร์ชันนี้
+    // ในฟังก์ชัน sendEmailWithPNG ของ Step5Summary
+    // ใน Step5Summary component
+    const sendEmailWithPNG = async () => {
+        if (!svgRef) return
+
+        try {
+            setIsSendingEmail(true)
+            setEmailStatus(null)
+
+            // Convert to image
+            const html2canvas = (await import('html2canvas')).default
+            const canvas = await html2canvas(svgRef, {
+                scale: 0.8,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false,
+            })
+
+            // Convert to JPEG
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
+            const base64String = dataUrl.split(',')[1]
+
+            // Prepare data
+            const emailData: SalaryEmailRequest = {
+                to: userEmail,
+                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year}`,
+                employeeName: userName,
+                month: getMonthName(formData.month),
+                year: formData.year,
+                baseSalary: prefillData.user.base_salary,
+                netSalary,
+                image: base64String,
+                fileName: `salary-summary-${userName.replace(/\s+/g, '-')}.jpg`,
+            }
+
+            // API base URL
+            const API_BASE_URL = 'http://localhost:8000'
+
+            // ส่งไปยัง backend API
+            const response = await fetch(
+                `${API_BASE_URL}/api/salary/send-email`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(emailData),
+                },
+            )
+
+            if (!response.ok) {
+                let errorMessage = 'Failed to send email'
+                try {
+                    const errorData: EmailResponse = await response.json()
+                    errorMessage = errorData.message || errorMessage
+                } catch (e) {
+                    errorMessage = `HTTP ${response.status}: ${response.statusText}`
+                }
+                throw new Error(errorMessage)
+            }
+
+            const result: EmailResponse = await response.json()
+
+            if (result.success) {
+                setEmailStatus({
+                    success: true,
+                    message: `✅ Salary summary sent to ${userEmail}`,
+                })
+            } else {
+                throw new Error(result.message || 'Failed to send email')
+            }
+        } catch (error: any) {
+            console.error('Failed to send email:', error)
+            setEmailStatus({
+                success: false,
+                message: `❌ ${error.message || 'Failed to send email'}`,
+            })
+        } finally {
+            setIsSendingEmail(false)
+        }
+    }
+
+    // ฟังก์ชันสำหรับส่ง email แบบแบ่ง chunks (ถ้าจำเป็น)
+    const sendEmailInChunks = async (chunks: string[], totalSize: number) => {
+        try {
+            // ส่ง chunk แรกกับ metadata
+            const firstChunkData = {
+                to: userEmail,
+                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year} (Part 1/2)`,
+                employeeName: userName,
+                month: getMonthName(formData.month),
+                year: formData.year,
+                baseSalary: prefillData.user.base_salary,
+                netSalary,
+                image: chunks[0],
+                fileName: `salary-summary-part1.jpg`,
+                isChunked: true,
+                totalChunks: 2,
+                currentChunk: 1,
+            }
+
+            const response1 = await fetch('/api/salary/send-email-chunk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(firstChunkData),
+            })
+
+            if (!response1.ok) throw new Error('Failed to send first chunk')
+
+            // ส่ง chunk ที่สอง
+            const secondChunkData = {
+                to: userEmail,
+                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year} (Part 2/2)`,
+                image: chunks[1],
+                fileName: `salary-summary-part2.jpg`,
+                isChunked: true,
+                totalChunks: 2,
+                currentChunk: 2,
+            }
+
+            const response2 = await fetch('/api/salary/send-email-chunk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(secondChunkData),
+            })
+
+            if (!response2.ok) throw new Error('Failed to send second chunk')
+
+            setEmailStatus({
+                success: true,
+                message: `✅ Salary summary has been sent in 2 parts (${totalSize.toFixed(2)}MB total)`,
+            })
+        } catch (error: any) {
+            throw new Error(`Chunked sending failed: ${error.message}`)
+        }
+    }
     return (
         <div>
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
-                <Calculator className="w-5 h-5 text-[#1F3A5F]" />
-                <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                    Salary Summary
-                </h3>
+            {/* Header with buttons */}
+            <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-[#1F3A5F]">
+                <div className="flex items-center gap-2">
+                    <Calculator className="w-5 h-5 text-[#1F3A5F]" />
+                    <h3 className="text-lg font-semibold text-[#1F3A5F]">
+                        Salary Summary
+                    </h3>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={exportToPNG}
+                        disabled={isExporting}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1F3A5F] bg-white border border-[#1F3A5F] rounded hover:bg-[#1F3A5F] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isExporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <Download className="w-4 h-4" />
+                        )}
+                        {isExporting ? 'Exporting...' : 'Export PNG'}
+                    </button>
+                    <button
+                        onClick={sendEmailWithPNG}
+                        disabled={isSendingEmail}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSendingEmail ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Sending...
+                            </>
+                        ) : (
+                            <>
+                                <Mail className="w-4 h-4" />
+                                Send to Employee
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
-            <div className="border border-gray-300 rounded p-6 bg-gray-50">
-                <div className="space-y-6">
-                    {/* Manual OT Details */}
-                    {manualOT.length > 0 && (
-                        <div className="bg-white rounded p-4 border border-[#1F3A5F]">
-                            <h4 className="text-base font-bold text-[#1F3A5F] mb-3 uppercase">
-                                Manual OT Details
-                            </h4>
-                            <div className="space-y-2 mb-3">
-                                {manualOT.map((detail, index) => (
-                                    <div
-                                        key={`manual-${index}`}
-                                        className="flex justify-between py-2 px-2 hover:bg-blue-50 rounded border-b border-gray-100"
-                                    >
-                                        <div>
-                                            <span className="text-gray-700">
-                                                {getOtTypeEnglish(
-                                                    detail.ot_type,
-                                                )}
-                                            </span>
-                                            <div className="text-sm text-gray-500">
-                                                {detail.ot_type === 'weekday'
-                                                    ? `${detail.total_hours} hours`
-                                                    : detail.days &&
-                                                        detail.days > 0
-                                                      ? `${detail.days} days`
-                                                      : `${detail.total_hours} hours`}
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="font-medium text-gray-900">
-                                                $
-                                                {detail.amount.toLocaleString()}
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                                {detail.ot_type === 'weekday'
-                                                    ? `$${detail.hourly_rate?.toFixed(2) || '0.00'}/hr`
-                                                    : detail.days &&
-                                                        detail.days > 0
-                                                      ? `$${detail.rate_per_day?.toFixed(2) || '0.00'}/day`
-                                                      : `$${detail.hourly_rate?.toFixed(2) || '0.00'}/hr`}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex justify-between pt-2 border-t border-[#1F3A5F]">
-                                <span className="font-bold text-[#1F3A5F]">
-                                    Manual OT Total:
-                                </span>
-                                <span className="font-bold text-[#1F3A5F]">
+
+            {/* Email Status Message */}
+            {emailStatus && (
+                <div
+                    className={`mb-4 p-3 rounded ${emailStatus.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+                >
+                    <div
+                        className={`font-medium ${emailStatus.success ? 'text-green-800' : 'text-red-800'}`}
+                    >
+                        {emailStatus.success ? '✓ Success!' : '✗ Error'}
+                    </div>
+                    <div
+                        className={`text-sm ${emailStatus.success ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                        {emailStatus.message}
+                    </div>
+                </div>
+            )}
+
+            {/* Email Info */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                <div className="text-sm text-blue-800">
+                    <div className="font-medium mb-1">
+                        Email will be sent to:
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        <span>{userEmail}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Salary Summary Content */}
+            <div
+                ref={setSvgRef}
+                className="border border-gray-300 rounded-lg p-6 bg-white"
+            >
+                {/* Header */}
+                <div className="text-center mb-8 border-b pb-4">
+                    <h1 className="text-2xl font-bold text-[#1F3A5F]">
+                        Salary Summary
+                    </h1>
+                    <p className="text-gray-600 mt-1">
+                        {getMonthName(formData.month)} {formData.year}
+                    </p>
+                </div>
+
+                {/* Employee Information */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="font-bold text-[#1F3A5F] mb-3">
+                        Employee Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <span className="text-gray-600">Name:</span>
+                            <span className="ml-2 font-medium">{userName}</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Email:</span>
+                            <span className="ml-2 font-medium">
+                                {userEmail}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Base Salary:</span>
+                            <span className="ml-2 font-bold text-[#1F3A5F]">
+                                ${formatCurrency(prefillData.user.base_salary)}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Working Days:</span>
+                            <span className="ml-2 font-medium">
+                                {formData.working_days || 0} days
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Salary Table */}
+                <div className="overflow-x-auto mb-8">
+                    <table className="min-w-full border border-gray-300 text-sm">
+                        <thead>
+                            <tr className="bg-[#1F3A5F] text-white">
+                                <th className="p-3 border text-left font-medium">
+                                    Income
+                                </th>
+                                <th className="p-3 border text-left font-medium">
+                                    Additional Income
+                                </th>
+                                <th className="p-3 border text-left font-medium">
+                                    Amount
+                                </th>
+                                <th className="p-3 border text-left font-medium">
+                                    Deductions
+                                </th>
+                                <th className="p-3 border text-left font-medium">
+                                    Amount
+                                </th>
+                                <th className="p-3 border text-left font-medium">
+                                    Payment Date
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {/* Base Salary Row */}
+                            <tr>
+                                <td className="p-3 border">Base Salary</td>
+                                <td className="p-3 border">-</td>
+                                <td className="p-3 border font-bold">
                                     $
-                                    {manualOT
-                                        .reduce(
-                                            (sum, detail) =>
-                                                sum + detail.amount,
-                                            0,
-                                        )
-                                        .toLocaleString()}
-                                </span>
-                            </div>
+                                    {formatCurrency(
+                                        prefillData.user.base_salary,
+                                    )}
+                                </td>
+                                <td className="p-3 border">Absence</td>
+                                <td className="p-3 border">-</td>
+                                <td
+                                    className="p-3 border font-bold text-center"
+                                    rowSpan={7}
+                                >
+                                    {formatDate(currentDate)}
+                                </td>
+                            </tr>
+
+                            {/* Additional Income Rows */}
+                            <tr>
+                                <td className="p-3 border" rowSpan={6}>
+                                    Additional Income
+                                </td>
+                                <td className="p-3 border">Fuel Costs</td>
+                                <td className="p-3 border">
+                                    ${formatCurrency(additionalIncome.fuel)}
+                                </td>
+                                <td className="p-3 border" rowSpan={2}>
+                                    Social Security
+                                </td>
+                                <td className="p-3 border" rowSpan={2}>
+                                    ${formatCurrency(deductions.socialSecurity)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">Commission</td>
+                                <td className="p-3 border">
+                                    $
+                                    {formatCurrency(
+                                        additionalIncome.commission,
+                                    )}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">Overtime (OT)</td>
+                                <td className="p-3 border">
+                                    ${formatCurrency(additionalIncome.ot)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">Bonus</td>
+                                <td className="p-3 border">
+                                    ${formatCurrency(additionalIncome.bonus)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">
+                                    Holiday Allowance
+                                </td>
+                                <td className="p-3 border">
+                                    $
+                                    {formatCurrency(
+                                        additionalIncome.holidayAllowance,
+                                    )}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">Other</td>
+                                <td className="p-3 border">
+                                    ${formatCurrency(additionalIncome.other)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+
+                            {/* Totals Row */}
+                            <tr className="bg-gray-50 font-bold">
+                                <td
+                                    className="p-3 border text-right"
+                                    colSpan={2}
+                                >
+                                    Total Income:
+                                </td>
+                                <td className="p-3 border">
+                                    ${formatCurrency(totalIncome)}
+                                </td>
+                                <td
+                                    className="p-3 border text-right"
+                                    colSpan={1}
+                                >
+                                    Total Deductions:
+                                </td>
+                                <td className="p-3 border">
+                                    ${formatCurrency(totalDeductions)}
+                                </td>
+                                <td className="p-3 border"></td>
+                            </tr>
+
+                            {/* Net Salary Row */}
+                            <tr className="bg-[#1F3A5F] text-white font-bold">
+                                <td
+                                    className="p-4 border text-center text-lg"
+                                    colSpan={4}
+                                >
+                                    NET SALARY:
+                                </td>
+                                <td
+                                    className="p-4 border text-center text-xl"
+                                    colSpan={2}
+                                >
+                                    ${formatCurrency(netSalary)}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Additional Information */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="font-bold text-[#1F3A5F] mb-3">
+                        Additional Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <span className="text-gray-600">Working Days:</span>
+                            <span className="ml-2 font-medium">
+                                {formData.working_days || 0} days
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">
+                                Vacation Days Left:
+                            </span>
+                            <span className="ml-2 font-medium">
+                                {prefillData.calculated
+                                    .remaining_vacation_days || 0}{' '}
+                                days
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">OT Hours:</span>
+                            <span className="ml-2 font-medium">
+                                {prefillData.calculated.ot_hours || 0} hours
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Day Off Days:</span>
+                            <span className="ml-2 font-medium">
+                                {prefillData.calculated.day_off_days || 0} days
+                            </span>
+                        </div>
+                    </div>
+                    {formData.notes && (
+                        <div className="mt-4 p-3 bg-white rounded border border-gray-300">
+                            <span className="font-medium text-gray-700">
+                                Notes:
+                            </span>
+                            <p className="mt-1 text-gray-600">
+                                {formData.notes}
+                            </p>
                         </div>
                     )}
+                </div>
 
-                    {/* Income */}
-                    <div className="bg-white rounded p-4 border border-[#1F3A5F]">
-                        <h4 className="text-base font-bold text-[#1F3A5F] mb-3 uppercase">
-                            Income
-                        </h4>
-                        <div className="space-y-2">
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">
-                                    Base Salary:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    $
-                                    {prefillData.user.base_salary.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">
-                                    OT Amount (Total):
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    ${totalOTAmount.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">
-                                    Fuel Costs:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    $
-                                    {prefillData.calculated.fuel_costs.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">Bonus:</span>
-                                <span className="font-semibold text-gray-900">
-                                    ${formData.bonus.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">
-                                    Commission:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    ${formData.commission.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">
-                                    Holiday Allowance:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    $
-                                    {formData.money_not_spent_on_holidays.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1">
-                                <span className="text-gray-700">
-                                    Other Income:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    ${formData.other_income.toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="border-t-2 border-[#1F3A5F] my-3"></div>
-                        <div className="flex justify-between py-2 bg-blue-50 px-3 rounded">
-                            <span className="font-bold text-[#1F3A5F]">
-                                Total Income:
-                            </span>
-                            <span className="font-bold text-[#1F3A5F] text-lg">
-                                ${calculateTotalIncome().toLocaleString()}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Deductions */}
-                    <div className="bg-white rounded p-4 border border-red-300">
-                        <h4 className="text-base font-bold text-red-700 mb-3 uppercase">
-                            Deductions
-                        </h4>
-                        <div className="space-y-2">
-                            <div className="flex justify-between py-1 border-b border-gray-100">
-                                <span className="text-gray-700">
-                                    Office Expenses:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    ${formData.office_expenses.toLocaleString()}
-                                </span>
-                            </div>
-                            <div className="flex justify-between py-1">
-                                <span className="text-gray-700">
-                                    Social Security:
-                                </span>
-                                <span className="font-semibold text-gray-900">
-                                    ${formData.social_security.toLocaleString()}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="border-t-2 border-red-300 my-3"></div>
-                        <div className="flex justify-between py-2 bg-red-50 px-3 rounded">
-                            <span className="font-bold text-red-700">
-                                Total Deductions:
-                            </span>
-                            <span className="font-bold text-red-700 text-lg">
-                                ${calculateTotalDeductions().toLocaleString()}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Net Salary */}
-                    <div className="bg-[#1F3A5F] rounded p-5">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xl font-bold text-white">
-                                NET SALARY:
-                            </span>
-                            <span className="text-3xl font-bold text-white">
-                                ${calculateNetSalary().toLocaleString()}
-                            </span>
-                        </div>
-                        <div className="mt-2 text-sm text-blue-200">
-                            Total OT: {totalOTHours} hrs + {totalOTDays} days
-                        </div>
-                    </div>
-
-                    {/* Additional Information */}
-                    <div className="bg-white rounded p-4 border border-gray-300">
-                        <p className="text-sm font-bold text-gray-800 mb-3 uppercase">
-                            Additional Information
-                        </p>
-                        <div className="space-y-2 text-sm text-gray-700">
-                            <div className="flex items-start">
-                                <span className="font-medium mr-2">•</span>
-                                <span>
-                                    Working Days:{' '}
-                                    <span className="font-semibold">
-                                        {formData.working_days} days
-                                    </span>
-                                </span>
-                            </div>
-                            <div className="flex items-start">
-                                <span className="font-medium mr-2">•</span>
-                                <span>
-                                    Day Off Days:{' '}
-                                    <span className="font-semibold">
-                                        {prefillData.calculated.day_off_days}{' '}
-                                        days
-                                    </span>
-                                </span>
-                            </div>
-                            <div className="flex items-start">
-                                <span className="font-medium mr-2">•</span>
-                                <span
-                                    className={getVacationTextColor(
-                                        prefillData.calculated.vacation_color,
-                                    )}
-                                >
-                                    Vacation Days Left:{' '}
-                                    <span className="font-semibold">
-                                        {
-                                            prefillData.calculated
-                                                .remaining_vacation_days
-                                        }{' '}
-                                        days
-                                    </span>
-                                </span>
-                            </div>
-                            <div className="flex items-start">
-                                <span className="font-medium mr-2">•</span>
-                                <span>
-                                    OT Hours:{' '}
-                                    <span className="font-semibold">
-                                        {totalOTHours} hours
-                                    </span>
-                                </span>
-                            </div>
-                            <div className="flex items-start">
-                                <span className="font-medium mr-2">•</span>
-                                <span>
-                                    OT Days (Weekend):{' '}
-                                    <span className="font-semibold">
-                                        {totalOTDays} days
-                                    </span>
-                                </span>
-                            </div>
-                            {formData.notes && (
-                                <div className="flex items-start">
-                                    <span className="font-medium mr-2">•</span>
-                                    <span>
-                                        Notes:{' '}
-                                        <span className="font-semibold">
-                                            {formData.notes}
-                                        </span>
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                {/* Footer */}
+                <div className="mt-8 pt-4 border-t text-center text-gray-500 text-sm">
+                    <p>
+                        Generated on {new Date().toLocaleDateString()} • This is
+                        an official salary statement
+                    </p>
                 </div>
             </div>
         </div>

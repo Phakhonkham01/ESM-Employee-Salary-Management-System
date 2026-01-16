@@ -11,6 +11,7 @@ export interface IRequest extends Document {
   date_off?: Date;        // ✅ เพิ่ม
   description?: string;  // ✅ เพิ่ม
   reason: string;
+  
   status: "Pending" | "Accept" | "Reject";
   created_at: Date;
 }
