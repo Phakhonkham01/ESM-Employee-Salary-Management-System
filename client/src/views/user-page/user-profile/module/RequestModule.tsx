@@ -29,6 +29,23 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     const loggedUser = auth?.user
 
     /* =====================
+       Current Month Range
+    ===================== */
+    const today = new Date()
+    const currentYear = today.getFullYear()
+    const currentMonth = today.getMonth()
+    
+    // First day of current month (YYYY-MM-DD format)
+    const minDate = new Date(currentYear, currentMonth, 1)
+        .toISOString()
+        .split('T')[0]
+    
+    // Last day of current month (YYYY-MM-DD format)
+    const maxDate = new Date(currentYear, currentMonth + 1, 0)
+        .toISOString()
+        .split('T')[0]
+
+    /* =====================
        Load supervisors
     ===================== */
     useEffect(() => {
@@ -148,6 +165,8 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                             type="date"
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
+                            min={minDate}
+                            max={maxDate}
                             className="w-full rounded-lg border px-3 py-2 text-sm"
                         />
                     </div>

@@ -20,6 +20,7 @@
         "axios": "^1.13.2",
         "axios-mock-adapter": "^2.1.0",
         "classnames": "^2.5.1",
+        "datepicker": "^0.0.0",
         "dayjs": "^1.11.19",
         "framer-motion": "^12.24.12",
         "html2canvas": "^1.4.1",

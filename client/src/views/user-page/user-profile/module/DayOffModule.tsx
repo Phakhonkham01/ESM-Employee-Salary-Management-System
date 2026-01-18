@@ -17,11 +17,12 @@ const DayOffModule = ({ open, onClose }: Props) => {
   const [dayOffType, setDayOffType] =
     useState<'FULL_DAY' | 'HALF_DAY'>('FULL_DAY')
 
-  // 📅 Date (calendar) + ⏰ Time (manual)
+  // 📅 Date (calendar)
   const [startDate, setStartDate] = useState<Date | null>(null)
-  const [startTime, setStartTime] = useState('')
   const [endDate, setEndDate] = useState<Date | null>(null)
-  const [endTime, setEndTime] = useState('')
+
+  // ⏰ Half Day: Morning or Afternoon
+  const [halfDayPeriod, setHalfDayPeriod] = useState<'MORNING' | 'AFTERNOON'>('MORNING')
 
   const [title, setTitle] = useState('')
 
@@ -34,6 +35,13 @@ const DayOffModule = ({ open, onClose }: Props) => {
   const auth = JSON.parse(localStorage.getItem('auth') || 'null')
   const loggedUser = auth?.user
   const role = loggedUser?.role // "Admin" | "Employee"
+
+  /* =====================
+     Date Range for Current Month
+  ===================== */
+  const today = new Date()
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+  const currentMonthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0)
 
   /* =====================
      Load supervisors
@@ -49,15 +57,51 @@ const DayOffModule = ({ open, onClose }: Props) => {
   /* =====================
      Helpers
   ===================== */
-  const combineDateTime = (date: Date, time: string) => {
-    const [h, m] = time.split(':').map(Number)
+  const getDateTimeForFullDay = (date: Date, isStart: boolean) => {
     const d = new Date(date)
-    d.setHours(h)
-    d.setMinutes(m)
-    d.setSeconds(0)
-    d.setMilliseconds(0)
-    return d.toISOString() // ✅ ONE datetime field
+    if (isStart) {
+      d.setHours(0, 0, 0, 0) // Start of day
+    } else {
+      d.setHours(23, 59, 59, 999) // End of day
+    }
+    return d.toISOString()
   }
+
+  const getDateTimeForHalfDay = (date: Date, period: 'MORNING' | 'AFTERNOON') => {
+    const d = new Date(date)
+    if (period === 'MORNING') {
+      // Morning: 8:30 AM to 12:00 PM
+      d.setHours(8, 30, 0, 0)
+      return {
+        start: d.toISOString(),
+        end: new Date(d.setHours(12, 0, 0, 0)).toISOString()
+      }
+    } else {
+      // Afternoon: 1:30 PM to 5:00 PM
+      d.setHours(13, 30, 0, 0)
+      return {
+        start: d.toISOString(),
+        end: new Date(d.setHours(17, 0, 0, 0)).toISOString()
+      }
+    }
+  }
+
+  /* =====================
+     Calculate Total Days
+  ===================== */
+  const calculateTotalDays = () => {
+    if (dayOffType === 'FULL_DAY') {
+      if (!startDate || !endDate) return 0
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays + 1 // Include both start and end day
+    } else {
+      // HALF_DAY
+      return 0.5
+    }
+  }
+
+  const totalDays = calculateTotalDays()
 
   /* =====================
      Submit
@@ -73,21 +117,13 @@ const DayOffModule = ({ open, onClose }: Props) => {
       return
     }
 
-    if (!startDate || !endDate) {
-      alert('Please select start and end date')
+    if (!startDate) {
+      alert('Please select start date')
       return
     }
 
-    if (!startTime || !endTime) {
-      alert('Please input start and end time')
-      return
-    }
-
-    const startDateTime = combineDateTime(startDate, startTime)
-    const endDateTime = combineDateTime(endDate, endTime)
-
-    if (new Date(endDateTime) <= new Date(startDateTime)) {
-      alert('End date must be later than start date')
+    if (dayOffType === 'FULL_DAY' && !endDate) {
+      alert('Please select end date')
       return
     }
 
@@ -103,6 +139,29 @@ const DayOffModule = ({ open, onClose }: Props) => {
     if (!targetEmployeeId) {
       alert('Please select an employee')
       return
+    }
+
+    let startDateTime: string
+    let endDateTime: string
+
+    if (dayOffType === 'FULL_DAY') {
+      if (!endDate) {
+        alert('Please select end date')
+        return
+      }
+      
+      if (endDate < startDate) {
+        alert('End date must be later than or equal to start date')
+        return
+      }
+
+      startDateTime = getDateTimeForFullDay(startDate, true)
+      endDateTime = getDateTimeForFullDay(endDate, false)
+    } else {
+      // HALF_DAY
+      const halfDayTimes = getDateTimeForHalfDay(startDate, halfDayPeriod)
+      startDateTime = halfDayTimes.start
+      endDateTime = halfDayTimes.end
     }
 
     try {
@@ -147,9 +206,13 @@ const DayOffModule = ({ open, onClose }: Props) => {
             </label>
             <select
               value={dayOffType}
-              onChange={(e) =>
+              onChange={(e) => {
                 setDayOffType(e.target.value as 'FULL_DAY' | 'HALF_DAY')
-              }
+                // Reset end date when switching to half day
+                if (e.target.value === 'HALF_DAY') {
+                  setEndDate(null)
+                }
+              }}
               className="w-full border rounded-lg px-3 py-2 text-sm"
             >
               <option value="FULL_DAY">Full Day</option>
@@ -157,62 +220,76 @@ const DayOffModule = ({ open, onClose }: Props) => {
             </select>
           </div>
 
-          {/* Start Date & Time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Start Date
-              </label>
-              <DatePicker
-                selected={startDate}
-                onChange={(date: Date | null) => setStartDate(date)}
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
+          {/* FULL DAY: Show Start Date and End Date */}
+          {dayOffType === 'FULL_DAY' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Start Date
+                </label>
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date: Date | null) => setStartDate(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select date"
+                  minDate={currentMonthStart}
+                  maxDate={currentMonthEnd}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Start Time
-              </label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  End Date
+                </label>
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date: Date | null) => setEndDate(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select date"
+                  minDate={startDate ?? currentMonthStart}
+                  maxDate={currentMonthEnd}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* End Date & Time */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                End Date
-              </label>
-              <DatePicker
-                selected={endDate}
-                onChange={(date: Date | null) => setEndDate(date)}
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Select date"
-                minDate={startDate ?? undefined}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
+          {/* HALF DAY: Show only Date and Morning/Afternoon selector */}
+          {dayOffType === 'HALF_DAY' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Date
+                </label>
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date: Date | null) => setStartDate(date)}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="Select date"
+                  minDate={currentMonthStart}
+                  maxDate={currentMonthEnd}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                End Time
-              </label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Period
+                </label>
+                <select
+                  value={halfDayPeriod}
+                  onChange={(e) =>
+                    setHalfDayPeriod(e.target.value as 'MORNING' | 'AFTERNOON')
+                  }
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="MORNING">Morning (8:30 AM - 12:00 PM)</option>
+                  <option value="AFTERNOON">Afternoon (1:30 PM - 5:00 PM)</option>
+                </select>
+              </div>
+            </>
+          )}
 
           {/* Employee (Admin only) */}
           {role === 'Admin' && (
@@ -261,19 +338,31 @@ const DayOffModule = ({ open, onClose }: Props) => {
               className="w-full border rounded-lg px-3 py-2 text-sm"
             />
           </div>
+
+          {/* Total Days Off Display */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-slate-700">
+                Total Days Off:
+              </span>
+              <span className="text-lg font-bold text-blue-600">
+                {totalDays > 0 ? `${totalDays} ${totalDays === 1 ? 'day' : 'days'}` : '-'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Actions */}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 rounded-lg"
+            className="px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg"
+            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
             Submit
           </button>
