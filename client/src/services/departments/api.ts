@@ -1,9 +1,10 @@
-const API_URL ='http://localhost:8000/api';
+const API_URL = 'http://localhost:8000/api';
 
 export interface DepartmentData {
     _id: string;
     department_name: string;
     created_at?: string;
+    updated_at?: string;
 }
 
 export interface PositionData {
@@ -11,10 +12,12 @@ export interface PositionData {
     department_id: string;
     position_name: string;
     created_at?: string;
+    updated_at?: string;
     department_name?: string; // สำหรับ populate
 }
 
-// Departments API
+// ==================== Departments API ====================
+
 export const getAllDepartments = async (): Promise<{ departments: DepartmentData[] }> => {
     try {
         const response = await fetch(`${API_URL}/departments`);
@@ -29,7 +32,7 @@ export const getAllDepartments = async (): Promise<{ departments: DepartmentData
     }
 };
 
-export const createDepartment = async (data: { department_name: string }) => {
+export const createDepartment = async (data: { department_name: string }): Promise<DepartmentData> => {
     try {
         const response = await fetch(`${API_URL}/departments`, {
             method: 'POST',
@@ -51,7 +54,51 @@ export const createDepartment = async (data: { department_name: string }) => {
     }
 };
 
-// Positions API
+export const updateDepartment = async (id: string, data: { department_name: string }): Promise<DepartmentData> => {
+    try {
+        const response = await fetch(`${API_URL}/departments/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update department');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating department:', error);
+        throw error;
+    }
+};
+
+export const deleteDepartment = async (id: string): Promise<{ message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/departments/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete department');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting department:', error);
+        throw error;
+    }
+};
+
+// ==================== Positions API ====================
+
 export const getAllPositions = async (): Promise<{ positions: PositionData[] }> => {
     try {
         const response = await fetch(`${API_URL}/positions`);
@@ -66,7 +113,7 @@ export const getAllPositions = async (): Promise<{ positions: PositionData[] }> 
     }
 };
 
-export const createPosition = async (data: { department_id: string; position_name: string }) => {
+export const createPosition = async (data: { department_id: string; position_name: string }): Promise<PositionData> => {
     try {
         const response = await fetch(`${API_URL}/positions`, {
             method: 'POST',
@@ -88,6 +135,49 @@ export const createPosition = async (data: { department_id: string; position_nam
     }
 };
 
+export const updatePosition = async (id: string, data: { department_id?: string; position_name: string }): Promise<PositionData> => {
+    try {
+        const response = await fetch(`${API_URL}/positions/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to update position');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating position:', error);
+        throw error;
+    }
+};
+
+export const deletePosition = async (id: string): Promise<{ message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/positions/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to delete position');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting position:', error);
+        throw error;
+    }
+};
+
 export const getPositionsByDepartment = async (departmentId: string): Promise<{ positions: PositionData[] }> => {
     try {
         const response = await fetch(`${API_URL}/positions/department/${departmentId}`);
@@ -98,6 +188,36 @@ export const getPositionsByDepartment = async (departmentId: string): Promise<{ 
         return { positions };
     } catch (error) {
         console.error('Error fetching positions by department:', error);
+        throw error;
+    }
+};
+
+// ==================== Utility Functions ====================
+
+// Get department by ID
+export const getDepartmentById = async (id: string): Promise<DepartmentData> => {
+    try {
+        const response = await fetch(`${API_URL}/departments/${id}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching department by ID:', error);
+        throw error;
+    }
+};
+
+// Get position by ID
+export const getPositionById = async (id: string): Promise<PositionData> => {
+    try {
+        const response = await fetch(`${API_URL}/positions/${id}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching position by ID:', error);
         throw error;
     }
 };

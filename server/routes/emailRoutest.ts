@@ -15,7 +15,7 @@ interface SalaryEmailRequest {
     totalDeductions?: number
     netSalary?: number
     image?: string
-    fileName?: string
+    fileName?: string   
 }
 
 // Interface สำหรับ Email Response

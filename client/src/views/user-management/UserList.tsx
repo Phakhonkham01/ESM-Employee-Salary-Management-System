@@ -92,16 +92,16 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
             case 'Admin':
                 return 'bg-[#1F3A5F] text-white border-[#1F3A5F]'
             case 'Supervisor':
-                return 'bg-[#E8EEF6] text-[#1F3A5F] border-[#CBD5E1]'
+                return 'bg-[#F52727] text-[#1F3A5F] border-[#F52727]'
             default:
-                return 'bg-[#F3F4F6] text-[#6B7280] border-[#E5E7EB]'
+                return 'bg-[#27F2F5] text-[#080808] border-[#27F2F5]'
         }
     }
 
     const getStatusBadgeClass = (status: string) => {
         switch (status) {
             case 'Active':
-                return 'bg-[#E6F4EA] text-[#2E7D32] border-[#C8E6C9]'
+                return 'bg-[#76FF70] text-[#2E7D32] border-[#C8E6C9]'
             case 'Inactive':
                 return 'bg-[#FDE8E8] text-[#9B1C1C] border-[#FECACA]'
             case 'On Leave':
@@ -114,7 +114,7 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
     const getStatusDotClass = (status: string) => {
         switch (status) {
             case 'Active':
-                return 'bg-[#2E7D32]'
+                return 'bg-[#76FF70]'
             case 'Inactive':
                 return 'bg-[#9B1C1C]'
             case 'On Leave':
@@ -166,7 +166,7 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
                     </div>
                     <button
                         onClick={handleCreateUser}
-                        className="px-5 py-2.5 bg-[#1F3A5F] hover:bg-[#152642] text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
+                        className="px-5 py-2.5 bg-[#27F584] hover:bg-[#152642] text-white rounded text-sm font-medium transition-colors flex items-center gap-2"
                     >
                         <HiUserAdd size={18} />
                         Create New User

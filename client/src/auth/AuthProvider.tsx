@@ -3,7 +3,7 @@ import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
 import { useSessionUser, useToken } from '@/store/authStore'
 import { apiSignOut, apiSignUp } from '@/services/AuthService'
-import { loginUser } from '@/services/auth/login' // เพิ่มบรรทัดนี้
+import { loginUser } from '@/services/auth/Login' // เพิ่มบรรทัดนี้
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
 import type {

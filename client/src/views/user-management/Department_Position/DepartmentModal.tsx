@@ -1,17 +1,23 @@
-import React, { useState } from 'react'
-import { createDepartment } from '../../../services/departments/api'
-import { HiX, HiPlus } from 'react-icons/hi'
+import React, { useState, useEffect } from 'react'
+import { 
+    createDepartment, 
+    updateDepartment,
+    type DepartmentData 
+} from '../../../services/departments/api'
+import { HiX, HiPlus, HiPencil } from 'react-icons/hi'
 
 interface DepartmentModalProps {
     isOpen: boolean
     onClose: () => void
     onSuccess: () => void
+    editingDepartment?: DepartmentData | null // 新增：编辑模式支持
 }
 
 const DepartmentModal: React.FC<DepartmentModalProps> = ({
     isOpen,
     onClose,
     onSuccess,
+    editingDepartment = null
 }) => {
     const [departmentName, setDepartmentName] = useState('')
     const [loading, setLoading] = useState(false)
@@ -20,17 +26,48 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
         text: string
     } | null>(null)
 
+    // 当编辑部门时，预填充表单
+    useEffect(() => {
+        if (editingDepartment) {
+            setDepartmentName(editingDepartment.department_name)
+        } else {
+            setDepartmentName('')
+        }
+        setMessage(null)
+    }, [editingDepartment, isOpen])
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        
+        if (!departmentName.trim()) {
+            setMessage({
+                type: 'error',
+                text: 'Please enter department name'
+            })
+            return
+        }
+
         setLoading(true)
         setMessage(null)
 
         try {
-            await createDepartment({ department_name: departmentName })
-            setMessage({
-                type: 'success',
-                text: 'Department created successfully!',
-            })
+            if (editingDepartment) {
+                // 编辑模式：更新部门
+                await updateDepartment(editingDepartment._id, { 
+                    department_name: departmentName 
+                })
+                setMessage({
+                    type: 'success',
+                    text: 'Department updated successfully!',
+                })
+            } else {
+                // 创建模式：新建部门
+                await createDepartment({ department_name: departmentName })
+                setMessage({
+                    type: 'success',
+                    text: 'Department created successfully!',
+                })
+            }
 
             setTimeout(() => {
                 setDepartmentName('')
@@ -40,7 +77,7 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
         } catch (error: any) {
             setMessage({
                 type: 'error',
-                text: error.message || 'Failed to create department',
+                text: error.message || 'Failed to process department',
             })
         } finally {
             setLoading(false)
@@ -60,6 +97,12 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
     }
 
     if (!isOpen) return null
+
+    const modalTitle = editingDepartment ? 'Edit Department' : 'Add New Department'
+    const submitButtonText = editingDepartment 
+        ? (loading ? 'Updating...' : 'Update Department')
+        : (loading ? 'Creating...' : 'Create Department')
+    const modalIcon = editingDepartment ? <HiPencil size={20} color="#3b82f6" /> : <HiPlus size={20} color="#3b82f6" />
 
     return (
         <div
@@ -97,6 +140,7 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        backgroundColor: editingDepartment ? '#fefce8' : '#ffffff'
                     }}
                 >
                     <h3
@@ -110,8 +154,8 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                             gap: '8px',
                         }}
                     >
-                        <HiPlus size={20} color="#3b82f6" />
-                        Add New Department
+                        {modalIcon}
+                        {modalTitle}
                     </h3>
                     <button
                         onClick={handleClose}
@@ -145,7 +189,9 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                     message.type === 'success'
                                         ? '#065f46'
                                         : '#991b1b',
-                                border: `1px solid ${message.type === 'success' ? '#6ee7b7' : '#fca5a5'}`,
+                                border: `1px solid ${
+                                    message.type === 'success' ? '#6ee7b7' : '#fca5a5'
+                                }`,
                                 fontSize: '14px',
                                 fontWeight: '500',
                             }}
@@ -182,9 +228,32 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                     border: '1px solid #e0e0e0',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    backgroundColor: editingDepartment ? '#f9fafb' : '#ffffff'
                                 }}
+                                autoFocus
                             />
                         </div>
+
+                        {/* 编辑模式下显示部门ID信息 */}
+                        {editingDepartment && (
+                            <div style={{ 
+                                marginBottom: '20px',
+                                padding: '12px',
+                                backgroundColor: '#f3f4f6',
+                                borderRadius: '8px',
+                                fontSize: '13px',
+                                color: '#6b7280'
+                            }}>
+                                <div style={{ marginBottom: '4px' }}>
+                                    <strong>Department ID:</strong> {editingDepartment._id}
+                                </div>
+                                <div>
+                                    <strong>Last Updated:</strong> {editingDepartment.updated_at 
+                                        ? new Date(editingDepartment.updated_at).toLocaleDateString()
+                                        : 'N/A'}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Modal Footer */}
                         <div
@@ -201,13 +270,20 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                 onClick={handleClose}
                                 style={{
                                     padding: '10px 20px',
-                                    backgroundColor: '#6b7280',
-                                    color: 'white',
-                                    border: 'none',
+                                    backgroundColor: '#f3f4f6',
+                                    color: '#374151',
+                                    border: '1px solid #d1d5db',
                                     borderRadius: '8px',
                                     cursor: 'pointer',
                                     fontSize: '14px',
                                     fontWeight: '500',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseOver={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#e5e7eb'
+                                }}
+                                onMouseOut={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#f3f4f6'
                                 }}
                             >
                                 Cancel
@@ -219,6 +295,8 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                     padding: '10px 20px',
                                     backgroundColor: loading
                                         ? '#9ca3af'
+                                        : editingDepartment
+                                        ? '#f59e0b'
                                         : '#3b82f6',
                                     color: 'white',
                                     border: 'none',
@@ -226,9 +304,24 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                     cursor: loading ? 'not-allowed' : 'pointer',
                                     fontSize: '14px',
                                     fontWeight: '500',
+                                    transition: 'all 0.2s',
+                                }}
+                                onMouseOver={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor = editingDepartment
+                                            ? '#d97706'
+                                            : '#2563eb'
+                                    }
+                                }}
+                                onMouseOut={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor = editingDepartment
+                                            ? '#f59e0b'
+                                            : '#3b82f6'
+                                    }
                                 }}
                             >
-                                {loading ? 'Creating...' : 'Create Department'}
+                                {submitButtonText}
                             </button>
                         </div>
                     </form>
