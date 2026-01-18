@@ -2,7 +2,6 @@
 
 import type { FC, ReactElement } from 'react'
 import { useState, useEffect } from 'react'
-<<<<<<< HEAD
 import {
     HiCheck,
     HiX,
@@ -11,10 +10,6 @@ import {
     HiFilter,
     HiRefresh,
 } from 'react-icons/hi'
-=======
-import { HiCheck, HiX, HiClock, HiCalendar, HiFilter } from 'react-icons/hi'
-import { useFullUser } from '@/components/template/useFullUser' // ✅ Use the hook
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
 import {
     getRequestsBySupervisor,
     updateRequestStatus,
@@ -85,20 +80,14 @@ const calculateDuration = (
 
 // ==================== Main Component ====================
 const SupervisorRequests: FC = () => {
-<<<<<<< HEAD
-=======
-    // ✅ Use the hook to get user data
-    const { fullUser, userId, role } = useFullUser()
-
-    // State Management
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
     const [requests, setRequests] = useState<RequestData[]>([])
     const [loading, setLoading] = useState<boolean>(false)
     const [selectedMonth, setSelectedMonth] = useState<string>('')
     const [selectedStatus, setSelectedStatus] = useState<string>('all')
+    const [supervisorId, setSupervisorId] = useState<string>('')
     const [error, setError] = useState<string>('')
+    const [userRole, setUserRole] = useState<string>('')
 
-<<<<<<< HEAD
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean
         requestId: string
@@ -133,64 +122,26 @@ const SupervisorRequests: FC = () => {
                 setError('Failed to load user data')
             }
         } else {
-=======
-    // Check if user is supervisor
-    const isSupervisor = role === 'Supervisor'
-    const supervisorId = isSupervisor ? userId : null
-
-    // ✅ Check authorization on mount
-    useEffect(() => {
-        console.log('🔄 Checking user authorization...')
-        console.log('👤 User ID:', userId)
-        console.log('👔 User Role:', role)
-        console.log('✅ Is Supervisor:', isSupervisor)
-
-        if (!userId) {
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
             setError('Please login to access this page')
-            return
         }
+    }, [])
 
-<<<<<<< HEAD
     useEffect(() => {
         if (supervisorId && supervisorId.length > 0) {
-=======
-        if (!isSupervisor) {
-            setError('Access denied. Only supervisors can view this page.')
-            return
-        }
-
-        // Clear any previous errors if user is authorized
-        setError('')
-    }, [userId, role, isSupervisor])
-
-    // ✅ Fetch requests when supervisor ID is available
-    useEffect(() => {
-        if (supervisorId) {
-            console.log('✅ Supervisor ID available:', supervisorId)
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
             fetchRequests()
         }
     }, [supervisorId])
 
     const fetchRequests = async (): Promise<void> => {
-        if (!supervisorId) {
-            console.warn('⚠️ Cannot fetch: No supervisor ID')
-            return
-        }
-
         try {
             setLoading(true)
             setError('')
 
-<<<<<<< HEAD
             if (!supervisorId || supervisorId.trim().length === 0) {
                 setError('Supervisor ID is not available. Please login again.')
                 return
             }
 
-=======
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
             const response: ApiResponse<RequestData[]> =
                 await getRequestsBySupervisor(supervisorId)
 
@@ -200,11 +151,6 @@ const SupervisorRequests: FC = () => {
                 setRequests([])
             }
         } catch (error: any) {
-<<<<<<< HEAD
-=======
-            console.error('❌ Error fetching requests:', error)
-
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
             if (error.message.includes('Network Error')) {
                 setError(
                     'Cannot connect to server. Please check if backend is running.',
@@ -245,15 +191,11 @@ const SupervisorRequests: FC = () => {
         if (!confirmDialog) return
 
         try {
-<<<<<<< HEAD
             setActionLoading(true)
             await updateRequestStatus(
                 confirmDialog.requestId,
                 confirmDialog.action,
             )
-=======
-            await updateRequestStatus(requestId, newStatus)
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
             await fetchRequests()
             closeConfirmDialog()
         } catch (error: any) {
@@ -301,7 +243,6 @@ const SupervisorRequests: FC = () => {
     const acceptedCount = requests.filter((r) => r.status === 'Accept').length
     const rejectedCount = requests.filter((r) => r.status === 'Reject').length
 
-<<<<<<< HEAD
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
             {/* Header */}
@@ -338,38 +279,6 @@ const SupervisorRequests: FC = () => {
                                 {loading ? 'Loading...' : 'Refresh'}
                             </button>
                         </div>
-=======
-                    <div className="flex items-center gap-4">
-                        {/* Show user info */}
-                        {fullUser && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">
-                                    {fullUser.first_name_en} {fullUser.last_name_en}
-                                </span>
-                                <span
-                                    className={`px-3 py-1 rounded-lg text-xs font-medium ${
-                                        role === 'Supervisor'
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-gray-100 text-gray-800'
-                                    }`}
-                                >
-                                    {role}
-                                </span>
-                            </div>
-                        )}
-
-                        <button
-                            onClick={fetchRequests}
-                            disabled={loading || !supervisorId}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 ${
-                                loading || !supervisorId
-                                    ? 'bg-gray-300 cursor-not-allowed'
-                                    : 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
-                            }`}
-                        >
-                            {loading ? 'Loading...' : 'Refresh'}
-                        </button>
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
                     </div>
                 </div>
             </div> */}
@@ -377,18 +286,18 @@ const SupervisorRequests: FC = () => {
             <div className="p-6">
                 {/* Error Message */}
                 {error && (
-<<<<<<< HEAD
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
                         <div className="font-semibold mb-1">Error</div>
-=======
-                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                        <div className="font-semibold mb-2">⚠️ Error</div>
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
                         <div>{error}</div>
+                        {!supervisorId && (
+                            <div className="mt-2 text-xs">
+                                Please check that you are logged in as a
+                                Supervisor.
+                            </div>
+                        )}
                     </div>
                 )}
 
-<<<<<<< HEAD
                 {/* Not Logged In Warning */}
                 {!supervisorId && !loading && (
                     <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm">
@@ -404,23 +313,10 @@ const SupervisorRequests: FC = () => {
                                 window.location.href = '/login'
                             }}
                             className="mt-3 px-4 py-2 bg-[#1F3A5F] hover:bg-[#2D4A6F] text-white rounded text-sm transition-colors"
-=======
-                {/* Not Authorized */}
-                {!userId ? (
-                    <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
-                        <div className="font-semibold mb-2">
-                            ⚠️ Not Logged In
-                        </div>
-                        <p>Please login to view this page.</p>
-                        <button
-                            onClick={() => window.location.href = '/sign-in'}
-                            className="mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm"
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
                         >
                             Go to Login
                         </button>
                     </div>
-<<<<<<< HEAD
                 )}
 
                 {supervisorId && (
@@ -434,35 +330,6 @@ const SupervisorRequests: FC = () => {
                                 <div className="text-2xl font-semibold text-[#1F3A5F] mt-1">
                                     {requests.length}
                                 </div>
-=======
-                ) : !isSupervisor ? (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-                        <div className="font-semibold mb-2">
-                            🚫 Access Denied
-                        </div>
-                        <p>Only supervisors can access this page.</p>
-                        <p className="text-xs mt-2">Your role: <strong>{role}</strong></p>
-                    </div>
-                ) : (
-                    <>
-                        {/* Filters Section */}
-                        <div className="flex gap-4 mb-6 flex-wrap">
-                            {/* Status Filter */}
-                            <div className="flex items-center gap-2">
-                                <HiFilter className="text-gray-500" />
-                                <select
-                                    value={selectedStatus}
-                                    onChange={(e) =>
-                                        setSelectedStatus(e.target.value)
-                                    }
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Accept">Accepted</option>
-                                    <option value="Reject">Rejected</option>
-                                </select>
->>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
                             </div>
                             <div className="bg-white border border-[#E5E7EB] rounded p-4">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
