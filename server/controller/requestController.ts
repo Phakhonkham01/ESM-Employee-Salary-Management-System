@@ -132,7 +132,7 @@ export const getRequestsByUser = async (
 
   res.json({ requests });
 };
-
+// ในไฟล์ requestController.ts
 export const getRequestsBySupervisor = async (
   req: Request,
   res: Response
@@ -144,13 +144,43 @@ export const getRequestsBySupervisor = async (
     return;
   }
 
-  const requests = await RequestModel.find({
-    supervisor_id: supervisorId,
-  })
-    .populate("user_id", "first_name_en last_name_en email")
+  console.log('🔍 Fetching requests for supervisor:', supervisorId);
+
+  try {
+    // วิธีที่ 1: Populate ข้อมูลทั้งหมดของ user
+    const requests = await RequestModel.find({
+      supervisor_id: supervisorId,
+    })
+    .populate({
+      path: 'user_id',
+      select: '-password', // ไม่เอา password
+    })
     .sort({ created_at: -1 });
 
-  res.json({ requests });
+    console.log(`✅ Found ${requests.length} requests`);
+    
+    // Log ข้อมูลตัวอย่าง
+    if (requests.length > 0) {
+      const sample = requests[0];
+      console.log('Sample request user_id:', {
+        type: typeof sample.user_id,
+        isObject: typeof sample.user_id === 'object',
+        user: sample.user_id
+      });
+    }
+
+    res.json({ 
+      message: "Successfully fetched requests",
+      requests,
+      count: requests.length 
+    });
+  } catch (error: any) {
+    console.error('❌ Error in getRequestsBySupervisor:', error);
+    res.status(500).json({ 
+      message: "Error fetching supervisor requests", 
+      error: error.message 
+    });
+  }
 };
 
 export const getRequestById = async (req: Request, res: Response) => {

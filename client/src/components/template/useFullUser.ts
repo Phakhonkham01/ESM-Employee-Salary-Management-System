@@ -31,7 +31,7 @@ export const useFullUser = () => {
             if (!authData) return null
 
             const parsed = JSON.parse(authData)
-            return parsed?.state?.user || null
+            return parsed?.user || null  // ✅ access .user directly
         } catch (error) {
             console.error('Error getting full user data:', error)
             return null
@@ -52,3 +52,5 @@ export const useFullUser = () => {
 }
 
 export default useFullUser
+
+

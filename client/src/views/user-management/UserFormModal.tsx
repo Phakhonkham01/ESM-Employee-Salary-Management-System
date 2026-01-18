@@ -29,6 +29,7 @@ import {
 } from 'react-icons/hi'
 import DepartmentModal from './Department_Position/DepartmentModal'
 import PositionModal from './Department_Position/PositionModal'
+import Swal from 'sweetalert2'
 
 interface UserFormModalProps {
   isOpen: boolean
@@ -83,11 +84,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const [editingPositionId, setEditingPositionId] = useState<string | null>(null)
   const [editDepartmentName, setEditDepartmentName] = useState('')
   const [editPositionName, setEditPositionName] = useState('')
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
-    type: 'department' | 'position'
-    id: string
-    name: string
-  } | null>(null)
+  
 
   useEffect(() => {
     if (isOpen) {
@@ -243,66 +240,70 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
     return formData.base_salary.toString()
   }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage(null)
-
-    try {
-      const submitData: CreateUserData = {
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
-        first_name_en: formData.first_name_en,
-        last_name_en: formData.last_name_en,
-        nickname_en: formData.nickname_en,
-        first_name_la: formData.first_name_la,
-        last_name_la: formData.last_name_la,
-        nickname_la: formData.nickname_la,
-        date_of_birth: formData.date_of_birth,
-        start_work: formData.start_work,
-        vacation_days: formData.vacation_days,
-        gender: formData.gender,
-        position_id: formData.position_id,
-        department_id: formData.department_id,
-        status: formData.status,
-        base_salary: formData.base_salary,
-      }
-
-      if (editingUser && !submitData.password) {
-        delete submitData.password
-      }
-
-      if (editingUser) {
-        await updateUser(editingUser._id, submitData)
-        setMessage({
-          type: 'success',
-          text: 'User has been updated successfully.',
-        })
-      } else {
-        await createUser(submitData)
-        setMessage({
-          type: 'success',
-          text: 'User has been created successfully.',
-        })
-      }
-
-      setTimeout(() => {
-        onSuccess()
-        resetForm()
-        onClose()
-      }, 1000)
-    } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.message || 'An error occurred. Please try again.',
-      })
-    } finally {
-      setLoading(false)
+  try {
+    const submitData: CreateUserData = {
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+      first_name_en: formData.first_name_en,
+      last_name_en: formData.last_name_en,
+      nickname_en: formData.nickname_en,
+      first_name_la: formData.first_name_la,
+      last_name_la: formData.last_name_la,
+      nickname_la: formData.nickname_la,
+      date_of_birth: formData.date_of_birth,
+      start_work: formData.start_work,
+      vacation_days: formData.vacation_days,
+      gender: formData.gender,
+      position_id: formData.position_id,
+      department_id: formData.department_id,
+      status: formData.status,
+      base_salary: formData.base_salary,
     }
-  }
 
+    if (editingUser && !submitData.password) {
+      delete submitData.password
+    }
+
+    if (editingUser) {
+      await updateUser(editingUser._id, submitData)
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Updated Successfully',
+        text: 'User has been updated successfully.',
+        timer: 1500,
+        showConfirmButton: false,
+      })
+    } else {
+      await createUser(submitData)
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Created Successfully',
+        text: 'User has been created successfully.',
+        timer: 1500,
+        showConfirmButton: false,
+      })
+    }
+
+    onSuccess()
+    resetForm()
+    onClose()
+  } catch (error: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Operation Failed',
+      text: error.message || 'An error occurred. Please try again.',
+    })
+  } finally {
+    setLoading(false)
+  }
+}
   const resetForm = () => {
     setFormData({
       email: '',
@@ -328,7 +329,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     setEditingPositionId(null)
     setEditDepartmentName('')
     setEditPositionName('')
-    setShowDeleteConfirm(null)
+    
   }
 
   const handleClose = () => {
@@ -353,6 +354,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
   }
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{
+  type: 'department' | 'position'
+  id: string
+  name: string
+} | null>(null)
+const handleEditPosition = (positionId: string, currentName: string) => { setEditingPositionId(positionId)}
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 2,
@@ -393,52 +400,111 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   }
 
   // 删除部门
-  const handleDeleteDepartment = async (departmentId: string, departmentName: string) => {
-    setShowDeleteConfirm({
-      type: 'department',
-      id: departmentId,
-      name: departmentName
+
+const handleDeleteDepartment = async (
+  departmentId: string,
+  departmentName: string
+) => {
+  const result = await Swal.fire({
+    title: 'Delete Department?',
+    html: `Department <b>${departmentName}</b> will be permanently removed.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Delete',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#9B1C1C',
+    cancelButtonColor: '#E5E7EB',
+    reverseButtons: true,
+  })
+
+  if (!result.isConfirmed) return
+
+  try {
+    setLoadingDepartments(true)
+    await deleteDepartment(departmentId)
+    await fetchDepartments()
+
+    if (formData.department_id === departmentId) {
+      setFormData((prev) => ({
+        ...prev,
+        department_id: '',
+        position_id: '',
+      }))
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Deleted',
+      text: 'Department deleted successfully',
+      timer: 1500,
+      showConfirmButton: false,
     })
+  } catch (error: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message || 'Failed to delete department',
+    })
+  } finally {
+    setLoadingDepartments(false)
   }
+}
 
   // 确认删除部门
-  const confirmDeleteDepartment = async () => {
-    if (!showDeleteConfirm) return
-
-    try {
-      setLoadingDepartments(true)
-      await deleteDepartment(showDeleteConfirm.id)
-      await fetchDepartments()
-      
-      // 如果当前选中的部门被删除，清空选择
-      if (formData.department_id === showDeleteConfirm.id) {
-        setFormData(prev => ({
-          ...prev,
-          department_id: '',
-          position_id: ''
-        }))
-      }
-      
-      setMessage({
-        type: 'success',
-        text: 'Department deleted successfully'
-      })
-    } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.message || 'Failed to delete department'
-      })
-    } finally {
-      setLoadingDepartments(false)
-      setShowDeleteConfirm(null)
-    }
-  }
+  
 
   // 编辑职位的函数
-  const handleEditPosition = (positionId: string, currentName: string) => {
-    setEditingPositionId(positionId)
-    setEditPositionName(currentName)
+const handleDeletePosition = async (
+  positionId: string,
+  positionName: string
+) => {
+  const result = await Swal.fire({
+    title: 'Delete Position?',
+    html: `Position <b>${positionName}</b> will be permanently removed.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Delete',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#9B1C1C',
+    cancelButtonColor: '#E5E7EB',
+    reverseButtons: true,
+  })
+
+  if (!result.isConfirmed) return
+
+  try {
+    setLoadingPositions(true)
+    await deletePosition(positionId)
+    await fetchAllPositions()
+
+    if (formData.department_id) {
+      await fetchPositionsByDepartment(formData.department_id)
+    }
+
+    if (formData.position_id === positionId) {
+      setFormData((prev) => ({
+        ...prev,
+        position_id: '',
+      }))
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Deleted',
+      text: 'Position deleted successfully',
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  } catch (error: any) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message || 'Failed to delete position',
+    })
+  } finally {
+    setLoadingPositions(false)
   }
+}
 
   // 保存职位编辑
   const handleSavePositionEdit = async () => {
@@ -470,48 +536,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   }
 
   // 删除职位
-  const handleDeletePosition = async (positionId: string, positionName: string) => {
-    setShowDeleteConfirm({
-      type: 'position',
-      id: positionId,
-      name: positionName
-    })
-  }
 
   // 确认删除职位
-  const confirmDeletePosition = async () => {
-    if (!showDeleteConfirm) return
 
-    try {
-      setLoadingPositions(true)
-      await deletePosition(showDeleteConfirm.id)
-      await fetchAllPositions()
-      if (formData.department_id) {
-        await fetchPositionsByDepartment(formData.department_id)
-      }
-      
-      // 如果当前选中的职位被删除，清空选择
-      if (formData.position_id === showDeleteConfirm.id) {
-        setFormData(prev => ({
-          ...prev,
-          position_id: ''
-        }))
-      }
-      
-      setMessage({
-        type: 'success',
-        text: 'Position deleted successfully'
-      })
-    } catch (error: any) {
-      setMessage({
-        type: 'error',
-        text: error.message || 'Failed to delete position'
-      })
-    } finally {
-      setLoadingPositions(false)
-      setShowDeleteConfirm(null)
-    }
-  }
 
   if (!isOpen) return null
 
@@ -776,7 +803,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   return (
     <div
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      onClick={handleBackdropClick}
+      
     >
       <div className="bg-white border border-gray-300 w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-lg">
         {/* Header */}
@@ -1418,44 +1445,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       />
 
       {/* Delete Confirmation Dialog */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
-          <div className="bg-white rounded-md p-6 max-w-md mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Confirm Delete
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete {showDeleteConfirm.type} "{showDeleteConfirm.name}"?
-              {showDeleteConfirm.type === 'department' && 
-                " This will also remove all associated positions."}
-              {showDeleteConfirm.type === 'position' && 
-                " You cannot delete a position that has users assigned to it."}
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (showDeleteConfirm.type === 'department') {
-                    confirmDeleteDepartment()
-                  } else {
-                    confirmDeletePosition()
-                  }
-                }}
-                className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-md"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   )
 }

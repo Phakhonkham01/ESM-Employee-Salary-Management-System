@@ -8,23 +8,42 @@ const API_BASE_URL = 'http://localhost:8000/api'
 export interface User {
     _id: string
     email: string
-    first_name_en: string
-    last_name_en: string
-    first_name_la: string
-    last_name_la: string
-    nickname_en: string
-    nickname_la: string
+    first_name_en?: string
+    last_name_en?: string
+    first_name_la?: string
+    last_name_la?: string
+    first_name?: string
+    last_name?: string
+    nickname_en?: string
+    nickname_la?: string
+    username?: string
+    nickname?: string
+    employee_id?: string
+    employeeId?: string
 }
 
 // ในไฟล์ services/requests/api.ts
 export interface RequestData {
   _id: string;
-  user_id: User | string;
+  user_id: {
+    _id: string;
+    email: string;
+    first_name_en?: string;
+    last_name_en?: string;
+    first_name_la?: string;
+    last_name_la?: string;
+    nickname_en?: string;
+    nickname_la?: string;
+    employee_id?: string;
+    role?: string;
+    status?: string;
+    // เพิ่มฟิลด์เหล่านี้จากที่ backend populate มา
+  } | string; // ยังเป็น string หรือ object ได้
   supervisor_id: User | string;
-  date: string; // ISO string
+  date: string;
   title: 'OT' | 'FIELD_WORK';
-  start_hour: string; // "HH:mm" format
-  end_hour: string; // "HH:mm" format
+  start_hour: string | number;
+  end_hour: string | number;
   fuel?: number;
   reason: string;
   status: 'Pending' | 'Accept' | 'Reject';
@@ -131,7 +150,12 @@ export const getRequestsBySupervisor = async (supervisorId: string): Promise<Api
             }
         })
         
-        console.log('✅ API Response received:', response.data)
+        console.log('✅ API Response received:', {
+            success: !!response.data,
+            message: response.data?.message,
+            requestsCount: response.data?.requests?.length,
+            sampleRequest: response.data?.requests?.[0]
+        })
         
         // Handle response structure
         if (response.data) {

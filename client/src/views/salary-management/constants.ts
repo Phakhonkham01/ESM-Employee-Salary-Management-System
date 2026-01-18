@@ -1,30 +1,6 @@
 // constants.ts
 
-export const steps = [
-    'Basic Information',
-    'Set OT Rates',
-    'Additional Income',
-    'Deductions',
-    'Summary',
-]
 
-export const getMonthName = (monthNum: number) => {
-    const months = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-    ]
-    return months[monthNum - 1] || ''
-}
 
 export const getVacationColorClass = (color: string) => {
     switch (color) {
@@ -39,18 +15,6 @@ export const getVacationColorClass = (color: string) => {
     }
 }
 
-export const getVacationTextColor = (color: string) => {
-    switch (color) {
-        case 'red':
-            return 'text-red-600'
-        case 'yellow':
-            return 'text-yellow-600'
-        case 'green':
-            return 'text-green-600'
-        default:
-            return 'text-blue-600'
-    }
-}
 
 export const getOtTypeThai = (type: string) => {
     switch (type) {
@@ -65,15 +29,73 @@ export const getOtTypeThai = (type: string) => {
     }
 }
 
-export const getOtTypeColor = (type: string) => {
-    switch (type) {
-        case 'weekday':
-            return 'bg-blue-100 text-blue-800'
-        case 'weekend':
-            return 'bg-yellow-100 text-yellow-800'
-        case 'holiday':
-            return 'bg-red-100 text-red-800'
-        default:
-            return 'bg-gray-100 text-gray-800'
-    }
+
+
+export const steps = [
+  "Basic Information",
+  "OT Rates",
+  "Additional Income",
+  "Deductions",
+  "Summary",
+]
+
+export const getMonthName = (month: number): string => {
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ]
+  return months[month - 1] || ""
+}
+
+export const getVacationTextColor = (days: number): string => {
+  if (days <= 0) return "text-red-600"
+  if (days <= 5) return "text-amber-600"
+  return "text-green-600"
+}
+
+export const getOtTypeColor = (type: string): string => {
+  switch (type) {
+    case "weekday":
+      return "bg-blue-100 text-blue-800"
+    case "weekend":
+      return "bg-amber-100 text-amber-800"
+    default:
+      return "bg-gray-100 text-gray-800"
+  }
+}
+
+export const getOtTypeEnglish = (type: string): string => {
+  switch (type) {
+    case "weekday":
+      return "Weekday"
+    case "weekend":
+      return "Weekend"
+    default:
+      return type
+  }
+}
+
+export const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+export const formatDate = (date: Date): string => {
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
 }

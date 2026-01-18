@@ -9,6 +9,7 @@ import {
     HiCalendar,
     HiFilter,
     HiRefresh,
+    HiOutlineUser,
 } from 'react-icons/hi'
 import {
     getRequestsBySupervisor,
@@ -31,14 +32,29 @@ const formatDate = (dateString: string): string => {
     }
 }
 
-const formatHour = (hour: string): string => {
+const formatHour = (hour: string | number): string => {
     try {
         if (typeof hour === 'number') {
             const hours = Math.floor(hour)
             const minutes = Math.round((hour - hours) * 60)
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
         }
-        return hour || '--:--'
+        
+        // ถ้าเป็น string ให้ตรวจสอบ format
+        if (typeof hour === 'string') {
+            if (hour.includes(':')) {
+                return hour
+            }
+            // ถ้าเป็นตัวเลขใน string
+            const numHour = parseFloat(hour)
+            if (!isNaN(numHour)) {
+                const hours = Math.floor(numHour)
+                const minutes = Math.round((numHour - hours) * 60)
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+            }
+        }
+        
+        return hour?.toString() || '--:--'
     } catch {
         return '--:--'
     }
@@ -51,8 +67,18 @@ const calculateDuration = (
     try {
         const toMinutes = (time: string | number): number => {
             if (typeof time === 'string') {
-                const [hours, minutes] = time.split(':').map(Number)
-                return hours * 60 + (minutes || 0)
+                if (time.includes(':')) {
+                    const [hours, minutes] = time.split(':').map(Number)
+                    return hours * 60 + (minutes || 0)
+                } else {
+                    // ถ้าเป็นตัวเลขใน string
+                    const numTime = parseFloat(time)
+                    if (!isNaN(numTime)) {
+                        const hours = Math.floor(numTime)
+                        const minutes = Math.round((numTime - hours) * 60)
+                        return hours * 60 + minutes
+                    }
+                }
             } else if (typeof time === 'number') {
                 const hours = Math.floor(time)
                 const minutes = Math.round((time - hours) * 60)
@@ -87,6 +113,7 @@ const SupervisorRequests: FC = () => {
     const [supervisorId, setSupervisorId] = useState<string>('')
     const [error, setError] = useState<string>('')
     const [userRole, setUserRole] = useState<string>('')
+    const [supervisorName, setSupervisorName] = useState<string>('')
 
     const [confirmDialog, setConfirmDialog] = useState<{
         isOpen: boolean
@@ -106,11 +133,20 @@ const SupervisorRequests: FC = () => {
                 const user = auth.user
 
                 setUserRole(user.role || '')
+                
+                // ตั้งชื่อ Supervisor
+                if (user.first_name_en && user.last_name_en) {
+                    setSupervisorName(`${user.first_name_en} ${user.last_name_en}`)
+                } else if (user.first_name && user.last_name) {
+                    setSupervisorName(`${user.first_name} ${user.last_name}`)
+                } else if (user.email) {
+                    setSupervisorName(user.email.split('@')[0])
+                } else {
+                    setSupervisorName(user.employee_id || 'Supervisor')
+                }
 
                 if (user.role !== 'Supervisor') {
-                    setError(
-                        'Access denied. Only supervisors can view this page.',
-                    )
+                    setError('Access denied. Only supervisors can view this page.')
                     setSupervisorId('')
                 } else if (user._id) {
                     setSupervisorId(user._id)
@@ -152,9 +188,7 @@ const SupervisorRequests: FC = () => {
             }
         } catch (error: any) {
             if (error.message.includes('Network Error')) {
-                setError(
-                    'Cannot connect to server. Please check if backend is running.',
-                )
+                setError('Cannot connect to server. Please check if backend is running.')
             } else if (error.message.includes('404')) {
                 setError('Supervisor not found or no requests available.')
             } else if (error.message.includes('400')) {
@@ -245,44 +279,6 @@ const SupervisorRequests: FC = () => {
 
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
-            {/* Header */}
-            {/* <div className="bg-[#1F3A5F] text-white">
-                <div className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-lg font-semibold m-0">
-                                Supervisor Request Management
-                            </h1>
-                            <p className="text-[#A0AEC0] text-xs mt-1 m-0">
-                                Review and manage employee requests
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {userRole && (
-                                <span className="px-3 py-1 bg-[#2D4A6F] rounded text-xs">
-                                    {userRole}
-                                </span>
-                            )}
-                            <button
-                                onClick={fetchRequests}
-                                disabled={loading || !supervisorId}
-                                className={`px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors ${
-                                    loading || !supervisorId
-                                        ? 'bg-[#2D4A6F] text-[#A0AEC0] cursor-not-allowed'
-                                        : 'bg-white text-[#1F3A5F] hover:bg-gray-100'
-                                }`}
-                            >
-                                <HiRefresh
-                                    className={loading ? 'animate-spin' : ''}
-                                    size={16}
-                                />
-                                {loading ? 'Loading...' : 'Refresh'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div> */}
-
             <div className="p-6">
                 {/* Error Message */}
                 {error && (
@@ -291,8 +287,7 @@ const SupervisorRequests: FC = () => {
                         <div>{error}</div>
                         {!supervisorId && (
                             <div className="mt-2 text-xs">
-                                Please check that you are logged in as a
-                                Supervisor.
+                                Please check that you are logged in as a Supervisor.
                             </div>
                         )}
                     </div>
@@ -305,8 +300,7 @@ const SupervisorRequests: FC = () => {
                             Not Logged In as Supervisor
                         </div>
                         <p className="m-0">
-                            Please login with a Supervisor account to view
-                            requests.
+                            Please login with a Supervisor account to view requests.
                         </p>
                         <button
                             onClick={() => {
@@ -321,6 +315,18 @@ const SupervisorRequests: FC = () => {
 
                 {supervisorId && (
                     <>
+                        {/* Supervisor Info */}
+                        {supervisorName && (
+                            <div className="mb-6 bg-white border border-gray-300 px-4 py-3 rounded">
+                                <p className="text-sm font-medium text-gray-900">
+                                    Supervisor: {supervisorName}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-0.5">
+                                    ID: {supervisorId.substring(0, 8)}...
+                                </p>
+                            </div>
+                        )}
+
                         {/* Stats Cards */}
                         <div className="grid grid-cols-4 gap-4 mb-6">
                             <div className="bg-white border border-[#E5E7EB] rounded p-4">
@@ -368,7 +374,7 @@ const SupervisorRequests: FC = () => {
                                     Filters
                                 </span>
                             </div>
-                            <div className="p-4 flex gap-4">
+                            <div className="p-4 flex gap-4 items-center">
                                 <div>
                                     <label className="block text-xs text-[#6B7280] mb-1">
                                         Status
@@ -421,6 +427,23 @@ const SupervisorRequests: FC = () => {
                                             ))}
                                         </select>
                                     </div>
+                                </div>
+                                <div className="ml-auto">
+                                    <button
+                                        onClick={fetchRequests}
+                                        disabled={loading || !supervisorId}
+                                        className={`px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors ${
+                                            loading || !supervisorId
+                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                : 'bg-[#1F3A5F] text-white hover:bg-[#2D4A6F]'
+                                        }`}
+                                    >
+                                        <HiRefresh
+                                            className={loading ? 'animate-spin' : ''}
+                                            size={16}
+                                        />
+                                        {loading ? 'Loading...' : 'Refresh'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -629,42 +652,45 @@ interface RequestRowProps {
 }
 
 const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
-    const getUserName = (): string => {
-        if (typeof request.user_id === 'object' && request.user_id !== null) {
-            const user = request.user_id as User
-            return `${user.first_name_en || ''} ${user.last_name_en || ''}`.trim()
+    // ฟังก์ชันดึงข้อมูลพนักงาน
+    const getEmployeeInfo = () => {
+    if (!request.user_id) {
+        return {
+            name: 'Unknown User',
+            email: 'No email',
+            employeeId: 'N/A'
         }
-        return 'Unknown User'
     }
 
-    const getUserEmail = (): string => {
-        if (typeof request.user_id === 'object' && request.user_id !== null) {
-            const user = request.user_id as User
-            return user.email || 'No email'
+    // ถ้า user_id เป็น object
+    if (typeof request.user_id === 'object') {
+        const user = request.user_id as any;
+        
+        // ใช้ชื่อจากฟิลด์ที่ backend populate จริงๆ
+        const firstName = user.first_name_en || user.first_name || '';
+        const lastName = user.last_name_en || user.last_name || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        
+        return {
+            name: fullName || user.email?.split('@')[0] || 'Unknown User',
+            email: user.email || 'No email',
+            employeeId: user.employee_id || user._id?.substring(0, 8) || 'N/A'
         }
-        return 'Unknown'
     }
-
-    const showFuelInfo = () => {
-        if (
-            request.title === 'FIELD_WORK' &&
-            request.fuel &&
-            request.fuel > 0
-        ) {
-            return (
-                <div className="text-xs text-green-600 mt-1">
-                    Fuel: {request.fuel.toLocaleString()} ₭
-                </div>
-            )
-        }
-        return null
+    
+    // ถ้า user_id เป็น string
+    return {
+        name: `User-${request.user_id.substring(0, 6)}...`,
+        email: 'No email',
+        employeeId: request.user_id.substring(0, 8)
     }
+}
 
+    const employeeInfo = getEmployeeInfo()
     const displayDate = formatDate(request.date)
     const startTime = formatHour(request.start_hour)
     const endTime = formatHour(request.end_hour)
     const duration = calculateDuration(request.start_hour, request.end_hour)
-    const userName = getUserName()
 
     const getStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
@@ -688,24 +714,56 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
 
     const getTypeBadge = (title: string) => {
         const isOT = title === 'OT'
+        const isFieldWork = title === 'FIELD_WORK'
         return (
             <span
                 className={`px-2 py-1 rounded text-xs font-medium ${
                     isOT
                         ? 'bg-blue-50 text-blue-700'
-                        : 'bg-purple-50 text-purple-700'
+                        : isFieldWork
+                        ? 'bg-purple-50 text-purple-700'
+                        : 'bg-gray-50 text-gray-700'
                 }`}
             >
-                {title}
+                {title === 'OT' ? 'Overtime' : 
+                 title === 'FIELD_WORK' ? 'Field Work' : 
+                 title}
             </span>
         )
+    }
+
+    const showFuelInfo = () => {
+        if (request.title === 'FIELD_WORK' && request.fuel && request.fuel > 0) {
+            return (
+                <div className="text-xs text-green-600 mt-1">
+                    Fuel: {request.fuel.toLocaleString()} ₭
+                </div>
+            )
+        }
+        return null
     }
 
     return (
         <tr className="border-b border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors">
             <td className="px-4 py-3 text-sm">
-                <div className="font-medium text-[#374151]">{userName}</div>
-                <div className="text-xs text-[#6B7280]">{getUserEmail()}</div>
+                <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                        <HiOutlineUser className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <div>
+                        <div className="font-medium text-[#374151]">
+                            {employeeInfo.name}
+                        </div>
+                        <div className="text-xs text-[#6B7280]">
+                            {employeeInfo.email}
+                        </div>
+                        {employeeInfo.employeeId !== 'N/A' && (
+                            <div className="text-xs text-[#6B7280] mt-0.5">
+                                ID: {employeeInfo.employeeId}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </td>
             <td className="px-4 py-3 text-sm">
                 {getTypeBadge(request.title)}
@@ -736,7 +794,7 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
                                 onStatusUpdate(
                                     request._id,
                                     'Accept',
-                                    userName,
+                                    employeeInfo.name,
                                     request.title,
                                 )
                             }
@@ -750,7 +808,7 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
                                 onStatusUpdate(
                                     request._id,
                                     'Reject',
-                                    userName,
+                                    employeeInfo.name,
                                     request.title,
                                 )
                             }

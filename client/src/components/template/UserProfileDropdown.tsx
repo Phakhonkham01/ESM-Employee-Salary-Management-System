@@ -48,10 +48,11 @@ const _UserDropdown = () => {
                     <Avatar {...avatarProps} />
                     <div>
                         <div className="font-bold text-gray-900 dark:text-gray-100">
-                            {userName || 'Anonymous'}
+                            {/* {userName || 'Anonymous'} */}
+                            {email || 'No email available'}
                         </div>
                         <div className="text-xs">
-                            {email || 'No email available'}
+                            
                         </div>
                         {/* ✅ Display additional info from full DB user */}
                         {role && (
