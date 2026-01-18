@@ -3,7 +3,11 @@ import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
 import { useSessionUser, useToken } from '@/store/authStore'
 import { apiSignOut, apiSignUp } from '@/services/AuthService'
+<<<<<<< HEAD
 import { loginUser } from '@/services/auth/Login' // เพิ่มบรรทัดนี้
+=======
+import { loginUser } from '@/services/auth/Login'
+>>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
 import type {
@@ -58,12 +62,28 @@ function AuthProvider({ children }: AuthProviderProps) {
         )
     }
 
-    const handleSignIn = (tokens: Token, user?: User) => {
+    const handleSignIn = (tokens: Token, user?: User, fullDbUser?: any) => {
         setToken(tokens.accessToken)
         setSessionSignedIn(true)
 
         if (user) {
             setUser(user)
+        }
+
+        // ✅ Save full DB user data to 'auth' localStorage
+        if (fullDbUser) {
+            const authData = JSON.parse(localStorage.getItem('auth') || '{}')
+            localStorage.setItem(
+                'auth',
+                JSON.stringify({
+                    ...authData,
+                    state: {
+                        ...authData.state,
+                        user: fullDbUser, // Full DB user object
+                    },
+                    token: tokens.accessToken,
+                })
+            )
         }
     }
 
@@ -71,28 +91,37 @@ function AuthProvider({ children }: AuthProviderProps) {
         setToken('')
         setUser({})
         setSessionSignedIn(false)
+<<<<<<< HEAD
 
         // ✅ CLEAR STORAGE
+=======
+        
+        // ✅ Clear the auth localStorage
+>>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
         localStorage.removeItem('auth')
     }
 
     const signIn = async (values: SignInCredential): AuthResult => {
         try {
-            // เปลี่ยนจาก apiSignIn เป็น loginUser (เช็คกับ database)
             const resp = await loginUser(values)
 
             if (resp && resp.user) {
-                // แปลง user data จาก database ให้ตรงกับ format ที่ app ต้องการ
+                // Map user data for Zustand state (UI display)
                 const userData: User = {
                     email: resp.user.email,
+<<<<<<< HEAD
                     userName: `${resp.user} ${resp.user}`,
+=======
+                    userName: `${resp.user.first_name_en} ${resp.user.last_name_en}`,
+>>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
                     authority: [resp.user.role], // ['Admin'], ['Supervisor'], ['Employee']
-                    avatar: '', // ถ้ามี avatar ให้เพิ่มใน database
+                    avatar: '', // Add avatar from database if available
                 }
 
-                // สร้าง mock token (หรือถ้า backend ส่ง token มาให้ใช้ token จริง)
+                // Create token (or use real token from backend if available)
                 const token = 'mock-token-' + resp.user._id
 
+<<<<<<< HEAD
                 // ✅ SAVE LOGIN DATA
                 localStorage.setItem(
                     'auth',
@@ -102,6 +131,10 @@ function AuthProvider({ children }: AuthProviderProps) {
                     }),
                 )
                 handleSignIn({ accessToken: token }, userData)
+=======
+                // ✅ Pass full DB user object to be saved in localStorage
+                handleSignIn({ accessToken: token }, userData, resp.user)
+>>>>>>> a81f90919b11e0e229d79ca6216df748c771d6a2
                 redirect()
                 return {
                     status: 'success',
@@ -135,7 +168,6 @@ function AuthProvider({ children }: AuthProviderProps) {
                 status: 'failed',
                 message: 'Unable to sign up',
             }
-            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
         } catch (errors: any) {
             return {
                 status: 'failed',

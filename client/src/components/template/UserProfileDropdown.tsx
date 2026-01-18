@@ -2,6 +2,7 @@ import Avatar from '@/components/ui/Avatar'
 import Dropdown from '@/components/ui/Dropdown'
 import withHeaderItem from '@/utils/hoc/withHeaderItem'
 import { useSessionUser } from '@/store/authStore'
+import { useFullUser } from './useFullUser' // ✅ Import helper hook
 import { Link } from 'react-router-dom'
 import { PiUserDuotone, PiSignOutDuotone } from 'react-icons/pi'
 import { useAuth } from '@/auth'
@@ -9,14 +10,17 @@ import { useAuth } from '@/auth'
 type DropdownList = {
     label: string
     path: string
-    icon: JSX.Element
+    
 }
 
-const dropdownItemList: DropdownList[] = [
-]
+const dropdownItemList: DropdownList[] = []
 
 const _UserDropdown = () => {
+    // ✅ Get display user data from Zustand (for UI)
     const { avatar, userName, email } = useSessionUser((state) => state.user)
+    
+    // ✅ Get full DB user data from localStorage (for additional info)
+    const { fullUser, role, departmentId } = useFullUser()
 
     const { signOut } = useAuth()
 
@@ -49,6 +53,12 @@ const _UserDropdown = () => {
                         <div className="text-xs">
                             {email || 'No email available'}
                         </div>
+                        {/* ✅ Display additional info from full DB user */}
+                        {role && (
+                            <div className="text-xs text-gray-500 mt-1">
+                                Role: {role}
+                            </div>
+                        )}
                     </div>
                 </div>
             </Dropdown.Item>
@@ -61,7 +71,7 @@ const _UserDropdown = () => {
                 >
                     <Link className="flex h-full w-full px-2" to={item.path}>
                         <span className="flex gap-2 items-center w-full">
-                            <span className="text-xl">{item.icon}</span>
+                            {/* <span className="text-xl">{item.icon}</span> */}
                             <span>{item.label}</span>
                         </span>
                     </Link>

@@ -13,6 +13,7 @@ export interface UserData {
   _id: string;
   email: string;
   role: "Supervisor" | "Admin" | "Employee";
+  name:string;
   first_name_en: string;
   last_name_en: string;
   nickname_en: string;
