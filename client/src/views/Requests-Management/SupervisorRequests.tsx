@@ -39,7 +39,7 @@ const formatHour = (hour: string | number): string => {
             const minutes = Math.round((hour - hours) * 60)
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
         }
-        
+
         // ถ้าเป็น string ให้ตรวจสอบ format
         if (typeof hour === 'string') {
             if (hour.includes(':')) {
@@ -53,7 +53,7 @@ const formatHour = (hour: string | number): string => {
                 return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
             }
         }
-        
+
         return hour?.toString() || '--:--'
     } catch {
         return '--:--'
@@ -133,10 +133,12 @@ const SupervisorRequests: FC = () => {
                 const user = auth.user
 
                 setUserRole(user.role || '')
-                
+
                 // ตั้งชื่อ Supervisor
                 if (user.first_name_en && user.last_name_en) {
-                    setSupervisorName(`${user.first_name_en} ${user.last_name_en}`)
+                    setSupervisorName(
+                        `${user.first_name_en} ${user.last_name_en}`,
+                    )
                 } else if (user.first_name && user.last_name) {
                     setSupervisorName(`${user.first_name} ${user.last_name}`)
                 } else if (user.email) {
@@ -146,7 +148,9 @@ const SupervisorRequests: FC = () => {
                 }
 
                 if (user.role !== 'Supervisor') {
-                    setError('Access denied. Only supervisors can view this page.')
+                    setError(
+                        'Access denied. Only supervisors can view this page.',
+                    )
                     setSupervisorId('')
                 } else if (user._id) {
                     setSupervisorId(user._id)
@@ -188,7 +192,9 @@ const SupervisorRequests: FC = () => {
             }
         } catch (error: any) {
             if (error.message.includes('Network Error')) {
-                setError('Cannot connect to server. Please check if backend is running.')
+                setError(
+                    'Cannot connect to server. Please check if backend is running.',
+                )
             } else if (error.message.includes('404')) {
                 setError('Supervisor not found or no requests available.')
             } else if (error.message.includes('400')) {
@@ -287,7 +293,8 @@ const SupervisorRequests: FC = () => {
                         <div>{error}</div>
                         {!supervisorId && (
                             <div className="mt-2 text-xs">
-                                Please check that you are logged in as a Supervisor.
+                                Please check that you are logged in as a
+                                Supervisor.
                             </div>
                         )}
                     </div>
@@ -300,7 +307,8 @@ const SupervisorRequests: FC = () => {
                             Not Logged In as Supervisor
                         </div>
                         <p className="m-0">
-                            Please login with a Supervisor account to view requests.
+                            Please login with a Supervisor account to view
+                            requests.
                         </p>
                         <button
                             onClick={() => {
@@ -316,20 +324,65 @@ const SupervisorRequests: FC = () => {
                 {supervisorId && (
                     <>
                         {/* Supervisor Info */}
-                        {supervisorName && (
-                            <div className="mb-6 bg-white border border-gray-300 px-4 py-3 rounded">
-                                <p className="text-sm font-medium text-gray-900">
-                                    Supervisor: {supervisorName}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-0.5">
-                                    ID: {supervisorId.substring(0, 8)}...
-                                </p>
-                            </div>
-                        )}
+{supervisorName && (
+  <div className="mb-6 bg-white border border-gray-300 px-4 py-3 rounded">
+    <div className="flex items-center justify-between">
+      {/* Left: Supervisor Info */}
+      <div>
+        <p className="text-sm font-medium text-gray-900">
+          Supervisor: {supervisorName}
+        </p>
+        <p className="text-xs text-gray-600 mt-0.5">
+          ID: {supervisorId.substring(0, 8)}...
+        </p>
+      </div>
+
+      {/* Right: Filters */}
+      <div className="flex items-center gap-4">
+        {/* Status Filter */}
+        <div>
+          
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="px-3 py-2 border border-[#E5E7EB] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
+          >
+            <option value="all">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Accept">Accepted</option>
+            <option value="Reject">Rejected</option>
+          </select>
+        </div>
+
+        {/* Month Filter */}
+        <div className="flex items-center gap-2">
+            
+          <HiCalendar className="text-[#6B7280]" size={16} />
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="px-3 py-2 border border-[#E5E7EB] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
+          >
+            <option value="">All Months</option>
+            {availableMonths.map((month) => (
+              <option key={month} value={month}>
+                {new Date(month + '-01').toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                })}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
                         {/* Stats Cards */}
                         <div className="grid grid-cols-4 gap-4 mb-6">
-                            <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                            <div className="bg-[#FFFFFF]/10 border border-[#FFFFFF]/30 rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Total Requests
                                 </div>
@@ -337,7 +390,7 @@ const SupervisorRequests: FC = () => {
                                     {requests.length}
                                 </div>
                             </div>
-                            <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                            <div className="bg-[#76FF70]/10 border border-[#76FF70]/30 rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Pending
                                 </div>
@@ -345,7 +398,7 @@ const SupervisorRequests: FC = () => {
                                     {pendingCount}
                                 </div>
                             </div>
-                            <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                            <div className="bg-[#FEF3C7]/50 border border-[#FDE68A] rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Accepted
                                 </div>
@@ -353,7 +406,7 @@ const SupervisorRequests: FC = () => {
                                     {acceptedCount}
                                 </div>
                             </div>
-                            <div className="bg-white border border-[#E5E7EB] rounded p-4">
+                            <div className="bg-[#FDE8E8] border border-[#FECACA] rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Rejected
                                 </div>
@@ -365,7 +418,7 @@ const SupervisorRequests: FC = () => {
 
                         {/* Filters */}
                         <div className="bg-white border border-[#E5E7EB] rounded mb-6">
-                            <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
+                            {/* <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
                                 <HiFilter
                                     className="text-[#6B7280]"
                                     size={16}
@@ -373,79 +426,8 @@ const SupervisorRequests: FC = () => {
                                 <span className="text-sm font-medium text-[#374151]">
                                     Filters
                                 </span>
-                            </div>
-                            <div className="p-4 flex gap-4 items-center">
-                                <div>
-                                    <label className="block text-xs text-[#6B7280] mb-1">
-                                        Status
-                                    </label>
-                                    <select
-                                        value={selectedStatus}
-                                        onChange={(e) =>
-                                            setSelectedStatus(e.target.value)
-                                        }
-                                        className="px-3 py-2 border border-[#E5E7EB] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[140px]"
-                                    >
-                                        <option value="all">All Status</option>
-                                        <option value="Pending">Pending</option>
-                                        <option value="Accept">Accepted</option>
-                                        <option value="Reject">Rejected</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs text-[#6B7280] mb-1">
-                                        Month
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                        <HiCalendar
-                                            className="text-[#6B7280]"
-                                            size={16}
-                                        />
-                                        <select
-                                            value={selectedMonth}
-                                            onChange={(e) =>
-                                                setSelectedMonth(e.target.value)
-                                            }
-                                            className="px-3 py-2 border border-[#E5E7EB] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[160px]"
-                                        >
-                                            <option value="">All Months</option>
-                                            {availableMonths.map((month) => (
-                                                <option
-                                                    key={month}
-                                                    value={month}
-                                                >
-                                                    {new Date(
-                                                        month + '-01',
-                                                    ).toLocaleDateString(
-                                                        'en-US',
-                                                        {
-                                                            year: 'numeric',
-                                                            month: 'long',
-                                                        },
-                                                    )}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="ml-auto">
-                                    <button
-                                        onClick={fetchRequests}
-                                        disabled={loading || !supervisorId}
-                                        className={`px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors ${
-                                            loading || !supervisorId
-                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                : 'bg-[#1F3A5F] text-white hover:bg-[#2D4A6F]'
-                                        }`}
-                                    >
-                                        <HiRefresh
-                                            className={loading ? 'animate-spin' : ''}
-                                            size={16}
-                                        />
-                                        {loading ? 'Loading...' : 'Refresh'}
-                                    </button>
-                                </div>
-                            </div>
+                            </div> */}
+        
                         </div>
 
                         {/* Content */}
@@ -654,37 +636,38 @@ interface RequestRowProps {
 const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
     // ฟังก์ชันดึงข้อมูลพนักงาน
     const getEmployeeInfo = () => {
-    if (!request.user_id) {
-        return {
-            name: 'Unknown User',
-            email: 'No email',
-            employeeId: 'N/A'
+        if (!request.user_id) {
+            return {
+                name: 'Unknown User',
+                email: 'No email',
+                employeeId: 'N/A',
+            }
         }
-    }
 
-    // ถ้า user_id เป็น object
-    if (typeof request.user_id === 'object') {
-        const user = request.user_id as any;
-        
-        // ใช้ชื่อจากฟิลด์ที่ backend populate จริงๆ
-        const firstName = user.first_name_en || user.first_name || '';
-        const lastName = user.last_name_en || user.last_name || '';
-        const fullName = `${firstName} ${lastName}`.trim();
-        
+        // ถ้า user_id เป็น object
+        if (typeof request.user_id === 'object') {
+            const user = request.user_id as any
+
+            // ใช้ชื่อจากฟิลด์ที่ backend populate จริงๆ
+            const firstName = user.first_name_en || user.first_name || ''
+            const lastName = user.last_name_en || user.last_name || ''
+            const fullName = `${firstName} ${lastName}`.trim()
+
+            return {
+                name: fullName || user.email?.split('@')[0] || 'Unknown User',
+                email: user.email || 'No email',
+                employeeId:
+                    user.employee_id || user._id?.substring(0, 8) || 'N/A',
+            }
+        }
+
+        // ถ้า user_id เป็น string
         return {
-            name: fullName || user.email?.split('@')[0] || 'Unknown User',
-            email: user.email || 'No email',
-            employeeId: user.employee_id || user._id?.substring(0, 8) || 'N/A'
+            name: `User-${request.user_id.substring(0, 6)}...`,
+            email: 'No email',
+            employeeId: request.user_id.substring(0, 8),
         }
     }
-    
-    // ถ้า user_id เป็น string
-    return {
-        name: `User-${request.user_id.substring(0, 6)}...`,
-        email: 'No email',
-        employeeId: request.user_id.substring(0, 8)
-    }
-}
 
     const employeeInfo = getEmployeeInfo()
     const displayDate = formatDate(request.date)
@@ -721,19 +704,25 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
                     isOT
                         ? 'bg-blue-50 text-blue-700'
                         : isFieldWork
-                        ? 'bg-purple-50 text-purple-700'
-                        : 'bg-gray-50 text-gray-700'
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'bg-gray-50 text-gray-700'
                 }`}
             >
-                {title === 'OT' ? 'Overtime' : 
-                 title === 'FIELD_WORK' ? 'Field Work' : 
-                 title}
+                {title === 'OT'
+                    ? 'Overtime'
+                    : title === 'FIELD_WORK'
+                      ? 'Field Work'
+                      : title}
             </span>
         )
     }
 
     const showFuelInfo = () => {
-        if (request.title === 'FIELD_WORK' && request.fuel && request.fuel > 0) {
+        if (
+            request.title === 'FIELD_WORK' &&
+            request.fuel &&
+            request.fuel > 0
+        ) {
             return (
                 <div className="text-xs text-green-600 mt-1">
                     Fuel: {request.fuel.toLocaleString()} ₭
@@ -759,7 +748,7 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
                         </div>
                         {employeeInfo.employeeId !== 'N/A' && (
                             <div className="text-xs text-[#6B7280] mt-0.5">
-                                ID: {employeeInfo.employeeId}
+                                {/* ID: {employeeInfo.employeeId} */}
                             </div>
                         )}
                     </div>
@@ -786,42 +775,43 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
             <td className="px-4 py-3 text-sm">
                 {getStatusBadge(request.status)}
             </td>
-            <td className="px-4 py-3 text-sm">
-                {request.status === 'Pending' ? (
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() =>
-                                onStatusUpdate(
-                                    request._id,
-                                    'Accept',
-                                    employeeInfo.name,
-                                    request.title,
-                                )
-                            }
-                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors flex items-center gap-1"
-                        >
-                            <HiCheck size={14} />
-                            Accept
-                        </button>
-                        <button
-                            onClick={() =>
-                                onStatusUpdate(
-                                    request._id,
-                                    'Reject',
-                                    employeeInfo.name,
-                                    request.title,
-                                )
-                            }
-                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors flex items-center gap-1"
-                        >
-                            <HiX size={14} />
-                            Reject
-                        </button>
-                    </div>
-                ) : (
-                    <span className="text-xs text-[#6B7280]">-</span>
-                )}
-            </td>
+ <td className="px-1 py-1 text-sm text-center">
+  {request.status === 'Pending' ? (
+    <div className="flex justify-center gap-4">
+      <button
+        onClick={() =>
+          onStatusUpdate(
+            request._id,
+            'Accept',
+            employeeInfo.name,
+            request.title
+          )
+        }
+        className="px-1 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+      >
+        <HiCheck size={14} />
+        Accept
+      </button>
+      <button
+        onClick={() =>
+          onStatusUpdate(
+            request._id,
+            'Reject',
+            employeeInfo.name,
+            request.title
+          )
+        }
+        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
+      >
+        <HiX size={14} />
+        Reject
+      </button>
+    </div>
+  ) : (
+    <span className="text-xs text-gray-400">-</span>
+  )}
+</td>
+
         </tr>
     )
 }

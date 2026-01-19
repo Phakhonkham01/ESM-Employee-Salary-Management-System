@@ -429,7 +429,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                 <>
                     {/* Statistics Overview */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-white border border-gray-300 p-4 rounded-sm">
+                        <div className="bg-[#FFFFFF]/10 border border-[#FFFFFF]/30 rounded p-4 shadow-sm">
                             <div className="text-xs text-gray-600 mb-1">
                                 Total Requests
                             </div>
@@ -440,7 +440,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                 <div className="h-full bg-[#1F3A5F] w-full"></div>
                             </div>
                         </div>
-                        <div className="bg-white border border-gray-300 p-4 rounded-sm">
+                        <div className="bg-[#FEF3C7]/50 border border-[#FDE68A] rounded p-4 shadow-sm">
                             <div className="text-xs text-gray-600 mb-1">
                                 Pending Review
                             </div>
@@ -451,7 +451,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                 <div className="h-full bg-[#B45309] w-full"></div>
                             </div>
                         </div>
-                        <div className="bg-white border border-gray-300 p-4 rounded-sm">
+                        <div className="bg-[#76FF70]/10 border border-[#76FF70]/30 rounded p-4 shadow-sm">
                             <div className="text-xs text-gray-600 mb-1">
                                 Approved
                             </div>
@@ -462,7 +462,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                 <div className="h-full bg-[#2E7D32] w-full"></div>
                             </div>
                         </div>
-                        <div className="bg-white border border-gray-300 p-4 rounded-sm">
+                        <div className="bg-[#FDE8E8] border border-[#FECACA] rounded p-4 shadow-sm">
                             <div className="text-xs text-gray-600 mb-1">
                                 Rejected
                             </div>
@@ -480,15 +480,18 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                         {/* Table Header */}
                         <div className="px-6 py-4 border-b border-gray-300">
                             <div className="flex justify-between items-center">
+                                {/* LEFT */}
                                 <div>
                                     <h2 className="text-lg font-medium text-gray-900">
                                         Leave Request Queue
                                     </h2>
-                                    <p className="text-sm text-gray-600 mt-0.5">
+                                    {/* <p className="text-sm text-gray-600 mt-0.5">
                                         Showing {filteredDayOffs.length} of{' '}
                                         {dayOffs.length} requests
-                                    </p>
+                                    </p> */}
                                 </div>
+
+                                {/* RIGHT */}
                                 <div className="flex gap-3">
                                     <div className="flex items-center gap-2">
                                         <HiFilter className="text-gray-500 w-4 h-4" />
@@ -499,7 +502,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                     e.target.value,
                                                 )
                                             }
-                                            className="px-3 py-1.5 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
                                         >
                                             <option value="all">
                                                 All Status
@@ -515,12 +518,13 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                             </option>
                                         </select>
                                     </div>
+
                                     <select
                                         value={selectedMonth}
                                         onChange={(e) =>
                                             setSelectedMonth(e.target.value)
                                         }
-                                        className="px-3 py-1.5 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
                                     >
                                         <option value="">All Periods</option>
                                         {availableMonths.map((month) => (
@@ -536,229 +540,250 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                     </select>
                                 </div>
                             </div>
+{/* 
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) =>
+                                    setSelectedMonth(e.target.value)
+                                }
+                                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                            >
+                                <option value="">All Periods</option>
+                                {availableMonths.map((month) => (
+                                    <option key={month} value={month}>
+                                        {new Date(
+                                            month + '-01',
+                                        ).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                        })}
+                                    </option>
+                                ))}
+                            </select> */}
                         </div>
+                    </div>
 
-                        {/* Table Content */}
-                        <div className="p-6">
-                            {filteredDayOffs.length === 0 ? (
-                                <div className="text-center py-16 px-5">
-                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-                                        <HiOutlineCalendar className="w-8 h-8 text-gray-400" />
-                                    </div>
-                                    <p className="text-gray-600 mb-1">
-                                        No matching leave requests found
-                                    </p>
-                                    <p className="text-gray-500 text-sm">
-                                        {dayOffs.length === 0
-                                            ? 'There are currently no leave requests requiring your approval.'
-                                            : 'Adjust filter criteria to see results.'}
-                                    </p>
+                    {/* Table Content */}
+                    <div className="p-6">
+                        {filteredDayOffs.length === 0 ? (
+                            <div className="text-center py-16 px-5">
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                                    <HiOutlineCalendar className="w-8 h-8 text-gray-400" />
                                 </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="bg-gray-50 border-b border-gray-300">
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Employee
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Type
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Start Date
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    End Date
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Duration
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Reason
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Status
-                                                </th>
-                                                <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                    Actions
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-200">
-                                            {filteredDayOffs.map((d) => {
-                                                const employeeDisplayName: string =
-                                                    getEmployeeDisplayName(d)
+                                <p className="text-gray-600 mb-1">
+                                    No matching leave requests found
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    {dayOffs.length === 0
+                                        ? 'There are currently no leave requests requiring your approval.'
+                                        : 'Adjust filter criteria to see results.'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-300">
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Employee
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Type
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Start Date
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                End Date
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Duration
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Reason
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Status
+                                            </th>
+                                            <th className="px-6 py-3.5 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                        {filteredDayOffs.map((d) => {
+                                            const employeeDisplayName: string =
+                                                getEmployeeDisplayName(d)
 
-                                                const employeeId =
-                                                    typeof d.employee_id ===
-                                                    'string'
-                                                        ? d.employee_id
-                                                        : ''
+                                            const employeeId =
+                                                typeof d.employee_id ===
+                                                'string'
+                                                    ? d.employee_id
+                                                    : ''
 
-                                                const statusStyle =
-                                                    getStatusStyle(d.status)
-                                                const typeStyle = getTypeStyle(
-                                                    d.day_off_type,
-                                                )
-                                                const isPending =
-                                                    d.status === 'Pending'
+                                            const statusStyle = getStatusStyle(
+                                                d.status,
+                                            )
+                                            const typeStyle = getTypeStyle(
+                                                d.day_off_type,
+                                            )
+                                            const isPending =
+                                                d.status === 'Pending'
 
-                                                return (
-                                                    <tr
-                                                        key={d._id}
-                                                        className="hover:bg-gray-50 transition-colors duration-150"
-                                                    >
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-sm flex items-center justify-center">
-                                                                    <HiOutlineUser className="w-4 h-4 text-gray-500" />
+                                            return (
+                                                <tr
+                                                    key={d._id}
+                                                    className="hover:bg-gray-50 transition-colors duration-150"
+                                                >
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center">
+                                                                <HiOutlineUser className="w-4 h-4 text-gray-500" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-medium text-gray-900 text-sm">
+                                                                    {
+                                                                        employeeDisplayName
+                                                                    }
                                                                 </div>
-                                                                <div>
-                                                                    <div className="font-medium text-gray-900 text-sm">
-                                                                        {
-                                                                            employeeDisplayName
-                                                                        }
-                                                                    </div>
-                                                                    <div className="text-xs text-gray-500 mt-0.5">
-                                                                        ID:{' '}
-                                                                        {employeeId
-                                                                            ? `${employeeId.substring(0, 8)}...`
-                                                                            : '-'}
-                                                                    </div>
+                                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                                    ID:{' '}
+                                                                    {employeeId
+                                                                        ? `${employeeId.substring(0, 8)}...`
+                                                                        : '-'}
                                                                 </div>
                                                             </div>
-                                                        </td>
+                                                        </div>
+                                                    </td>
 
-                                                        <td className="px-6 py-4">
-                                                            <span
-                                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border"
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        typeStyle.background,
-                                                                    color: typeStyle.color,
-                                                                    borderColor:
-                                                                        typeStyle.border,
-                                                                    borderWidth:
-                                                                        '1px',
-                                                                }}
-                                                            >
-                                                                {d.day_off_type ===
-                                                                'HALF_DAY' ? (
-                                                                    <HiOutlineClock className="w-3 h-3" />
-                                                                ) : (
-                                                                    <HiOutlineCalendar className="w-3 h-3" />
-                                                                )}
-                                                                {d.day_off_type ===
-                                                                'HALF_DAY'
-                                                                    ? 'Half Day'
-                                                                    : 'Full Day'}
-                                                            </span>
-                                                        </td>
-
-                                                        <td className="px-6 py-4 text-sm text-gray-900">
-                                                            {formatDate(
-                                                                d.start_date_time,
+                                                    <td className="px-6 py-4">
+                                                        <span
+                                                            className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium border"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    typeStyle.background,
+                                                                color: typeStyle.color,
+                                                                borderColor:
+                                                                    typeStyle.border,
+                                                                borderWidth:
+                                                                    '1px',
+                                                            }}
+                                                        >
+                                                            {d.day_off_type ===
+                                                            'HALF_DAY' ? (
+                                                                <HiOutlineClock className="w-3 h-3" />
+                                                            ) : (
+                                                                <HiOutlineCalendar className="w-3 h-3" />
                                                             )}
-                                                        </td>
+                                                            {d.day_off_type ===
+                                                            'HALF_DAY'
+                                                                ? 'Half Day'
+                                                                : 'Full Day'}
+                                                        </span>
+                                                    </td>
 
-                                                        <td className="px-6 py-4 text-sm text-gray-900">
-                                                            {formatDate(
-                                                                d.end_date_time,
-                                                            )}
-                                                        </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900">
+                                                        {formatDate(
+                                                            d.start_date_time,
+                                                        )}
+                                                    </td>
 
-                                                        <td className="px-6 py-4">
-                                                            <span className="inline-flex items-center justify-center px-3 py-1 text-sm font-medium bg-gray-100 text-gray-700 border border-gray-300">
-                                                                {d.date_off_number ===
-                                                                0.5
-                                                                    ? '0.5'
-                                                                    : d.date_off_number}{' '}
-                                                                day(s)
-                                                            </span>
-                                                        </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900">
+                                                        {formatDate(
+                                                            d.end_date_time,
+                                                        )}
+                                                    </td>
 
-                                                        <td className="px-6 py-4 max-w-xs">
-                                                            <div
-                                                                className="text-sm text-gray-700 truncate"
-                                                                title={d.title}
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-3 py-1.5 border border-gray-300 rounded-md text-sm">
+                                                            {d.date_off_number ===
+                                                            0.5
+                                                                ? '0.5'
+                                                                : d.date_off_number}{' '}
+                                                            day(s)
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="px-6 py-4 max-w-xs">
+                                                        <div
+                                                            className="text-sm text-gray-700 truncate"
+                                                            title={d.title}
+                                                        >
+                                                            {d.title}
+                                                        </div>
+                                                    </td>
+
+                                                    <td className="px-6 py-4">
+                                                        <span
+                                                            className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium border"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    statusStyle.background,
+                                                                color: statusStyle.color,
+                                                                borderColor:
+                                                                    statusStyle.border,
+                                                                borderWidth:
+                                                                    '1px',
+                                                            }}
+                                                        >
+                                                            {d.status}
+                                                        </span>
+                                                    </td>
+
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleApprove(
+                                                                        d._id,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    !isPending
+                                                                }
+                                                                className="px-3 py-1.5 bg-white border border-green-600 hover:bg-green-50 text-green-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed rounded-sm text-xs font-medium transition-colors duration-200 flex items-center gap-1"
                                                             >
-                                                                {d.title}
-                                                            </div>
-                                                        </td>
+                                                                <HiCheck className="w-3 h-3" />
+                                                                Approve
+                                                            </button>
 
-                                                        <td className="px-6 py-4">
-                                                            <span
-                                                                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border"
-                                                                style={{
-                                                                    backgroundColor:
-                                                                        statusStyle.background,
-                                                                    color: statusStyle.color,
-                                                                    borderColor:
-                                                                        statusStyle.border,
-                                                                    borderWidth:
-                                                                        '1px',
-                                                                }}
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleReject(
+                                                                        d._id,
+                                                                    )
+                                                                }
+                                                                disabled={
+                                                                    !isPending
+                                                                }
+                                                                className="px-3 py-1.5 bg-white border border-red-600 hover:bg-red-50 text-red-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed rounded-sm text-xs font-medium transition-colors duration-200 flex items-center gap-1"
                                                             >
-                                                                {d.status}
-                                                            </span>
-                                                        </td>
+                                                                <HiX className="w-3 h-3" />
+                                                                Reject
+                                                            </button>
 
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex gap-2">
+                                                            {onView && (
                                                                 <button
                                                                     onClick={() =>
-                                                                        handleApprove(
-                                                                            d._id,
+                                                                        onView(
+                                                                            d,
                                                                         )
                                                                     }
-                                                                    disabled={
-                                                                        !isPending
-                                                                    }
-                                                                    className="px-3 py-1.5 bg-white border border-green-600 hover:bg-green-50 text-green-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed rounded-sm text-xs font-medium transition-colors duration-200 flex items-center gap-1"
+                                                                    className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-sm text-xs font-medium transition-colors duration-200 flex items-center gap-1"
                                                                 >
-                                                                    <HiCheck className="w-3 h-3" />
-                                                                    Approve
+                                                                    <HiEye className="w-3 h-3" />
+                                                                    Details
                                                                 </button>
-
-                                                                <button
-                                                                    onClick={() =>
-                                                                        handleReject(
-                                                                            d._id,
-                                                                        )
-                                                                    }
-                                                                    disabled={
-                                                                        !isPending
-                                                                    }
-                                                                    className="px-3 py-1.5 bg-white border border-red-600 hover:bg-red-50 text-red-700 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed rounded-sm text-xs font-medium transition-colors duration-200 flex items-center gap-1"
-                                                                >
-                                                                    <HiX className="w-3 h-3" />
-                                                                    Reject
-                                                                </button>
-
-                                                                {onView && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            onView(
-                                                                                d,
-                                                                            )
-                                                                        }
-                                                                        className="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-sm text-xs font-medium transition-colors duration-200 flex items-center gap-1"
-                                                                    >
-                                                                        <HiEye className="w-3 h-3" />
-                                                                        Details
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </>
             )}
