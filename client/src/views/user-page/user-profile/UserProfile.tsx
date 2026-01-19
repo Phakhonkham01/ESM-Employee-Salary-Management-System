@@ -32,7 +32,7 @@ import {
 // Dashboard statistics interface
 interface DashboardStats {
     totalRequests: number
-    approvedRequests: number
+    acceptedRequests: number
     pendingRequests: number
     remainingDayOffs: number
     totalOTHours: number
@@ -109,24 +109,6 @@ const ProfileField = ({ label, value, icon }: { label: string; value?: string; i
     </div>
 )
 
-const StatsCard = ({ title, value, icon }: {
-    title: string
-    value: number
-    icon: React.ReactNode
-}) => {
-    return (
-        <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-600 text-sm font-medium">{title}</span>
-                <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-                    {icon}
-                </div>
-            </div>
-            <div className="text-3xl font-bold text-slate-900 mb-2">{value}</div>
-        </div>
-    )
-}
-
 const QuickActions = ({ actions }: { actions: Array<{ icon: React.ReactNode; label: string; color: string; onClick: () => void }> }) => (
     <div className="bg-white rounded-xl p-6 border border-slate-200">
         <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h3>
@@ -184,32 +166,22 @@ const UserDashboard = ({ user }: Props) => {
     const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
     const [loadingDayOffs, setLoadingDayOffs] = useState(false)
 
-    // Stats state
-    const [stats, setStats] = useState<DashboardStats>({
-        totalRequests: 0,
-        approvedRequests: 0,
-        pendingRequests: 0,
-        remainingDayOffs: 15,
-        totalOTHours: 42,
-        rejectedRequests: 0
-    })
-
     // Fetch day off requests
     const fetchDayOffRequests = async () => {
         try {
             setLoadingDayOffs(true)
             const response = await getAllDayOffRequests()
-            
+
             if (response && response.requests) {
                 // Filter requests for current user - Fixed: compare user_id with user._id
                 const userRequests = response.requests.filter(
                     (request: DayOffRequest) => request._id === user._id
                 )
                 setDayOffRequests(userRequests)
-                
+
                 // Calculate statistics from the requests
                 const totalRequests = userRequests.length
-                const approvedRequests = userRequests.filter(
+                const acceptedRequests = userRequests.filter(
                     (req: DayOffRequest) => req.status === 'Accepted'
                 ).length
                 const pendingRequests = userRequests.filter(
@@ -218,16 +190,6 @@ const UserDashboard = ({ user }: Props) => {
                 const rejectedRequests = userRequests.filter(
                     (req: DayOffRequest) => req.status === 'Rejected'
                 ).length
-                
-                // Update stats - Fixed: added this missing code
-                setStats({
-                    totalRequests,
-                    approvedRequests,
-                    pendingRequests,
-                    remainingDayOffs: 15,
-                    totalOTHours: 42,
-                    rejectedRequests
-                })
             }
         } catch (error) {
             console.error('Error fetching day off requests:', error)
@@ -429,37 +391,6 @@ const UserDashboard = ({ user }: Props) => {
                     <div className="p-6">
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
-                                {/* Statistics Cards */}
-                                {loadingDayOffs ? (
-                                    <div className="text-center py-8">
-                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                        <p className="mt-2 text-slate-600">Loading dashboard data...</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <StatsCard
-                                            title="Total Requests"
-                                            value={stats.totalRequests}
-                                            icon={<PiChartLineUp />}
-                                        />
-                                        <StatsCard
-                                            title="Approved"
-                                            value={stats.approvedRequests}
-                                            icon={<CheckCircle />}
-                                        />
-                                        <StatsCard
-                                            title="Pending"
-                                            value={stats.pendingRequests}
-                                            icon={<PiClock />}
-                                        />
-                                        <StatsCard
-                                            title="Rejected"
-                                            value={stats.rejectedRequests}
-                                            icon={<XCircle />}
-                                        />
-                                    </div>
-                                )}
-
                                 {/* Quick Actions & Department Summary Side by Side */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <QuickActions actions={quickActions} />
@@ -549,7 +480,7 @@ const UserDashboard = ({ user }: Props) => {
                         {activeTab === 'requests' && (
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-slate-900">Request History</h3>
+                                    <h3 className="text-xl font-bold text-slate-900">Requests</h3>
                                     <div className="flex gap-2">
                                         <ActionButton
                                             label="New OT Request"
@@ -566,22 +497,6 @@ const UserDashboard = ({ user }: Props) => {
                                             onClick={() => setOpenDayOff(true)}
                                             icon={<MdOutlineCalendarToday />}
                                         />
-                                    </div>
-                                </div>
-
-                                {/* Request Stats */}
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="bg-blue-50 rounded-xl p-4 text-center">
-                                        <div className="text-2xl font-bold text-blue-700">{stats.totalRequests}</div>
-                                        <div className="text-sm text-blue-600">Total Requests</div>
-                                    </div>
-                                    <div className="bg-green-50 rounded-xl p-4 text-center">
-                                        <div className="text-2xl font-bold text-green-700">{stats.approvedRequests}</div>
-                                        <div className="text-sm text-green-600">Approved</div>
-                                    </div>
-                                    <div className="bg-amber-50 rounded-xl p-4 text-center">
-                                        <div className="text-2xl font-bold text-amber-700">{stats.pendingRequests}</div>
-                                        <div className="text-sm text-amber-600">Pending</div>
                                     </div>
                                 </div>
                             </div>

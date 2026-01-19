@@ -176,7 +176,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             <option value="all">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Accepted">Accepted</option>
-            <option value="Reject">Rejected</option>
+            <option value="Rejected">Rejected</option>
           </select>
 
           <select
