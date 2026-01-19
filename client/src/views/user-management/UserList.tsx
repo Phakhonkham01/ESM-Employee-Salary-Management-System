@@ -28,7 +28,6 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
     const [editingUser, setEditingUser] = useState<UserData | null>(null)
     const [refreshTrigger, setRefreshTrigger] = useState(0)
   
-
     // --- Filter States ---
     const [filterPosition, setFilterPosition] = useState('')
     const [filterDepartment, setFilterDepartment] = useState('')

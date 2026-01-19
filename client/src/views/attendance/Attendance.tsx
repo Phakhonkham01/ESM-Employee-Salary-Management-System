@@ -51,7 +51,7 @@ const Attendance: React.FC = () => {
     const getWorkingDaysInMonth = (year: number, month: number): number => {
         const daysInMonth = new Date(year, month, 0).getDate()
         let workingDays = 0
-        
+
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month - 1, day)
             const dayOfWeek = date.getDay()
@@ -60,7 +60,7 @@ const Attendance: React.FC = () => {
                 workingDays++
             }
         }
-        
+
         return workingDays
     }
 
