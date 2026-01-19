@@ -340,14 +340,6 @@ const SalaryListUser: React.FC = () => {
                 </div>
 
                 {/* Info Alert */}
-                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6 flex items-start gap-2 text-sm">
-                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <span>
-                        Select an employee to calculate salary for the current
-                        month ({getMonthName(selectedMonth)} {selectedYear}).
-                        Click the "Calculate Salary" button to start.
-                    </span>
-                </div>
 
                 {/* Search and Filter */}
                 <div className="bg-white border border-[#E5E7EB] rounded mb-6">
@@ -374,6 +366,14 @@ const SalaryListUser: React.FC = () => {
                                 <div className="flex items-center gap-4 flex-wrap">
                                     <span className="text-sm font-medium text-[#6B7280]">
                                         Filter by:
+                                               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6 flex items-start gap-2 text-sm">
+                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <span>
+                      ເລືອກພະນັກງານເພື່ອຄິດໄລ່ເງິນເດືອນສຳລັບປັດຈຸບັນ
+                     ({getMonthName(selectedMonth)} {selectedYear}).
+                        ໃຫ້ຄລິກໃສ່ປຸ່ມ "ຄິດໄລ່ເງິນເດືອນ" ເພື່ອເລີ່ມຕົ້ນ.
+                    </span>
+                </div>
                                     </span>
 
                                     {/* Department Filter */}
@@ -564,26 +564,21 @@ const SalaryListUser: React.FC = () => {
                                                     days
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <button
-                                                    onClick={() =>
-                                                        handleOpenCalculator(
-                                                            user,
-                                                        )
-                                                    }
-                                                    disabled={
-                                                        user.status !== 'Active'
-                                                    }
-                                                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                                                        user.status === 'Active'
-                                                            ? 'bg-[#1F3A5F] text-white hover:bg-[#2D4A6F]'
-                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                    }`}
-                                                >
-                                                    <Plus className="w-3.5 h-3.5" />
-                                                    Calculate
-                                                </button>
-                                            </td>
+                              <td className="px-4 py-3 text-center">
+  <button
+    onClick={() => handleOpenCalculator(user)}
+    disabled={user.status !== 'Active'}
+    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+      user.status === 'Active'
+        ? 'bg-[#45CC67] text-white hover:bg-[#3DB75B]'
+        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+    }`}
+  >
+    <Plus className="w-3.5 h-3.5" />
+    Calculate
+  </button>
+</td>
+
                                         </tr>
                                     ))
                                 )}
@@ -595,14 +590,14 @@ const SalaryListUser: React.FC = () => {
 
             {/* Confirmation Dialog */}
             {openConfirmDialog && (
-                <div className="min-h-[600px] min-w-[600px]">
+                <div className="min-h-[600px] min-w-[600px] ">
                     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white border border-gray-300">
+                        <div className="bg-white p-10 border border-gray-300 rounded-md">
                             {/* Dialog Header */}
-                            <div className="bg-[#1F3A5F] px-6 py-4 border-b border-[#152642]">
+                            <div className="bg-[#FFFFFF] px-6 py-4 border-b border-[#FFFFFF]">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h2 className="text-lg font-medium text-white">
+                                        <h2 className="text-lg font-medium text-dark ">
                                             Confirm Salary Calculation
                                         </h2>
                                         <p className="text-gray-300 text-xs mt-0.5">
@@ -725,17 +720,15 @@ const SalaryListUser: React.FC = () => {
                                                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                                                 <div>
                                                     <div className="font-medium mb-0.5">
-                                                        Duplicate Record Warning
+                                                        ຄຳເຕືອນກ່ຽວກັບບັນທຶກຊໍ້າກັນ
                                                     </div>
                                                     <div>
-                                                        A salary record for{' '}
+                                                        ບັນທຶກເງິນເດືອນສຳລັບ{' '}
                                                         {getMonthName(
                                                             selectedMonth,
                                                         )}{' '}
-                                                        {selectedYear} already
-                                                        exists. Proceeding will
-                                                        create a new
-                                                        calculation.
+                                                        {selectedYear}
+                                                 ມີຢູ່ແລ້ວ. ດຳເນີນການສ້າງການຄິດໄລ່ໃໝ່.
                                                     </div>
                                                 </div>
                                             </div>
@@ -798,7 +791,7 @@ const SalaryListUser: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={handleConfirmCalculate}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] hover:bg-[#152642] transition-colors rounded-sm flex items-center gap-1.5"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-[#45CC67] hover:bg-[#3aa85a] transition-colors rounded-sm flex items-center gap-1.5"
                                 >
                                     Proceed to Calculation
                                 </button>

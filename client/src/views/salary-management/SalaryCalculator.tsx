@@ -491,9 +491,9 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white border border-gray-300 w-full max-w-5xl max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-md p-15 border-gray-300 w-full max-w-6xl max-h-[95vh] ">
                 {/* Header */}
-                <div className="bg-[#1F3A5F] px-6 py-4 flex items-center justify-between border-b border-[#152642]">
+                <div className="bg-[#ffffff] flex items-center justify-between border-b border-[#ffffff] ">
                     <div className="flex items-center gap-3 text-white">
                         <div className="p-1">
                             <Calculator className="w-5 h-5" />
@@ -502,7 +502,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                             <h2 className="text-lg font-medium">
                                 Payroll Calculation System
                             </h2>
-                            <p className="text-gray-300 text-xs mt-0.5">
+                            <p className="text-gray-500 text-xs mt-0.5">
                                 {user.first_name_en} {user.last_name_en} |{' '}
                                 {getMonthName(month)} {year}
                             </p>
@@ -510,7 +510,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                     </div>
                     <button
                         onClick={handleClose}
-                        className="text-white hover:bg-white/10 p-2 rounded transition-colors"
+                        className="text-dark hover:bg-white/10 p-2 rounded transition-colors"
                         title="Close"
                     >
                         <X className="w-5 h-5" />
@@ -518,7 +518,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50">
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
                     {loading && activeStep === 0 ? (
                         <div className="flex justify-center items-center min-h-[300px]">
                             <div className="flex flex-col items-center">

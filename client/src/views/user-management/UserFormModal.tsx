@@ -380,7 +380,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 </div>
 
                 {/* Body */}
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
+                <div className="p-[60px] overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
+
                     {message && (
                         <div
                             className={`mb-6 p-3 rounded border text-sm font-medium ${

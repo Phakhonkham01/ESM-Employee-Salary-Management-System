@@ -357,28 +357,58 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
             {/* Page Header */}
             <div className="mb-8">
                 <div className="flex justify-between items-start">
-                    <div>
-                        <h1 className="text-2xl font-medium text-gray-900 mb-1">
-                            Leave Request Management System
-                        </h1>
-                        <p className="text-gray-600 text-sm">
-                            Supervisor: Review and approve employee leave
-                            requests
-                        </p>
-                    </div>
+          
 
-                    {supervisorName && (
-                        <div className="bg-white border border-gray-300 px-4 py-2 rounded-sm">
-                            <p className="text-sm font-medium text-gray-900">
-                                Supervisor: {supervisorName}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                                ID: {supervisorId.substring(0, 8)}...
-                            </p>
-                        </div>
-                    )}
+{supervisorName && (
+  <div className="bg-white border border-gray-300 px-4 py-2 rounded-sm flex items-center justify-between w-full">
+    {/* Left: Supervisor Info */}
+    <div>
+      <p className="text-sm font-medium text-gray-900">
+        Supervisor: {supervisorName}
+      </p>
+      <p className="text-xs text-gray-600 mt-0.5">
+        ID: {supervisorId.substring(0, 8)}...
+      </p>
+    </div>
+
+    {/* Right: Filters */}
+    <div className="flex items-center gap-3 ml-auto">
+      <div className="flex items-center gap-2">
+        <HiFilter className="text-gray-500 w-4 h-4" />
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+        >
+          <option value="all">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Accepted">Approved</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+
+      <select
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+      >
+        <option value="">All Periods</option>
+        {availableMonths.map((month) => (
+          <option key={month} value={month}>
+            {new Date(month + '-01').toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+            })}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+)}
+
+
                 </div>
-                <div className="h-[1px] bg-gray-200 mt-4"></div>
+                
             </div>
 
             {/* Error Display */}
@@ -478,89 +508,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                     {/* Main Content */}
                     <div className="bg-white border border-gray-300 rounded-sm">
                         {/* Table Header */}
-                        <div className="px-6 py-4 border-b border-gray-300">
-                            <div className="flex justify-between items-center">
-                                {/* LEFT */}
-                                <div>
-                                    <h2 className="text-lg font-medium text-gray-900">
-                                        Leave Request Queue
-                                    </h2>
-                                    {/* <p className="text-sm text-gray-600 mt-0.5">
-                                        Showing {filteredDayOffs.length} of{' '}
-                                        {dayOffs.length} requests
-                                    </p> */}
-                                </div>
-
-                                {/* RIGHT */}
-                                <div className="flex gap-3">
-                                    <div className="flex items-center gap-2">
-                                        <HiFilter className="text-gray-500 w-4 h-4" />
-                                        <select
-                                            value={selectedStatus}
-                                            onChange={(e) =>
-                                                setSelectedStatus(
-                                                    e.target.value,
-                                                )
-                                            }
-                                            className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                                        >
-                                            <option value="all">
-                                                All Status
-                                            </option>
-                                            <option value="Pending">
-                                                Pending
-                                            </option>
-                                            <option value="Accepted">
-                                                Approved
-                                            </option>
-                                            <option value="Rejected">
-                                                Rejected
-                                            </option>
-                                        </select>
-                                    </div>
-
-                                    <select
-                                        value={selectedMonth}
-                                        onChange={(e) =>
-                                            setSelectedMonth(e.target.value)
-                                        }
-                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
-                                    >
-                                        <option value="">All Periods</option>
-                                        {availableMonths.map((month) => (
-                                            <option key={month} value={month}>
-                                                {new Date(
-                                                    month + '-01',
-                                                ).toLocaleDateString('en-US', {
-                                                    year: 'numeric',
-                                                    month: 'long',
-                                                })}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-{/* 
-                            <select
-                                value={selectedMonth}
-                                onChange={(e) =>
-                                    setSelectedMonth(e.target.value)
-                                }
-                                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
-                            >
-                                <option value="">All Periods</option>
-                                {availableMonths.map((month) => (
-                                    <option key={month} value={month}>
-                                        {new Date(
-                                            month + '-01',
-                                        ).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                        })}
-                                    </option>
-                                ))}
-                            </select> */}
-                        </div>
+                      
                     </div>
 
                     {/* Table Content */}
@@ -704,14 +652,19 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                         </span>
                                                     </td>
 
-                                                    <td className="px-6 py-4 max-w-xs">
-                                                        <div
-                                                            className="text-sm text-gray-700 truncate"
-                                                            title={d.title}
-                                                        >
-                                                            {d.title}
-                                                        </div>
-                                                    </td>
+                                                <td className="px-6 py-4 max-w-xs relative group">
+  <div
+    className="text-sm text-gray-700 truncate cursor-pointer"
+    title={d.title} // fallback native tooltip
+  >
+    {d.title}
+  </div>
+  {/* Tooltip */}
+  <div className="absolute left-0 bottom-full mb-1 w-max max-w-xs bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-normal z-50">
+    {d.title}
+  </div>
+</td>
+
 
                                                     <td className="px-6 py-4">
                                                         <span
@@ -731,7 +684,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                     </td>
 
                                                     <td className="px-6 py-4">
-                                                        <div className="flex gap-2">
+                                                        <div className="flex gap-4">
                                                             <button
                                                                 onClick={() =>
                                                                     handleApprove(
