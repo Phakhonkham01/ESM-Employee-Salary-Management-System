@@ -659,31 +659,6 @@ const DayoffRequests: React.FC = () => {
                   </span>
                 </div>
               </div>
-
-              {selectedRequest.status === 'Pending' && (
-                <div className="flex gap-3 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => {
-                      handleStatusChange(selectedRequest._id, 'Accepted')
-                      setShowDetailModal(false)
-                    }}
-                    disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-medium"
-                  >
-                    <FaCheck /> Accept Request
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleStatusChange(selectedRequest._id, 'Rejected')
-                      setShowDetailModal(false)
-                    }}
-                    disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium"
-                  >
-                    <FaTimes /> Reject Request
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

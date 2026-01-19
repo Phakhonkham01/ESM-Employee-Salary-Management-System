@@ -2,7 +2,8 @@ import { UserData } from '@/services/User_Page/user_api'
 import { useState, useEffect } from 'react'
 import RequestModule from './module/RequestModule'
 import DayOffModule from './module/DayOffModule'
-import ViewPaySlip from './module/ViewPaySlip'
+import { getAllDayOffRequests, type DayOffRequest } from '@/services/Day_off_api/api'
+
 import {
     MdEmail,
     MdCake,
@@ -35,7 +36,7 @@ interface DashboardStats {
     pendingRequests: number
     remainingDayOffs: number
     totalOTHours: number
-    upcomingEvents: number
+    rejectedRequests: number
 }
 
 import {
@@ -97,16 +98,6 @@ interface Salary {
     updated_at: string
 }
 
-// Dashboard statistics interface
-interface DashboardStats {
-    totalRequests: number
-    approvedRequests: number
-    pendingRequests: number
-    remainingDayOffs: number
-    totalOTHours: number
-    upcomingEvents: number
-}
-
 // Helper Components
 const ProfileField = ({ label, value, icon }: { label: string; value?: string; icon: React.ReactNode }) => (
     <div className="bg-slate-50 rounded-lg p-4">
@@ -118,33 +109,20 @@ const ProfileField = ({ label, value, icon }: { label: string; value?: string; i
     </div>
 )
 
-const StatsCard = ({ title, value, icon, change, trend, color }: {
+const StatsCard = ({ title, value, icon }: {
     title: string
     value: number
     icon: React.ReactNode
-    change: string
-    trend: 'up' | 'down'
-    color: 'blue' | 'green' | 'amber' | 'purple'
 }) => {
-    const colorClasses = {
-        blue: 'bg-blue-50 text-blue-600',
-        green: 'bg-green-50 text-green-600',
-        amber: 'bg-amber-50 text-amber-600',
-        purple: 'bg-purple-50 text-purple-600'
-    }
-
     return (
         <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="flex items-center justify-between mb-4">
                 <span className="text-slate-600 text-sm font-medium">{title}</span>
-                <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
+                <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
                     {icon}
                 </div>
             </div>
             <div className="text-3xl font-bold text-slate-900 mb-2">{value}</div>
-            <div className={`text-sm ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                {change} from last month
-            </div>
         </div>
     )
 }
@@ -202,32 +180,62 @@ const UserDashboard = ({ user }: Props) => {
     const [salaryError, setSalaryError] = useState<string | null>(null)
     const [expandedRows, setExpandedRows] = useState<string[]>([])
 
+    // Day off requests state
+    const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
+    const [loadingDayOffs, setLoadingDayOffs] = useState(false)
+
+    // Stats state
     const [stats, setStats] = useState<DashboardStats>({
         totalRequests: 0,
         approvedRequests: 0,
         pendingRequests: 0,
         remainingDayOffs: 15,
         totalOTHours: 42,
-        upcomingEvents: 3
+        rejectedRequests: 0
     })
 
-    // Simulate fetching dashboard data
-    useEffect(() => {
-        // In a real app, fetch this data from your API
-        const fetchDashboardData = async () => {
-            // Mock data - replace with actual API call
-            const mockStats: DashboardStats = {
-                totalRequests: 24,
-                approvedRequests: 18,
-                pendingRequests: 3,
-                remainingDayOffs: 15,
-                totalOTHours: 42,
-                upcomingEvents: 3
+    // Fetch day off requests
+    const fetchDayOffRequests = async () => {
+        try {
+            setLoadingDayOffs(true)
+            const response = await getAllDayOffRequests()
+            
+            if (response && response.requests) {
+                // Filter requests for current user - Fixed: compare user_id with user._id
+                const userRequests = response.requests.filter(
+                    (request: DayOffRequest) => request._id === user._id
+                )
+                setDayOffRequests(userRequests)
+                
+                // Calculate statistics from the requests
+                const totalRequests = userRequests.length
+                const approvedRequests = userRequests.filter(
+                    (req: DayOffRequest) => req.status === 'Accepted'
+                ).length
+                const pendingRequests = userRequests.filter(
+                    (req: DayOffRequest) => req.status === 'Pending'
+                ).length
+                const rejectedRequests = userRequests.filter(
+                    (req: DayOffRequest) => req.status === 'Rejected'
+                ).length
+                
+                // Update stats - Fixed: added this missing code
+                setStats({
+                    totalRequests,
+                    approvedRequests,
+                    pendingRequests,
+                    remainingDayOffs: 15,
+                    totalOTHours: 42,
+                    rejectedRequests
+                })
             }
-            setStats(mockStats)
+        } catch (error) {
+            console.error('Error fetching day off requests:', error)
+        } finally {
+            setLoadingDayOffs(false)
         }
-        fetchDashboardData()
-    }, [user])
+    }
+
     // Fetch salary data
     const fetchSalaries = async () => {
         try {
@@ -252,20 +260,9 @@ const UserDashboard = ({ user }: Props) => {
         }
     }
 
-    // Fetch dashboard data
+    // Fetch dashboard data on mount
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            const mockStats: DashboardStats = {
-                totalRequests: 24,
-                approvedRequests: 18,
-                pendingRequests: 3,
-                remainingDayOffs: 15,
-                totalOTHours: 42,
-                upcomingEvents: 3
-            }
-            setStats(mockStats)
-        }
-        fetchDashboardData()
+        fetchDayOffRequests()
     }, [user])
 
     // Fetch salaries when viewpayslip tab is active
@@ -337,14 +334,6 @@ const UserDashboard = ({ user }: Props) => {
         }
     }
 
-    // Recent activities data
-    const recentActivities = [
-        { id: 1, type: 'OT', action: 'Approved', time: '2 hours ago', amount: '4 hours' },
-        { id: 2, type: 'Field Work', action: 'Submitted', time: '1 day ago', location: 'Client Site' },
-        { id: 3, type: 'Day Off', action: 'Pending', time: '2 days ago', date: '2024-01-20' },
-        { id: 4, type: 'Salary', action: 'Paid', time: '1 week ago', amount: '5,200,000₭' }
-    ]
-
     // Quick actions data
     const quickActions = [
         {
@@ -373,7 +362,7 @@ const UserDashboard = ({ user }: Props) => {
             label: 'View Payslip',
             description: 'Latest salary details',
             color: 'bg-amber-500',
-            onClick: () => console.log('View payslip')
+            onClick: () => setActiveTab('viewpayslip')
         }
     ]
 
@@ -406,18 +395,6 @@ const UserDashboard = ({ user }: Props) => {
                                         {user.role}
                                     </span>
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Quick Stats */}
-                        <div className="flex gap-4">
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600">{stats.remainingDayOffs}</div>
-                                <div className="text-sm text-slate-600">Days Off Left</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-2xl font-bold text-green-600">{stats.totalOTHours}h</div>
-                                <div className="text-sm text-slate-600">OT This Month</div>
                             </div>
                         </div>
                     </div>
@@ -453,42 +430,37 @@ const UserDashboard = ({ user }: Props) => {
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
                                 {/* Statistics Cards */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <StatsCard
-                                        title="Total Requests"
-                                        value={stats.totalRequests}
-                                        icon={<PiChartLineUp />}
-                                        change="+12%"
-                                        trend="up"
-                                        color="blue"
-                                    />
-                                    <StatsCard
-                                        title="Approved"
-                                        value={stats.approvedRequests}
-                                        icon={<MdOutlineRequestQuote />}
-                                        change="+8%"
-                                        trend="up"
-                                        color="green"
-                                    />
-                                    <StatsCard
-                                        title="Pending"
-                                        value={stats.pendingRequests}
-                                        icon={<PiClock />}
-                                        change="-2%"
-                                        trend="down"
-                                        color="amber"
-                                    />
-                                    <StatsCard
-                                        title="Upcoming Events"
-                                        value={stats.upcomingEvents}
-                                        icon={<MdOutlineCalendarToday />}
-                                        change="+3"
-                                        trend="up"
-                                        color="purple"
-                                    />
-                                </div>
+                                {loadingDayOffs ? (
+                                    <div className="text-center py-8">
+                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <p className="mt-2 text-slate-600">Loading dashboard data...</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <StatsCard
+                                            title="Total Requests"
+                                            value={stats.totalRequests}
+                                            icon={<PiChartLineUp />}
+                                        />
+                                        <StatsCard
+                                            title="Approved"
+                                            value={stats.approvedRequests}
+                                            icon={<CheckCircle />}
+                                        />
+                                        <StatsCard
+                                            title="Pending"
+                                            value={stats.pendingRequests}
+                                            icon={<PiClock />}
+                                        />
+                                        <StatsCard
+                                            title="Rejected"
+                                            value={stats.rejectedRequests}
+                                            icon={<XCircle />}
+                                        />
+                                    </div>
+                                )}
 
-                                {/* Quick Actions & Recent Activity Side by Side */}
+                                {/* Quick Actions & Department Summary Side by Side */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <QuickActions actions={quickActions} />
                                     {/* Department Summary */}
@@ -515,8 +487,6 @@ const UserDashboard = ({ user }: Props) => {
                                         </div>
                                     </div>
                                 </div>
-
-
                             </div>
                         )}
 
@@ -573,29 +543,6 @@ const UserDashboard = ({ user }: Props) => {
                                         icon={<PiMoneyFill />}
                                     />
                                 </div>
-
-                                {/* Additional Information */}
-                                <div className="bg-slate-50 rounded-xl p-6">
-                                    <h4 className="font-semibold text-slate-900 mb-4">Additional Details</h4>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="text-center p-4 bg-white rounded-lg">
-                                            <div className="text-2xl font-bold text-blue-600">{stats.remainingDayOffs}</div>
-                                            <div className="text-sm text-slate-600">Annual Leave Days</div>
-                                        </div>
-                                        <div className="text-center p-4 bg-white rounded-lg">
-                                            <div className="text-2xl font-bold text-green-600">{stats.totalOTHours}</div>
-                                            <div className="text-sm text-slate-600">Total OT Hours</div>
-                                        </div>
-                                        <div className="text-center p-4 bg-white rounded-lg">
-                                            <div className="text-2xl font-bold text-purple-600">{stats.approvedRequests}</div>
-                                            <div className="text-sm text-slate-600">Approved Requests</div>
-                                        </div>
-                                        <div className="text-center p-4 bg-white rounded-lg">
-                                            <div className="text-2xl font-bold text-amber-600">{user.status}</div>
-                                            <div className="text-sm text-slate-600">Employment Status</div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         )}
 
@@ -637,19 +584,296 @@ const UserDashboard = ({ user }: Props) => {
                                         <div className="text-sm text-amber-600">Pending</div>
                                     </div>
                                 </div>
-
-                                {/* Request History Table (Placeholder) */}
-                                <div className="bg-slate-50 rounded-xl p-6">
-                                    <p className="text-center text-slate-500">
-                                        Request history will be displayed here
-                                    </p>
-                                </div>
                             </div>
                         )}
 
                         {activeTab === 'viewpayslip' && (
                             <div className="space-y-6">
-                                <ViewPaySlip />
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xl font-bold text-slate-900">Salary History & Payslips</h3>
+                                    <div className="text-sm text-slate-600">
+                                        Total Records: <span className="font-semibold">{filteredSalaries.length}</span>
+                                    </div>
+                                </div>
+
+                                {loadingSalaries ? (
+                                    <div className="flex justify-center items-center min-h-[400px]">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600"></div>
+                                            <span className="text-gray-600 font-medium">Loading salary history...</span>
+                                        </div>
+                                    </div>
+                                ) : salaryError ? (
+                                    <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                                        <p className="text-red-600">{salaryError}</p>
+                                    </div>
+                                ) : (
+                                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Period
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Net Salary
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Status
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Payment Date
+                                                        </th>
+                                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Actions
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {filteredSalaries.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={5} className="px-6 py-12 text-center">
+                                                                <div className="flex flex-col items-center gap-2">
+                                                                    <FileText className="w-12 h-12 text-gray-400" />
+                                                                    <p className="text-gray-500 font-medium">
+                                                                        No salary records found
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-400">
+                                                                        Your payslips will appear here once processed
+                                                                    </p>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        filteredSalaries.map((salary) => {
+                                                            const isExpanded = expandedRows.includes(salary._id)
+                                                            const statusInfo = getStatusInfo(salary.status)
+
+                                                            return (
+                                                                <div key={salary._id}>
+                                                                    <tr className={`hover:bg-gray-50 ${isExpanded ? 'bg-blue-50' : ''}`}>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-sm text-gray-900 font-medium">
+                                                                                {getMonthName(salary.month)} {salary.year}
+                                                                            </div>
+                                                                            <div className="text-sm text-gray-500">
+                                                                                {salary.working_days} working days
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-lg font-bold text-gray-900">
+                                                                                ฿{salary.net_salary.toLocaleString()}
+                                                                            </div>
+                                                                            <div className="text-sm text-gray-500">
+                                                                                Base: ฿{salary.base_salary.toLocaleString()}
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                                                                                {statusInfo.icon}
+                                                                                {statusInfo.label}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                            {moment(salary.payment_date).format('DD/MM/YYYY')}
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <button
+                                                                                    onClick={() => toggleRow(salary._id)}
+                                                                                    className="text-blue-600 hover:text-blue-900 p-1"
+                                                                                    title={isExpanded ? 'Hide details' : 'Show details'}
+                                                                                >
+                                                                                    {isExpanded ? (
+                                                                                        <ChevronUp className="w-5 h-5" />
+                                                                                    ) : (
+                                                                                        <ChevronDown className="w-5 h-5" />
+                                                                                    )}
+                                                                                </button>
+                                                                                <button
+                                                                                    className="text-green-600 hover:text-green-900 p-1"
+                                                                                    title="View details"
+                                                                                >
+                                                                                    <Eye className="w-5 h-5" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+
+                                                                    {isExpanded && (
+                                                                        <tr className="bg-blue-50">
+                                                                            <td colSpan={5} className="px-6 py-4">
+                                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                                    {/* Income Details */}
+                                                                                    <div className="bg-white rounded-lg p-4 border border-blue-200">
+                                                                                        <h4 className="text-sm font-bold text-blue-700 mb-3 uppercase">
+                                                                                            Income Breakdown
+                                                                                        </h4>
+                                                                                        <div className="space-y-2">
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Base Salary:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.base_salary.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">OT Amount:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.ot_amount.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Bonus:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.bonus.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Commission:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.commission.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Fuel Costs:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.fuel_costs.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Holiday Money:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.money_not_spent_on_holidays.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Other Income:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.other_income.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="border-t border-blue-200 my-2 pt-2">
+                                                                                                <div className="flex justify-between font-bold text-blue-900">
+                                                                                                    <span>Total Income:</span>
+                                                                                                    <span>
+                                                                                                        ฿{(
+                                                                                                            salary.base_salary +
+                                                                                                            salary.ot_amount +
+                                                                                                            salary.bonus +
+                                                                                                            salary.commission +
+                                                                                                            salary.fuel_costs +
+                                                                                                            salary.money_not_spent_on_holidays +
+                                                                                                            salary.other_income
+                                                                                                        ).toLocaleString()}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {/* Deductions Details */}
+                                                                                    <div className="bg-white rounded-lg p-4 border border-red-200">
+                                                                                        <h4 className="text-sm font-bold text-red-700 mb-3 uppercase">
+                                                                                            Deductions
+                                                                                        </h4>
+                                                                                        <div className="space-y-2">
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Office Expenses:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.office_expenses.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="flex justify-between py-1">
+                                                                                                <span className="text-gray-700">Social Security:</span>
+                                                                                                <span className="font-semibold text-gray-900">
+                                                                                                    ฿{salary.social_security.toLocaleString()}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <div className="border-t border-red-200 my-2 pt-2">
+                                                                                                <div className="flex justify-between font-bold text-red-900">
+                                                                                                    <span>Total Deductions:</span>
+                                                                                                    <span>
+                                                                                                        ฿{(
+                                                                                                            salary.office_expenses +
+                                                                                                            salary.social_security
+                                                                                                        ).toLocaleString()}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                                                                            <h4 className="text-sm font-bold text-gray-800 mb-2">
+                                                                                                Additional Information
+                                                                                            </h4>
+                                                                                            <div className="space-y-1 text-sm text-gray-700">
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span>Working Days:</span>
+                                                                                                    <span className="font-semibold">
+                                                                                                        {salary.working_days} days
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span>Day Off Days:</span>
+                                                                                                    <span className="font-semibold">
+                                                                                                        {salary.day_off_days} days
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span>Vacation Days Left:</span>
+                                                                                                    <span className="font-semibold">
+                                                                                                        {salary.remaining_vacation_days} days
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                <div className="flex justify-between">
+                                                                                                    <span>Created By:</span>
+                                                                                                    <span className="font-semibold">
+                                                                                                        {salary.created_by.first_name_en} {salary.created_by.last_name_en}
+                                                                                                    </span>
+                                                                                                </div>
+                                                                                                {salary.notes && (
+                                                                                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                                                                                        <span className="text-gray-700">Notes:</span>
+                                                                                                        <p className="text-sm text-gray-600 mt-1">
+                                                                                                            {salary.notes}
+                                                                                                        </p>
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        })
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between">
+                                                <div className="text-sm text-gray-500">
+                                                    Showing <span className="font-medium">{filteredSalaries.length}</span> of{' '}
+                                                    <span className="font-medium">{salaries.length}</span> records
+                                                </div>
+                                                <div className="flex items-center gap-4 mt-2 md:mt-0">
+                                                    <div className="text-sm text-gray-700">
+                                                        Total Net Salary:{' '}
+                                                        <span className="font-bold text-green-600">
+                                                            ฿{calculateTotal('net_salary').toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
