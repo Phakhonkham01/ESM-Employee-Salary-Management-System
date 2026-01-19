@@ -106,10 +106,10 @@ export const useExportToPDF = ({ requests, users }: UseExportToPDFProps) => {
     // Add summary statistics
     const totalRequests = requests.length
     const pendingRequests = requests.filter(r => r.status === 'Pending').length
-    const acceptedRequests = requests.filter(r => r.status === 'Accept').length
-    const rejectedRequests = requests.filter(r => r.status === 'Reject').length
+    const acceptedRequests = requests.filter(r => r.status === 'Accepted').length
+    const rejectedRequests = requests.filter(r => r.status === 'Rejected').length
     const totalDaysOff = requests
-      .filter(r => r.status === 'Accept')
+      .filter(r => r.status === 'Accepted')
       .reduce((sum, r) => sum + r.date_off_number, 0)
 
     const finalY = (doc as any).lastAutoTable.finalY || 100

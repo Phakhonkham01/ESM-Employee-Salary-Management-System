@@ -423,14 +423,6 @@ const UserDashboard = ({ user }: Props) => {
 
                         {activeTab === 'profile' && (
                             <div className="space-y-6">
-                                {/* Profile Header */}
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-slate-900">Personal Information</h3>
-                                    <button className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium transition-colors">
-                                        Edit Profile
-                                    </button>
-                                </div>
-
                                 {/* Profile Details Grid */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <ProfileField

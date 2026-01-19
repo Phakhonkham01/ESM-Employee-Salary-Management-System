@@ -4,15 +4,9 @@ import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import type { UserData } from '../../../services/Create_user/api'
 import type { DayOffRequest } from '@/services/Day_off_api/api'
+import { getAllDepartments, type DepartmentData } from '@/services/departments/api'
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
-
-// Add Department interface
-interface Department {
-  _id: string
-  name: string
-  // Add other department fields as needed
-}
 
 interface AddFormRequestProps {
   showModal: boolean
@@ -20,12 +14,11 @@ interface AddFormRequestProps {
   selectedRequest: DayOffRequest | null
   setSelectedRequest: (request: DayOffRequest | null) => void
   users: UserData[]
-  departments?: Department[] // Make departments optional
   loading: boolean
   formData: {
     employee_id: string
     supervisor_id: string
-    department_id: string // Add department_id to formData
+    department_id: string
     day_off_type: DayOffType
     start_date_time: string
     end_date_time: string
@@ -34,7 +27,7 @@ interface AddFormRequestProps {
   setFormData: React.Dispatch<React.SetStateAction<{
     employee_id: string
     supervisor_id: string
-    department_id: string // Add department_id
+    department_id: string
     day_off_type: DayOffType
     start_date_time: string
     end_date_time: string
@@ -61,6 +54,9 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
   const [halfDayPeriod, setHalfDayPeriod] = useState<'MORNING' | 'AFTERNOON'>('MORNING')
+  const [departments, setDepartments] = useState<DepartmentData[]>([])
+  const [loadingDepartments, setLoadingDepartments] = useState(false)
+
   // Get current month's first and last day
   const getCurrentMonthRange = () => {
     const now = new Date()
@@ -70,6 +66,37 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   }
 
   const { firstDay: minDate, lastDay: maxDate } = getCurrentMonthRange()
+
+  // Filter users by role - only show Supervisors
+  const supervisors = users.filter(user => user.role === 'Supervisor')
+
+  // Filter employees by selected department
+  const filteredEmployees = formData.department_id
+  ? users.filter(
+      user =>
+        user.role === 'Employee' &&
+        user.department_id?._id === formData.department_id
+    )
+  : []
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setLoadingDepartments(true)
+      try {
+        const response = await getAllDepartments()
+        setDepartments(response.departments)
+      } catch (error) {
+        console.error('Error fetching departments:', error)
+      } finally {
+        setLoadingDepartments(false)
+      }
+    }
+
+    if (showModal) {
+      fetchDepartments()
+    }
+  }, [showModal])
 
   // Half day time presets
   const getHalfDayTimes = (period: 'MORNING' | 'AFTERNOON') => {
@@ -100,10 +127,10 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
       const [endHours, endMinutes] = times.end.split(':')
 
       const startDateTime = new Date(startDate)
-      startDateTime.setHours(parseInt(startHours), parseInt(startMinutes))
+      startDateTime.setHours(parseInt(startHours), parseInt(startMinutes), 0, 0)
 
-      const endDateTime = new Date(startDate)
-      endDateTime.setHours(parseInt(endHours), parseInt(endMinutes))
+      const endDateTime = new Date(startDate) // Same day for half-day
+      endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0)
 
       setFormData(prev => ({
         ...prev,
@@ -111,31 +138,42 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
         end_date_time: endDateTime.toISOString().slice(0, 16)
       }))
 
+      // For half-day, end date is same as start date
       setEndDate(startDate)
     } else if (formData.day_off_type === 'FULL_DAY') {
       if (startDate) {
         const dateTime = new Date(startDate)
-        dateTime.setHours(8, 30, 0, 0) // Set default start time 08:30
+        dateTime.setHours(8, 30, 0, 0)
         setFormData(prev => ({ ...prev, start_date_time: dateTime.toISOString().slice(0, 16) }))
       }
+      if (endDate) {
+        const dateTime = new Date(endDate)
+        dateTime.setHours(17, 0, 0, 0)
+        setFormData(prev => ({ ...prev, end_date_time: dateTime.toISOString().slice(0, 16) }))
+      }
     }
-  }, [startDate, formData.day_off_type, halfDayPeriod])
-
-  useEffect(() => {
-    if (formData.day_off_type === 'FULL_DAY' && endDate) {
-      const dateTime = new Date(endDate)
-      dateTime.setHours(17, 0, 0, 0) // Set default end time 17:00
-      setFormData(prev => ({ ...prev, end_date_time: dateTime.toISOString().slice(0, 16) }))
-    }
-  }, [endDate, formData.day_off_type])
+  }, [startDate, endDate, formData.day_off_type, halfDayPeriod, setFormData])
 
   if (!showModal) return null
 
-  const calculatedDaysOff = calculateDaysOff(
-    formData.start_date_time,
-    formData.end_date_time,
-    formData.day_off_type
-  )
+  // Calculate days off correctly
+  const calculatedDaysOff = (() => {
+    if (!formData.start_date_time || !formData.end_date_time) return 0
+    
+    const start = new Date(formData.start_date_time)
+    const end = new Date(formData.end_date_time)
+    
+    if (formData.day_off_type === 'HALF_DAY') {
+      return 0.5
+    } else {
+      // FULL_DAY calculation: inclusive day count
+      const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+      const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+      const diffTime = endDay.getTime() - startDay.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1 to include both start and end day
+      return diffDays
+    }
+  })()
 
   const handleClose = () => {
     setShowModal(false)
@@ -163,19 +201,50 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Department *</label>
+              <select
+                value={formData.department_id}
+                onChange={(e) => {
+                  const newDeptId = e.target.value
+                  setFormData({ 
+                    ...formData, 
+                    department_id: newDeptId,
+                    employee_id: '' // Reset employee when department changes
+                  })
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loadingDepartments}
+              >
+                <option value="">
+                  {loadingDepartments ? 'Loading departments...' : 'Select Department'}
+                </option>
+                {departments.map(dept => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.department_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Employee *</label>
               <select
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={!formData.department_id}
               >
-                <option value="">Select Employee</option>
-                {users.map(user => (
+                <option value="">
+                  {!formData.department_id ? 'Please select a department first' : 'Select Employee'}
+                </option>
+                {filteredEmployees.map(user => (
                   <option key={user._id} value={user._id}>
                     {user.first_name_en} {user.last_name_en}
                   </option>
                 ))}
               </select>
+              {formData.department_id && filteredEmployees.length === 0 && (
+                <p className="text-sm text-amber-600 mt-1">No employees found in this department</p>
+              )}
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Supervisor *</label>
@@ -185,12 +254,15 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Select Supervisor</option>
-                {users.map(user => (
+                {supervisors.map(user => (
                   <option key={user._id} value={user._id}>
                     {user.first_name_en} {user.last_name_en}
                   </option>
                 ))}
               </select>
+              {supervisors.length === 0 && (
+                <p className="text-sm text-amber-600 mt-1">No supervisors found</p>
+              )}
             </div>
           </div>
 
@@ -213,6 +285,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 const newType = e.target.value as DayOffType
                 setFormData({ ...formData, day_off_type: newType })
                 if (newType === 'HALF_DAY') {
+                  // Reset end date when switching to half-day
                   setEndDate(null)
                 }
               }}
@@ -237,10 +310,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
             </div>
           )}
 
-          {/* Conditional rendering based on day_off_type */}
           {formData.day_off_type === 'FULL_DAY' ? (
             <>
-              {/* Start Date */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -248,7 +319,13 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                   </label>
                   <DatePicker
                     selected={startDate}
-                    onChange={(date: Date | null) => setStartDate(date)}
+                    onChange={(date: Date | null) => {
+                      setStartDate(date)
+                      // Reset end date if it's before the new start date
+                      if (date && endDate && endDate < date) {
+                        setEndDate(null)
+                      }
+                    }}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="Select date"
                     minDate={minDate}
@@ -257,7 +334,6 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                   />
                 </div>
 
-                {/* End Date */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     End Date *
@@ -276,7 +352,6 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
             </>
           ) : (
             <>
-              {/* Half Day - Single Date */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Date *
@@ -292,13 +367,11 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 />
               </div>
 
-              {/* Display Time Info (Read-only) */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <p className="text-sm font-semibold text-gray-700 mb-2">Time Period</p>
                 <p className="text-lg font-bold text-blue-600">
                   {getHalfDayTimes(halfDayPeriod).start} - {getHalfDayTimes(halfDayPeriod).end}
                 </p>
-                <p className="text-xs text-gray-600 mt-1">Time is fixed for half-day requests</p>
               </div>
             </>
           )}
@@ -309,9 +382,6 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Days Off</p>
                   <p className="text-4xl font-bold text-blue-600">{calculatedDaysOff}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {formData.day_off_type === 'FULL_DAY' ? '1 day per calendar day' : '0.5 days per calendar day'}
-                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">From</p>
