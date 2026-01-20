@@ -521,7 +521,7 @@ const DayoffRequests: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-gray-900">🏖 Day Off Requests</h1>
+            <h1 className="text-3xl font-bold text-gray-900">🏖 ຂໍ້ມູນການລາພັກວຽກ</h1>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -536,7 +536,7 @@ const DayoffRequests: React.FC = () => {
               disabled={loading}
               className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
             >
-              <FaPlus /> New Request
+              <FaPlus /> ຂໍລາພັກວຽກ
             </button>
           </div>
         </div>
@@ -544,19 +544,19 @@ const DayoffRequests: React.FC = () => {
         {/* Stats Cards */}
         <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
-            <div className="text-sm text-gray-500 font-medium mb-1">Total Requests</div>
+            <div className="text-sm text-gray-500 font-medium mb-1">ຈຳນວນຄຳຂໍທັງໝົດ</div>
             <div className="text-2xl font-bold text-gray-900">{stats.totalRequests}</div>
           </div>
           <div className="bg-yellow-50 p-4 rounded-lg shadow-sm">
-            <div className="text-sm text-yellow-600 font-medium mb-1">Pending</div>
+            <div className="text-sm text-yellow-600 font-medium mb-1">ກຳລັງດຳເນີນການ</div>
             <div className="text-2xl font-bold text-yellow-700">{stats.pendingRequests}</div>
           </div>
           <div className="bg-green-50 p-4 rounded-lg shadow-sm">
-            <div className="text-sm text-green-600 font-medium mb-1">Accepted</div>
+            <div className="text-sm text-green-600 font-medium mb-1">ອະນຸມັດແລ້ວ</div>
             <div className="text-2xl font-bold text-green-700">{stats.acceptedRequests}</div>
           </div>
           <div className="bg-red-50 p-4 rounded-lg shadow-sm">
-            <div className="text-sm text-red-600 font-medium mb-1">Rejected</div>
+            <div className="text-sm text-red-600 font-medium mb-1">ປະຕິເສດ</div>
             <div className="text-2xl font-bold text-red-700">{stats.rejectedRequests}</div>
           </div>
         </div>
@@ -564,19 +564,19 @@ const DayoffRequests: React.FC = () => {
         {/* Filters */}
         <div className="flex items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow-sm">
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Year</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ປີ</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {[2023, 2024, 2025, 2026].map(year => (
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Month</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ເດືອນ</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -588,14 +588,14 @@ const DayoffRequests: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Department</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ພະແໜກ</label>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
               disabled={loading}
             >
-              <option value="">All Departments</option>
+              <option value="">ພະແໜກທັງໝົດ</option>
               {getUniqueDepartments().map(dept => (
                 <option key={dept._id} value={dept._id}>{dept.department_name}</option>
               ))}
@@ -603,29 +603,29 @@ const DayoffRequests: React.FC = () => {
           </div>
           {/* Day off type */}
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Type</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ປະເພດ</label>
             <select
               value={filterDayOffType}
               onChange={(e) => setFilterDayOffType(e.target.value as DayOffType | 'ALL')}
               className="px-3 py-2 border rounded-lg text-sm"
             >
-              <option value="ALL">All Types</option>
-              <option value="FULL_DAY">Full Day</option>
-              <option value="HALF_DAY">Half Day</option>
+              <option value="ALL">ປະເພດທັງໝົດ</option>
+              <option value="FULL_DAY">ໝົດມື້</option>
+              <option value="HALF_DAY">ເຄີ່ງມື້</option>
             </select>
           </div>
 
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Status</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ສະຖານະ</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as RequestStatus | 'ALL')}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="ALL">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Accepted">Accepted</option>
-              <option value="Rejected">Rejected</option>
+              <option value="ALL">ສະຖານະທັງໝົດ</option>
+              <option value="Pending">ກຳລັງດຳເນີນການ</option>
+              <option value="Accepted">ອະນຸມັດແລ້ວ</option>
+              <option value="Rejected">ປະຕິເສດ</option>
             </select>
           </div>
         </div>
@@ -636,14 +636,14 @@ const DayoffRequests: React.FC = () => {
             <table className="w-full min-w-max">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Employee</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Supervisor</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Start date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">End date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Days</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Reason</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ພະນັກງານ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຫົວໜ້າ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ປະເພດ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ວັນທິ່ເລີ່ມ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຮອດວັນທີ່</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ມື້</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ເລືອງ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ສະຖານະ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
@@ -679,7 +679,7 @@ const DayoffRequests: React.FC = () => {
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 text-white hover:bg-gray-700"
                           >
-                            <FaEye className="text-xs" /> Detail
+                            <FaEye className="text-xs" /> ລາຍລະອຽດ
                           </button>
                           <button
                             onClick={() => handleEdit(request)}
@@ -689,7 +689,7 @@ const DayoffRequests: React.FC = () => {
                               : 'bg-blue-600 text-white hover:bg-blue-700'
                               }`}
                           >
-                            <FaEdit className="text-xs" /> Edit
+                            <FaEdit className="text-xs" /> ແກ້ໄຂ
                           </button>
                           <button
                             onClick={() => handleStatusChange(request._id, 'Rejected')}
@@ -699,7 +699,7 @@ const DayoffRequests: React.FC = () => {
                               : 'bg-red-600 text-white hover:bg-red-700'
                               }`}
                           >
-                            <FaTrash className="text-xs" /> Cancel
+                            <FaTrash className="text-xs" /> ຍົກເລີກ
                           </button>
                         </div>
                       </td>
@@ -741,7 +741,7 @@ const DayoffRequests: React.FC = () => {
         <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Request Details</h2>
+              <h2 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດຄຳຂໍ</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -752,44 +752,44 @@ const DayoffRequests: React.FC = () => {
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Employee</label>
+                  <label className="text-sm font-semibold text-gray-500">ພະນັກງານ</label>
                   <p className="text-gray-900 mt-1">{getUserName(selectedRequest.employee_id || selectedRequest.user_id)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Supervisor</label>
+                  <label className="text-sm font-semibold text-gray-500">ຫົວໜ້າ</label>
                   <p className="text-gray-900 mt-1">{getUserName(selectedRequest.supervisor_id)}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">Reason</label>
+                <label className="text-sm font-semibold text-gray-500">ເລືອງ</label>
                 <p className="text-lg font-semibold text-gray-900 mt-1">{selectedRequest.title}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Day Off Type</label>
+                  <label className="text-sm font-semibold text-gray-500">ປະເພດມື້ພັກ</label>
                   <p className="text-gray-900 mt-1">{selectedRequest.day_off_type}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Total Days</label>
-                  <p className="text-gray-900 font-semibold mt-1">{selectedRequest.date_off_number} days</p>
+                  <label className="text-sm font-semibold text-gray-500">ຈຳນວນມື້</label>
+                  <p className="text-gray-900 font-semibold mt-1">{selectedRequest.date_off_number} ມື້</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Start Date & Time</label>
+                  <label className="text-sm font-semibold text-gray-500">ວັນທິ່ເລີ່ມ</label>
                   <p className="text-gray-900 mt-1">{formatDateTime(selectedRequest.start_date_time)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">End Date & Time</label>
+                  <label className="text-sm font-semibold text-gray-500">ຮອດວັນທີ່</label>
                   <p className="text-gray-900 mt-1">{formatDateTime(selectedRequest.end_date_time)}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">Current Status</label>
+                <label className="text-sm font-semibold text-gray-500">ສະຖານະປັດຈຸບັນ</label>
                 <div className="mt-2">
                   <span className={`px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
                     {getStatusLabel(selectedRequest.status)}

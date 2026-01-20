@@ -190,10 +190,30 @@ const Attendance: React.FC = () => {
         getMonthName
     })
 
+    // เพิ่มฟังก์ชันใหม่สำหรับกรองประวัติตามเดือนและปี
+    const getUserRequestHistoryByMonth = (userId: string, year: number, month: number) => {
+        return dayOffRequests
+            .filter(req => {
+                const requestUserId = typeof req.user_id === 'string' ? req.user_id : req.user_id?._id
+                const employeeId = typeof req.employee_id === 'string' ? req.employee_id : req.employee_id?._id
+                const matchesUser = requestUserId === userId || employeeId === userId
+
+                if (!matchesUser) return false
+
+                // ตรวจสอบเดือนและปี
+                const startDate = new Date(req.start_date_time)
+                const requestYear = startDate.getFullYear()
+                const requestMonth = startDate.getMonth() + 1
+
+                return requestYear === year && requestMonth === month
+            })
+            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
+
     return (
         <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-semibold text-gray-800">Attendance</h2>
+                <h2 className="text-2xl font-semibold text-gray-800">ຂໍ້ມູນການມາວຽກ</h2>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleExportToPDF}
@@ -206,7 +226,7 @@ const Attendance: React.FC = () => {
                         onClick={fetchData}
                         className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
                     >
-                        Refresh Data
+                        ໂຫຼດຂໍ້ມູນໃໝ່
                     </button>
                 </div>
             </div>
@@ -214,15 +234,15 @@ const Attendance: React.FC = () => {
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-sm text-green-600 font-medium mb-1">Total Attendance Days</div>
+                    <div className="text-sm text-green-600 font-medium mb-1">ຈຳນວນມາວຽກທັງໝົດ</div>
                     <div className="text-2xl font-bold text-green-700">{stats.totalAttendance}</div>
                 </div>
                 <div className="bg-orange-50 rounded-lg p-4">
-                    <div className="text-sm text-orange-600 font-medium mb-1">Total Leave Days</div>
+                    <div className="text-sm text-orange-600 font-medium mb-1">ຈຳນວນພັກວຽກທັງໝົດ</div>
                     <div className="text-2xl font-bold text-orange-700">{stats.totalLeave.toFixed(1)}</div>
                 </div>
                 <div className="bg-purple-50 rounded-lg p-4">
-                    <div className="text-sm text-purple-600 font-medium mb-1">Working Days</div>
+                    <div className="text-sm text-purple-600 font-medium mb-1">ຈຳນວນມື້ເຮັດວຽກທັງໝົດ</div>
                     <div className="text-2xl font-bold text-purple-700">{workingDaysInMonth}</div>
                 </div>
             </div>
@@ -230,7 +250,7 @@ const Attendance: React.FC = () => {
             {/* Filters */}
             <div className="flex items-center gap-4 mb-4 bg-gray-50 p-4 rounded-lg">
                 <div>
-                    <label className="text-xs text-gray-600 font-medium mb-1 block">Year</label>
+                    <label className="text-xs text-gray-600 font-medium mb-1 block">ປີ</label>
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -242,7 +262,7 @@ const Attendance: React.FC = () => {
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs text-gray-600 font-medium mb-1 block">Month</label>
+                    <label className="text-xs text-gray-600 font-medium mb-1 block">ເດືອນ</label>
                     <select
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -254,21 +274,21 @@ const Attendance: React.FC = () => {
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs text-gray-600 font-medium mb-1 block">Department</label>
+                    <label className="text-xs text-gray-600 font-medium mb-1 block">ພະແໜກ</label>
                     <select
                         value={selectedDepartment}
                         onChange={(e) => setSelectedDepartment(e.target.value)}
                         className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
                         disabled={loading}
                     >
-                        <option value="">All Departments</option>
+                        <option value="">ພະແໜກທັງໝົດ</option>
                         {getUniqueDepartments().map(dept => (
                             <option key={dept._id} value={dept._id}>{dept.name}</option>
                         ))}
                     </select>
                 </div>
                 <div className="ml-auto text-sm text-gray-600">
-                    Showing attendance for <span className="font-medium">{getMonthName(selectedMonth)} {selectedYear}</span>
+                    ສະແດງມື້ເຮັດວຽກສຳຫຼັບ <span className="font-medium">{getMonthName(selectedMonth)} {selectedYear}</span>
                     {selectedDepartment && (
                         <span className="ml-2">
                             • <span className="font-medium">{getUniqueDepartments().find(d => d._id === selectedDepartment)?.name}</span>
@@ -282,13 +302,13 @@ const Attendance: React.FC = () => {
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-gray-100 border-b-2 border-gray-200">
-                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name (EN)</th>
-                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name (LA)</th>
-                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
-                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Year</th>
-                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Month</th>
-                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Leave Days</th>
-                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Attendance Days</th>
+                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ຊື່ (EN)</th>
+                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ຊື່ (LA)</th>
+                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ອີເມວ</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ປີ</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ເດືອນ</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ມື້ພັກ</th>
+                            <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ມື້ມາວຽກ</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -348,7 +368,7 @@ const Attendance: React.FC = () => {
                                             className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors"
                                         >
                                             <FaRegEye size={14} />
-                                            View History
+                                            ລາຍລະອຽດ
                                         </button>
                                     </td>
                                 </tr>
@@ -370,28 +390,30 @@ const Attendance: React.FC = () => {
                 <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-xl">
-                            <h3 className="text-xl text-white font-semibold">Employee Request History</h3>
+                            <h3 className="text-xl text-white font-semibold">
+                                ປະຫວັດການຂໍລາພັກ ຂອງພະນັກງານ - {getMonthName(selectedMonth)} {selectedYear}
+                            </h3>
                         </div>
 
                         <div className="p-6 space-y-6">
                             {/* User Information */}
                             <div className="bg-gray-50 rounded-lg p-4">
-                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Employee Information</h4>
+                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">ຂໍ້ມູນພະນັກງານ</h4>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Name (English)</p>
+                                        <p className="text-xs text-gray-500 mb-1">ຊື່ (English)</p>
                                         <p className="text-sm font-medium text-gray-800">
                                             {selectedUser.first_name_en} {selectedUser.last_name_en}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Name (Lao)</p>
+                                        <p className="text-xs text-gray-500 mb-1">ຊື່ (Lao)</p>
                                         <p className="text-sm font-medium text-gray-800">
                                             {selectedUser.first_name_la} {selectedUser.last_name_la}
                                         </p>
                                     </div>
                                     <div className="col-span-2">
-                                        <p className="text-xs text-gray-500 mb-1">Email</p>
+                                        <p className="text-xs text-gray-500 mb-1">ອີເມວ</p>
                                         <p className="text-sm font-medium text-gray-800">{selectedUser.email}</p>
                                     </div>
                                 </div>
@@ -399,9 +421,11 @@ const Attendance: React.FC = () => {
 
                             {/* Request History */}
                             <div>
-                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">Request History</h4>
+                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
+                                    ປະຫວັດຄຳຂໍ - {getMonthName(selectedMonth)} {selectedYear}
+                                </h4>
                                 <div className="space-y-3">
-                                    {getUserRequestHistory(selectedUser._id).map((request) => (
+                                    {getUserRequestHistoryByMonth(selectedUser._id, selectedYear, selectedMonth).map((request) => (
                                         <div key={request._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                                             <div className="flex justify-between items-start mb-3">
                                                 <div className="flex-1">
@@ -412,7 +436,7 @@ const Attendance: React.FC = () => {
                                                         </span>
                                                     </div>
                                                     <div className="text-xs text-gray-500">
-                                                        Type: {request.day_off_type}
+                                                        ປະເພດ: {request.day_off_type}
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
@@ -423,28 +447,28 @@ const Attendance: React.FC = () => {
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-xs">
                                                 <div>
-                                                    <span className="text-gray-500">Start:</span>
+                                                    <span className="text-gray-500">ເລີ່ມ:</span>
                                                     <span className="ml-1 text-gray-700">
                                                         {new Date(request.start_date_time).toLocaleString()}
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <span className="text-gray-500">End:</span>
+                                                    <span className="text-gray-500">ຮອດ:</span>
                                                     <span className="ml-1 text-gray-700">
                                                         {new Date(request.end_date_time).toLocaleString()}
                                                     </span>
                                                 </div>
                                             </div>
                                             <div className="mt-2 text-xs text-gray-500">
-                                                Created: {new Date(request.created_at).toLocaleDateString()}
+                                                ສ້າງໃນ: {new Date(request.created_at).toLocaleDateString()}
                                             </div>
                                         </div>
                                     ))}
 
-                                    {getUserRequestHistory(selectedUser._id).length === 0 && (
+                                    {getUserRequestHistoryByMonth(selectedUser._id, selectedYear, selectedMonth).length === 0 && (
                                         <div className="text-center py-8 text-gray-500">
                                             <div className="text-3xl mb-2 opacity-50">📋</div>
-                                            <p>No request records found</p>
+                                            <p>ບໍ່ມີຂໍ້ມູນການຂໍລາໃນເດືອນນີ້</p>
                                         </div>
                                     )}
                                 </div>
@@ -456,7 +480,7 @@ const Attendance: React.FC = () => {
                                 onClick={closeModal}
                                 className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
                             >
-                                Close
+                                ປິດ
                             </button>
                         </div>
                     </div>

@@ -322,7 +322,7 @@ const OTandFieldWork: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-gray-900">⏰ OT & Field Work Requests</h1>
+            <h1 className="text-3xl font-bold text-gray-900">⏰ ຂໍ້ມູນການເຮັດ Overtime(OT) ແລະ ວຽກນອກ</h1>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -338,31 +338,31 @@ const OTandFieldWork: React.FC = () => {
         {/* Summary Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           <div className="bg-blue-50 rounded-lg p-4">
-            <div className="text-sm text-blue-600 font-medium mb-1">Total Requests</div>
+            <div className="text-sm text-blue-600 font-medium mb-1">ຄຳຂໍທັງໝົດ</div>
             <div className="text-2xl font-bold text-blue-700">{stats.totalRequests}</div>
           </div>
           <div className="bg-yellow-50 rounded-lg p-4">
-            <div className="text-sm text-yellow-600 font-medium mb-1">Pending</div>
+            <div className="text-sm text-yellow-600 font-medium mb-1">ກຳລັງດຳເນີນການ</div>
             <div className="text-2xl font-bold text-yellow-700">{stats.pendingRequests}</div>
           </div>
           <div className="bg-green-50 rounded-lg p-4">
-            <div className="text-sm text-green-600 font-medium mb-1">Accepted</div>
+            <div className="text-sm text-green-600 font-medium mb-1">ອະນຸມັດແລ້ວ</div>
             <div className="text-2xl font-bold text-green-700">{stats.acceptedRequests}</div>
           </div>
           <div className="bg-red-50 rounded-lg p-4">
-            <div className="text-sm text-red-600 font-medium mb-1">Rejected</div>
+            <div className="text-sm text-red-600 font-medium mb-1">ປະຕິເສດ</div>
             <div className="text-2xl font-bold text-red-700">{stats.rejectedRequests}</div>
           </div>
           <div className="bg-indigo-50 rounded-lg p-4">
-            <div className="text-sm text-indigo-600 font-medium mb-1">OT Requests</div>
+            <div className="text-sm text-indigo-600 font-medium mb-1">ຄຳຂໍເຮັດ OT</div>
             <div className="text-2xl font-bold text-indigo-700">{stats.otRequests}</div>
           </div>
           <div className="bg-purple-50 rounded-lg p-4">
-            <div className="text-sm text-purple-600 font-medium mb-1">Field Work</div>
+            <div className="text-sm text-purple-600 font-medium mb-1">ຄຳຂໍເຮັດວຽກນອກ</div>
             <div className="text-2xl font-bold text-purple-700">{stats.fieldWorkRequests}</div>
           </div>
           <div className="bg-cyan-50 rounded-lg p-4">
-            <div className="text-sm text-cyan-600 font-medium mb-1">Total Hours</div>
+            <div className="text-sm text-cyan-600 font-medium mb-1">ຈຳນວນຊົ່ວໂມງ</div>
             <div className="text-2xl font-bold text-cyan-700">{stats.totalHours.toFixed(1)}h</div>
           </div>
         </div>
@@ -370,7 +370,7 @@ const OTandFieldWork: React.FC = () => {
         {/* Filters */}
         <div className="flex items-center gap-4 mb-4 bg-gray-50 p-4 rounded-lg">
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Year</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ປີ</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -382,7 +382,7 @@ const OTandFieldWork: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Month</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ເດືອນ</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -394,42 +394,42 @@ const OTandFieldWork: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Department</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ພະແໜກ</label>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
               disabled={loading}
             >
-              <option value="">All Departments</option>
+              <option value="">ພະແໜກທັງໝົດ</option>
               {getUniqueDepartments().map(dept => (
                 <option key={dept._id} value={dept._id}>{dept.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Type</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ປະເພດ</label>
             <select
               value={filterTitle}
               onChange={(e) => setFilterTitle(e.target.value as 'OT' | 'FIELD_WORK' | 'ALL')}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="ALL">All Types</option>
-              <option value="OT">OT</option>
-              <option value="FIELD_WORK">Field Work</option>
+              <option value="ALL">ປະເພດທັງໝົດ</option>
+              <option value="OT">ວຽກລ່ວງເວລາ(OT)</option>
+              <option value="FIELD_WORK">ວຽກນອກ</option>
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">Status</label>
+            <label className="text-xs text-gray-600 font-medium mb-1 block">ສະຖານະ</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as RequestStatus | 'ALL')}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="ALL">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Accept">Accepted</option>
-              <option value="Reject">Rejected</option>
+              <option value="ALL">ສະຖານະທັງໝົດ</option>
+              <option value="Pending">ກຳລັງດຳເນີນການ</option>
+              <option value="Accept">ອະນຸມັດແລ້ວ</option>
+              <option value="Reject">ປະຕິເສດ</option>
             </select>
           </div>
         </div>
@@ -440,14 +440,14 @@ const OTandFieldWork: React.FC = () => {
             <table className="w-full min-w-max">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Employee</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Supervisor</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Type</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Time</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Hours</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Reason</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ພະນັກງານ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຫົວໜ້າ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ປະເພດ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ວັນທິ່</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ເວລາ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຊົ່ວໂມງ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ເລືອງ</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ສະຖານະ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
@@ -493,7 +493,7 @@ const OTandFieldWork: React.FC = () => {
                             }}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 text-white hover:bg-gray-700"
                           >
-                            <FaEye className="text-xs" /> Details
+                            <FaEye className="text-xs" /> ລາຍລະອຽດ
                           </button>
                           <button
                             onClick={() => handleDelete(request._id)}
@@ -503,7 +503,7 @@ const OTandFieldWork: React.FC = () => {
                               : 'bg-red-600 text-white hover:bg-red-700'
                               }`}
                           >
-                            <FaTrash className="text-xs" /> Delete
+                            <FaTrash className="text-xs" /> ລົບ
                           </button>
                         </div>
                       </td>
@@ -526,7 +526,7 @@ const OTandFieldWork: React.FC = () => {
         <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Request Details</h2>
+              <h2 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດຄຳຂໍ</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -537,23 +537,23 @@ const OTandFieldWork: React.FC = () => {
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Employee</label>
+                  <label className="text-sm font-semibold text-gray-500">ພະນັກງານ</label>
                   <p className="text-gray-900 mt-1">{getUserName(selectedRequest.user_id)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Supervisor</label>
+                  <label className="text-sm font-semibold text-gray-500">ຫົວໜ້າ</label>
                   <p className="text-gray-900 mt-1">{getUserName(selectedRequest.supervisor_id)}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">Reason</label>
+                <label className="text-sm font-semibold text-gray-500">ເລືອງ</label>
                 <p className="text-lg font-semibold text-gray-900 mt-1">{selectedRequest.reason}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Type</label>
+                  <label className="text-sm font-semibold text-gray-500">ປະເພດ</label>
                   <p className="text-gray-900 mt-1">
                     <span className={`px-3 py-1 rounded-md text-sm font-medium ${getTitleColor(selectedRequest.title)}`}>
                       {selectedRequest.title}
@@ -561,7 +561,7 @@ const OTandFieldWork: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Total Hours</label>
+                  <label className="text-sm font-semibold text-gray-500">ຊົ່ວໂມງ</label>
                   <p className="text-gray-900 font-semibold mt-1">
                     {parseTimeToHours(selectedRequest.start_hour as any, selectedRequest.end_hour as any).toFixed(1)}h
                   </p>
@@ -570,20 +570,20 @@ const OTandFieldWork: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Date</label>
+                  <label className="text-sm font-semibold text-gray-500">ວັນທິ່</label>
                   <p className="text-gray-900 mt-1">{formatDate(selectedRequest.date)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">Time</label>
+                  <label className="text-sm font-semibold text-gray-500">ເວລາ</label>
                   <p className="text-gray-900 mt-1">{formatTimeRange(selectedRequest.start_hour, selectedRequest.end_hour)}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">Current Status</label>
+                <label className="text-sm font-semibold text-gray-500">ສະຖານະປັດຈຸບັນ</label>
                 <div className="mt-2">
                   <span className={`px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
-                    {selectedRequest.status === 'Accept' ? 'Accepted' : selectedRequest.status}
+                    {selectedRequest.status === 'Accept' ? 'ອານຸມັດແລ້ວ' : selectedRequest.status}
                   </span>
                 </div>
               </div>

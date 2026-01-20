@@ -114,7 +114,6 @@ export const updateDayOffStatus = async (
   }
 };
 
-
 // UPDATE DAY OFF REQUEST
 export const updateDayOffRequest = async (
   requestId: string,
