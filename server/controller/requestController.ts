@@ -105,14 +105,42 @@ export const createRequest = async (
 /* ============================================================
    READ
 ============================================================ */
+export const getAllRequests = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, status, title } = req.query;
 
-export const getAllRequests = async (_: Request, res: Response) => {
-  const requests = await RequestModel.find()
-    .populate("user_id", "first_name_en last_name_en email")
-    .populate("supervisor_id", "first_name_en last_name_en email")
-    .sort({ created_at: -1 });
+    const query: any = {};
 
-  res.json({ requests });
+    // Filter by date (frontend ส่ง startDate / endDate)
+    if (startDate && endDate) {
+      const start = new Date(startDate as string);
+      const end = new Date(endDate as string);
+      // ให้รวมวันสุดท้ายเต็มวัน
+      end.setHours(23, 59, 59, 999);
+
+      query.date = { $gte: start, $lte: end };
+    }
+
+    // Filter by status
+    if (status && typeof status === "string") {
+      query.status = status;
+    }
+
+    // Filter by title
+    if (title && typeof title === "string") {
+      query.title = title;
+    }
+
+    const requests = await RequestModel.find(query)
+      .populate("user_id", "first_name_en last_name_en email department_id")
+      .populate("supervisor_id", "first_name_en last_name_en email")
+      .sort({ date: -1 }); // ใช้ date ไม่ใช่ created_at
+
+    res.json({ requests });
+  } catch (error: any) {
+    console.error("Error fetching requests:", error);
+    res.status(500).json({ message: "Failed to fetch requests" });
+  }
 };
 
 export const getRequestsByUser = async (

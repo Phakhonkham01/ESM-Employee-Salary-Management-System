@@ -24,30 +24,30 @@ export interface User {
 
 // ในไฟล์ services/requests/api.ts
 export interface RequestData {
-  _id: string;
-  user_id: {
     _id: string;
-    email: string;
-    first_name_en?: string;
-    last_name_en?: string;
-    first_name_la?: string;
-    last_name_la?: string;
-    nickname_en?: string;
-    nickname_la?: string;
-    employee_id?: string;
-    role?: string;
-    status?: string;
-    // เพิ่มฟิลด์เหล่านี้จากที่ backend populate มา
-  } | string; // ยังเป็น string หรือ object ได้
-  supervisor_id: User | string;
-  date: string;
-  title: 'OT' | 'FIELD_WORK';
-  start_hour: string | number;
-  end_hour: string | number;
-  fuel?: number;
-  reason: string;
-  status: 'Pending' | 'Accept' | 'Reject';
-  created_at: string;
+    user_id: {
+        _id: string;
+        email: string;
+        first_name_en?: string;
+        last_name_en?: string;
+        first_name_la?: string;
+        last_name_la?: string;
+        nickname_en?: string;
+        nickname_la?: string;
+        employee_id?: string;
+        role?: string;
+        status?: string;
+        // เพิ่มฟิลด์เหล่านี้จากที่ backend populate มา
+    } | string; // ยังเป็น string หรือ object ได้
+    supervisor_id: User | string;
+    date: string;
+    title: 'OT' | 'FIELD_WORK';
+    start_hour: string | number;
+    end_hour: string | number;
+    fuel?: number;
+    reason: string;
+    status: 'Pending' | 'Accept' | 'Reject';
+    created_at: string;
 }
 
 export interface CreateRequestPayload {
@@ -142,21 +142,21 @@ export const getRequestsByUser = async (userId: string): Promise<ApiResponse<Req
 export const getRequestsBySupervisor = async (supervisorId: string): Promise<ApiResponse<RequestData[]>> => {
     try {
         console.log('📡 Calling API: GET', `${API_BASE_URL}/requests/supervisor/${supervisorId}`)
-        
+
         const response = await axios.get(`${API_BASE_URL}/requests/supervisor/${supervisorId}`, {
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
             }
         })
-        
+
         console.log('✅ API Response received:', {
             success: !!response.data,
             message: response.data?.message,
             requestsCount: response.data?.requests?.length,
             sampleRequest: response.data?.requests?.[0]
         })
-        
+
         // Handle response structure
         if (response.data) {
             return {
@@ -165,12 +165,12 @@ export const getRequestsBySupervisor = async (supervisorId: string): Promise<Api
                 count: response.data.count
             }
         }
-        
+
         return {
             message: 'Success',
             requests: []
         }
-        
+
     } catch (error: any) {
         console.error('❌ API Error details:', {
             message: error.message,
@@ -178,7 +178,7 @@ export const getRequestsBySupervisor = async (supervisorId: string): Promise<Api
             status: error.response?.status,
             url: error.config?.url
         })
-        
+
         if (error.response) {
             throw new Error(error.response.data?.message || `Server error: ${error.response.status}`)
         } else if (error.request) {
@@ -210,7 +210,7 @@ export const updateRequestStatus = async (
 ): Promise<ApiResponse<RequestData>> => {
     try {
         console.log('📡 Updating request status:', { id, status })
-        
+
         const response = await axios.put(`${API_BASE_URL}/requests/${id}/status`, { status })
         return response.data
     } catch (error: any) {

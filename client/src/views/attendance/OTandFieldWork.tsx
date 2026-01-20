@@ -10,6 +10,7 @@ import {
   type RequestData
 } from '../../services/requests/api'
 import { useExportOTToPDF } from './ExportToPDF'
+import Swal from 'sweetalert2'
 
 type RequestStatus = 'Pending' | 'Accept' | 'Reject'
 type RequestTitle = 'OT' | 'FIELD_WORK'
@@ -27,11 +28,36 @@ const OTandFieldWork: React.FC = () => {
   const [filterTitle, setFilterTitle] = useState<'OT' | 'FIELD_WORK' | 'ALL'>('ALL')
   const [filterStatus, setFilterStatus] = useState<RequestStatus | 'ALL'>('ALL')
 
+  const useUsersMap = (users: UserData[]) => {
+    return React.useMemo(() => {
+      const map = new Map<string, UserData>()
+      users.forEach(u => map.set(u._id, u))
+      return map
+    }, [users])
+  }
+
+  const usersMap = useUsersMap(users)
+
+
   useEffect(() => {
     loadUsers()
     loadDepartments()
-    loadRequests()
+  }, [])
+
+  // โหลดครั้งแรก หลัง users มาแล้ว
+  useEffect(() => {
+    if (users.length > 0) {
+      loadRequests()
+    }
+  }, [users])
+
+  // โหลดเมื่อ filter เปลี่ยน
+  useEffect(() => {
+    if (users.length > 0) {
+      loadRequests()
+    }
   }, [selectedYear, selectedMonth, selectedDepartment, filterTitle, filterStatus])
+
 
   const loadUsers = async () => {
     try {
@@ -52,46 +78,79 @@ const OTandFieldWork: React.FC = () => {
     }
   }
 
+  const formatDateForAPI = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const loadRequests = async () => {
     try {
       setLoading(true)
-      const filters: any = {}
-      
+      const startDate = new Date(selectedYear, selectedMonth - 1, 1, 0, 0, 0)
+      const endDate = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999)
+      const res = await getAllRequests({
+        startDate: formatDateForAPI(startDate),
+        endDate: formatDateForAPI(endDate),
+      })
+
+      let filteredRequests = (res.requests || []).map(r => ({
+        ...r,
+        status: normalizeStatus(r.status),
+      }))
+
+      // Type
       if (filterTitle !== 'ALL') {
-        filters.title = filterTitle
+        filteredRequests = filteredRequests.filter(r => r.title === filterTitle)
       }
+
+      // Status
       if (filterStatus !== 'ALL') {
-        filters.status = filterStatus
+        filteredRequests = filteredRequests.filter(r => r.status === filterStatus)
       }
-      
-      // Calculate date range for selected month/year
-      const startDate = new Date(selectedYear, selectedMonth - 1, 1)
-      const endDate = new Date(selectedYear, selectedMonth, 0)
-      filters.startDate = startDate.toISOString().split('T')[0]
-      filters.endDate = endDate.toISOString().split('T')[0]
 
-      const res = await getAllRequests(filters)
-      let filteredRequests = res.requests || []
-
-      // Filter by department if selected
+      // Department (frontend-safe)
       if (selectedDepartment) {
         filteredRequests = filteredRequests.filter(req => {
-          const userId = typeof req.user_id === 'string' ? req.user_id : req.user_id._id
+          const userId =
+            typeof req.user_id === 'string'
+              ? req.user_id
+              : req.user_id?._id
+
           const user = users.find(u => u._id === userId)
-          if (!user) return false
-          const deptId = typeof user.department_id === 'object' && user.department_id !== null
-            ? user.department_id._id
-            : user.department_id
-          return deptId === selectedDepartment
+          if (!user || !user.department_id) return false
+
+          const deptId =
+            typeof user.department_id === 'object'
+              ? String(user.department_id._id)
+              : String(user.department_id)
+
+          return deptId === String(selectedDepartment)
         })
       }
 
       setRequests(filteredRequests)
     } catch (error) {
-      console.error('Error loading requests:', error)
-      alert('Failed to load OT/Field Work requests')
+      console.error(error)
+      alert('Failed to load requests')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const normalizeStatus = (status: string): RequestStatus => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'Pending'
+      case 'accept':
+      case 'accepted':
+        return 'Accept'
+      case 'reject':
+      case 'rejected':
+        return 'Reject'
+      default:
+        return 'Pending'
     }
   }
 
@@ -123,39 +182,44 @@ const OTandFieldWork: React.FC = () => {
     return `${start} - ${end}`
   }
 
-
-  const handleStatusChange = async (requestId: string, newStatus: 'Accept' | 'Reject') => {
-    try {
-      setLoading(true)
-      await updateRequestStatus(requestId, newStatus)
-      alert(`Request ${newStatus.toLowerCase()}ed successfully!`)
-      await loadRequests()
-    } catch (error: any) {
-      console.error('Error updating status:', error)
-      alert(error.message || 'Failed to update request status')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleDelete = async (requestId: string) => {
-    if (!window.confirm('Are you sure you want to delete this request?')) {
-      return
-    }
+    const result = await Swal.fire({
+      title: 'Confirm Deletion',
+      text: 'Do you want to delete this request?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#d33',
+      reverseButtons: true,
+    })
+
+    if (!result.isConfirmed) return
 
     try {
       setLoading(true)
       await deleteRequest(requestId)
-      alert('Request deleted successfully!')
+      await Swal.fire({
+        icon: 'success',
+        title: 'Deleted',
+        text: 'Request deleted successfully!',
+        confirmButtonColor: '#3085d6'
+      })
+
       await loadRequests()
+
     } catch (error: any) {
-      console.error('Error deleting request:', error)
-      alert(error.message || 'Failed to delete request')
+      await Swal.fire({
+        icon: 'error',
+        title: 'Delete failed',
+        text: error?.message || 'Failed to delete request',
+        confirmButtonColor: '#d33'
+      })
+
     } finally {
       setLoading(false)
     }
   }
-
 
   const getUserName = (userRef: any) => {
     if (!userRef) return 'Unknown User'
@@ -312,7 +376,7 @@ const OTandFieldWork: React.FC = () => {
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {[2023, 2024, 2025, 2026].map(year => (
+              {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
             </select>
@@ -459,7 +523,7 @@ const OTandFieldWork: React.FC = () => {
 
       {/* Detail Modal */}
       {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Request Details</h2>
@@ -523,31 +587,6 @@ const OTandFieldWork: React.FC = () => {
                   </span>
                 </div>
               </div>
-
-              {selectedRequest.status === 'Pending' && (
-                <div className="flex gap-3 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => {
-                      handleStatusChange(selectedRequest._id, 'Accept')
-                      setShowDetailModal(false)
-                    }}
-                    disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 font-medium"
-                  >
-                    <FaCheck /> Accept Request
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleStatusChange(selectedRequest._id, 'Reject')
-                      setShowDetailModal(false)
-                    }}
-                    disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-medium"
-                  >
-                    <FaTimes /> Reject Request
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

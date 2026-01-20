@@ -7,12 +7,15 @@ import { getAllDepartments, type DepartmentData } from '../../services/departmen
 import {
   getAllDayOffRequests,
   createDayOffRequest,
+  updateDayOffRequest,
   updateDayOffStatus,
   type DayOffRequest,
   type CreateDayOffRequestPayload
 } from '@/services/Day_off_api/api'
 import { useExportToPDF } from './ExportToPDF'
 import AddFormRequest from './dayoffrequests/AddFormRequrst'
+import EditFormRequest from './dayoffrequests/EditFormRequest'
+import Swal from 'sweetalert2'
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
 type RequestStatus = 'Pending' | 'Accepted' | 'Rejected'
@@ -23,7 +26,8 @@ const DayoffRequests: React.FC = () => {
   const [departments, setDepartments] = useState<DepartmentData[]>([])
   const [loading, setLoading] = useState(false)
   const [dataLoaded, setDataLoaded] = useState(false)
-  const [showModal, setShowModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<DayOffRequest | null>(null)
 
@@ -33,16 +37,8 @@ const DayoffRequests: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('')
   const [filterTitle, setFilterTitle] = useState<'OT' | 'FIELD_WORK' | 'ALL'>('ALL')
   const [filterStatus, setFilterStatus] = useState<RequestStatus | 'ALL'>('ALL')
-
-  const [formData, setFormData] = useState({
-    employee_id: '',
-    supervisor_id: '',
-    department_id: '',
-    day_off_type: 'FULL_DAY' as DayOffType,
-    start_date_time: '',
-    end_date_time: '',
-    title: '',
-  })
+  const [filterDayOffType, setFilterDayOffType] =
+    useState<DayOffType | 'ALL'>('ALL')
 
   const useUsersMap = (users: UserData[]) => {
     return React.useMemo(() => {
@@ -145,44 +141,93 @@ const DayoffRequests: React.FC = () => {
       const requestYear = startDate.getFullYear()
       const requestMonth = startDate.getMonth() + 1
 
-      // Year filter
+      // Year
       if (requestYear !== selectedYear) return false
 
-      // Month filter
+      // Month
       if (requestMonth !== selectedMonth) return false
 
-      // Department filter
+      // Department
       if (selectedDepartment) {
-        const userDepartmentId = typeof request.employee_id === 'object'
-          ? request.employee_id._id
-          : users.find(u => u._id === request._id)?.department_id
+        const employeeId =
+          typeof request.employee_id === 'string'
+            ? request.employee_id
+            : request.employee_id?._id
 
-        if (userDepartmentId !== selectedDepartment) return false
+        const employee = users.find(u => u._id === employeeId)
+
+        const employeeDeptId =
+          typeof employee?.department_id === 'string'
+            ? employee.department_id
+            : employee?.department_id?._id
+
+        if (employeeDeptId !== selectedDepartment) {
+          return false
+        }
       }
 
-      // Title filter
-      if (filterTitle !== 'ALL' && request.title !== filterTitle) return false
+      // ✅ Day off type filter (FULL / HALF)
+      if (filterDayOffType !== 'ALL' && request.day_off_type !== filterDayOffType) {
+        return false
+      }
 
-      // Status filter
-      if (filterStatus !== 'ALL' && request.status !== filterStatus) return false
+      // ✅ Status filter
+      if (filterStatus !== 'ALL' && request.status !== filterStatus) {
+        return false
+      }
 
       return true
     })
-  }, [requests, selectedYear, selectedMonth, selectedDepartment, filterTitle, filterStatus, users])
+  }, [
+    requests,
+    selectedYear,
+    selectedMonth,
+    selectedDepartment,
+    filterDayOffType, // ✅ IMPORTANT
+    filterStatus,     // ✅ IMPORTANT
+    users
+  ])
+
 
   const calculateDaysOff = (start: string, end: string, type: DayOffType): number => {
     if (!start || !end) return 0
     const startDate = new Date(start)
     const endDate = new Date(end)
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
-    return type === 'HALF_DAY' ? diffDays * 0.5 : diffDays
+
+    if (type === 'HALF_DAY') {
+      return 0.5
+    } else {
+      const startDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+      const endDay = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+      const diffTime = endDay.getTime() - startDay.getTime()
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
+      return diffDays
+    }
   }
 
-  const handleSubmit = async () => {
-    if (!formData.employee_id || !formData.supervisor_id || !formData.title ||
-      !formData.start_date_time || !formData.end_date_time) {
-      alert('Please fill in all required fields')
+  // Handle CREATE
+  const handleCreate = async (formData: {
+    employee_id: string
+    supervisor_id: string
+    department_id: string
+    day_off_type: DayOffType
+    start_date_time: string
+    end_date_time: string
+    title: string
+  }) => {
+    if (
+      !formData.employee_id ||
+      !formData.supervisor_id ||
+      !formData.title ||
+      !formData.start_date_time ||
+      !formData.end_date_time
+    ) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Missing information',
+        text: 'Please fill in all required fields.',
+        confirmButtonColor: '#3085d6'
+      })
       return
     }
 
@@ -206,80 +251,179 @@ const DayoffRequests: React.FC = () => {
     try {
       setLoading(true)
       await createDayOffRequest(payload)
-      alert('Day off request created successfully!')
-      setShowModal(false)
-      resetForm()
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Day off request created successfully!',
+        confirmButtonColor: '#3085d6'
+      })
+
+      setShowAddModal(false)
       await loadDayOffRequests()
+
     } catch (error) {
-      console.error('Error creating request:', error)
-      alert('Failed to create day off request')
+      console.error(error)
+
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to create day off request',
+        confirmButtonColor: '#d33'
+      })
+
     } finally {
       setLoading(false)
     }
   }
 
-  const resetForm = () => {
-    setFormData({
-      employee_id: '',
-      supervisor_id: '',
-      department_id: '',
-      day_off_type: 'FULL_DAY',
-      start_date_time: '',
-      end_date_time: '',
-      title: ''
-    })
+  // Handle UPDATE
+  const handleUpdate = async (requestId: string, formData: {
+    employee_id: string
+    supervisor_id: string
+    department_id: string
+    day_off_type: DayOffType
+    start_date_time: string
+    end_date_time: string
+    title: string
+  }) => {
+    if (
+      !formData.employee_id ||
+      !formData.supervisor_id ||
+      !formData.title ||
+      !formData.start_date_time ||
+      !formData.end_date_time
+    ) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Missing information',
+        text: 'Please fill in all required fields.',
+        confirmButtonColor: '#3085d6'
+      })
+      return
+    }
+
+    const daysOff = calculateDaysOff(
+      formData.start_date_time,
+      formData.end_date_time,
+      formData.day_off_type
+    )
+
+    const payload = {
+      employee_id: formData.employee_id,
+      supervisor_id: formData.supervisor_id,
+      day_off_type: formData.day_off_type,
+      start_date_time: new Date(formData.start_date_time).toISOString(),
+      end_date_time: new Date(formData.end_date_time).toISOString(),
+      date_off_number: daysOff,
+      title: formData.title,
+    }
+
+    try {
+      setLoading(true)
+      await updateDayOffRequest(requestId, payload)
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Day off request updated successfully!',
+        confirmButtonColor: '#3085d6'
+      })
+
+      setShowEditModal(false)
+      setSelectedRequest(null)
+      await loadDayOffRequests()
+
+    } catch (error) {
+      console.error(error)
+
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to update day off request',
+        confirmButtonColor: '#d33'
+      })
+
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleStatusChange = async (requestId: string, newStatus: 'Accepted' | 'Rejected') => {
+  const handleStatusChange = async (
+    requestId: string,
+    newStatus: 'Accepted' | 'Rejected'
+  ) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `You are about to ${newStatus.toLowerCase()} this request.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: `Yes, ${newStatus}`
+    })
+
+    if (!result.isConfirmed) return
+
     try {
       setLoading(true)
 
-      const targetRequest = requests.find((req) => req._id === requestId)
-
+      const targetRequest = requests.find(req => req._id === requestId)
+      if (!targetRequest) {
+        throw new Error("Request not found")
+      }
       await updateDayOffStatus(requestId, newStatus)
 
       if (newStatus === 'Accepted') {
         await Promise.all(
-          usersWithUpdatedVacationDays.map((user) =>
+          usersWithUpdatedVacationDays.map(user =>
             updateUser(user._id, { vacation_days: user.vacation_days })
           )
         )
 
-        if (targetRequest) {
-          const startDate = new Date(targetRequest.start_date_time)
-          const year = startDate.getFullYear()
-          const month = startDate.getMonth() + 1
+        const startDate = new Date(targetRequest.start_date_time)
+        const year = startDate.getFullYear()
+        const month = startDate.getMonth() + 1
 
-          const userId =
-            typeof targetRequest.user_id === 'string'
-              ? targetRequest.user_id
-              : targetRequest.user_id?._id ||
-              (typeof targetRequest.employee_id === 'string'
-                ? targetRequest.employee_id
-                : targetRequest.employee_id?._id)
+        const userId =
+          typeof targetRequest.user_id === 'string'
+            ? targetRequest.user_id
+            : targetRequest.user_id?._id ||
+            (typeof targetRequest.employee_id === 'string'
+              ? targetRequest.employee_id
+              : targetRequest.employee_id?._id)
 
-          if (userId) {
-            try {
-              await createAttendanceSummary({
-                user_id: userId,
-                year,
-                month,
-                leave_days: targetRequest.date_off_number || 0,
-                ot_hours: 0,
-                attendance_days: 0,
-              })
-            } catch (attendanceError) {
-              console.error('Error creating attendance summary:', attendanceError)
-            }
+        if (userId) {
+          try {
+            await createAttendanceSummary({
+              user_id: userId,
+              year,
+              month,
+              leave_days: targetRequest.date_off_number || 0,
+              ot_hours: 0,
+              attendance_days: 0,
+            })
+          } catch (err) {
+            console.error('Attendance summary error:', err)
           }
         }
       }
 
-      alert(`Request ${newStatus.toLowerCase()} successfully!`)
       await loadDayOffRequests()
+
+      Swal.fire({
+        title: "Success",
+        text: `Request ${newStatus.toLowerCase()} successfully`,
+        icon: "success"
+      })
+
     } catch (error) {
       console.error('Error updating status:', error)
-      alert('Failed to update request status')
+      Swal.fire({
+        title: "Error",
+        text: "Failed to update request status",
+        icon: "error"
+      })
     } finally {
       setLoading(false)
     }
@@ -287,16 +431,7 @@ const DayoffRequests: React.FC = () => {
 
   const handleEdit = (request: DayOffRequest) => {
     setSelectedRequest(request)
-    setShowModal(true)
-    setFormData({
-      employee_id: typeof request.employee_id === 'object' ? request.employee_id._id : request.employee_id || request.user_id._id,
-      supervisor_id: typeof request.supervisor_id === 'object' ? request.supervisor_id._id : request.supervisor_id,
-      department_id: '',
-      day_off_type: request.day_off_type,
-      start_date_time: new Date(request.start_date_time).toISOString().slice(0, 16),
-      end_date_time: new Date(request.end_date_time).toISOString().slice(0, 16),
-      title: request.title,
-    })
+    setShowEditModal(true)
   }
 
   const getUserName = (userRef: any): string => {
@@ -397,11 +532,7 @@ const DayoffRequests: React.FC = () => {
               <FaFilePdf /> Export to PDF
             </button>
             <button
-              onClick={() => {
-                setSelectedRequest(null)
-                resetForm()
-                setShowModal(true)
-              }}
+              onClick={() => setShowAddModal(true)}
               disabled={loading}
               className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
             >
@@ -411,7 +542,7 @@ const DayoffRequests: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+        <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
             <div className="text-sm text-gray-500 font-medium mb-1">Total Requests</div>
             <div className="text-2xl font-bold text-gray-900">{stats.totalRequests}</div>
@@ -470,18 +601,20 @@ const DayoffRequests: React.FC = () => {
               ))}
             </select>
           </div>
+          {/* Day off type */}
           <div>
             <label className="text-xs text-gray-600 font-medium mb-1 block">Type</label>
             <select
-              value={filterTitle}
-              onChange={(e) => setFilterTitle(e.target.value as 'OT' | 'FIELD_WORK' | 'ALL')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={filterDayOffType}
+              onChange={(e) => setFilterDayOffType(e.target.value as DayOffType | 'ALL')}
+              className="px-3 py-2 border rounded-lg text-sm"
             >
               <option value="ALL">All Types</option>
-              <option value="OT">OT</option>
-              <option value="FIELD_WORK">Field Work</option>
+              <option value="FULL_DAY">Full Day</option>
+              <option value="HALF_DAY">Half Day</option>
             </select>
           </div>
+
           <div>
             <label className="text-xs text-gray-600 font-medium mb-1 block">Status</label>
             <select
@@ -584,19 +717,23 @@ const DayoffRequests: React.FC = () => {
         </div>
       </div>
 
-      {/* Add Form Request Modal */}
+      {/* Add Form Modal */}
       <AddFormRequest
-        showModal={showModal}
-        setShowModal={setShowModal}
-        selectedRequest={selectedRequest}
-        setSelectedRequest={setSelectedRequest}
+        showModal={showAddModal}
+        setShowModal={setShowAddModal}
         users={users}
         loading={loading}
-        formData={formData}
-        setFormData={setFormData}
-        handleSubmit={handleSubmit}
-        resetForm={resetForm}
-        calculateDaysOff={calculateDaysOff}
+        onSubmit={handleCreate}
+      />
+
+      {/* Edit Form Modal */}
+      <EditFormRequest
+        showModal={showEditModal}
+        setShowModal={setShowEditModal}
+        selectedRequest={selectedRequest}
+        users={users}
+        loading={loading}
+        onUpdate={handleUpdate}
       />
 
       {/* Detail Modal */}

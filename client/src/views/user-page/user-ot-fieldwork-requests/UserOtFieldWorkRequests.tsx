@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useEffect } from "react"
 import { HiPencil, HiTrash } from "react-icons/hi"
 import {
   Section,
@@ -82,22 +82,36 @@ const ActionButton = ({
 
 /* ================= UI COMPONENT ================= */
 
-const UserOtFieldWorkRequests: React.FC<Props> = async ({
+const UserOtFieldWorkRequests: React.FC<Props> = ({
   requests,
   onEdit,
   onDelete,
 }) => {
-
-
-
   /* ================= FILTER STATE ================= */
 
-  const [selectedStatus, setSelectedStatus] =
-    React.useState<string>("all")
-  const [selectedMonth, setSelectedMonth] =
-    React.useState<string>("")
-  const [selectedType, setSelectedType] =
-    React.useState<"all" | "OT" | "FIELD_WORK">("all")
+  const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [selectedMonth, setSelectedMonth] = useState<string>("")
+  const [selectedType, setSelectedType] = useState<"all" | "OT" | "FIELD_WORK">("all")
+
+  /* ================= MONTH OPTIONS ================= */
+
+  const [availableMonths, setAvailableMonths] = useState<string[]>([])
+
+  useEffect(() => {
+    // Extract unique months from requests
+    const months = Array.from(
+      new Set(
+        requests
+          .map((r) => new Date(r.date).toISOString().slice(0, 7))
+          .filter(Boolean)
+      )
+    ).sort(
+      (a, b) =>
+        new Date(a + "-01").getTime() -
+        new Date(b + "-01").getTime()
+    )
+    setAvailableMonths(months)
+  }, [requests])
 
   /* ================= FILTER LOGIC ================= */
 
@@ -117,20 +131,6 @@ const UserOtFieldWorkRequests: React.FC<Props> = async ({
 
     return true
   })
-
-  /* ================= MONTH OPTIONS ================= */
-
-  const availableMonths = Array.from(
-    new Set(
-      requests
-        .map((r) => new Date(r.date).toISOString().slice(0, 7))
-        .filter(Boolean)
-    )
-  ).sort(
-    (a, b) =>
-      new Date(a + "-01").getTime() -
-      new Date(b + "-01").getTime()
-  )
 
   /* ================= RENDER ================= */
 

@@ -81,6 +81,44 @@ const ActionButton = ({
   </button>
 )
 
+/* ================= FILTER STYLES ================= */
+
+const filterContainerStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "16px",
+  marginBottom: "20px",
+  padding: "16px",
+  backgroundColor: "#f9fafb",
+  borderRadius: "8px",
+  flexWrap: "wrap",
+  alignItems: "center",
+}
+
+const filterGroupStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "6px",
+}
+
+const filterLabelStyle: React.CSSProperties = {
+  fontSize: "12px",
+  fontWeight: "600",
+  color: "#374151",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+}
+
+const selectStyle: React.CSSProperties = {
+  padding: "8px 12px",
+  border: "1px solid #d1d5db",
+  borderRadius: "6px",
+  fontSize: "14px",
+  backgroundColor: "white",
+  cursor: "pointer",
+  minWidth: "150px",
+  outline: "none",
+}
+
 /* ================= COMPONENT ================= */
 
 const UserDayOffRequests: React.FC<Props> = ({
@@ -91,13 +129,15 @@ const UserDayOffRequests: React.FC<Props> = ({
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const role = auth?.user?.role
 
-  const [selectedStatus, setSelectedStatus] =
-    React.useState<string>("all")
-  const [selectedMonth, setSelectedMonth] =
-    React.useState<string>("")
+  const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
+  const [selectedMonth, setSelectedMonth] = React.useState<string>("")
+  const [selectedType, setSelectedType] = React.useState<string>("all")
 
   const filteredDayOffs = dayOffs.filter((d) => {
     if (selectedStatus !== "all" && d.status !== selectedStatus)
+      return false
+
+    if (selectedType !== "all" && d.day_off_type !== selectedType)
       return false
 
     if (selectedMonth) {
@@ -116,7 +156,7 @@ const UserDayOffRequests: React.FC<Props> = ({
         new Date(d.start_date_time).toISOString().slice(0, 7)
       )
     )
-  )
+  ).sort().reverse()
 
   return (
     <div style={containerStyle}>
@@ -125,6 +165,62 @@ const UserDayOffRequests: React.FC<Props> = ({
       </h2>
 
       <Section title="🏖 Day Off Requests">
+        {/* Filter Section */}
+        <div style={filterContainerStyle}>
+          <div style={filterGroupStyle}>
+            <label style={filterLabelStyle}>Status</label>
+            <select
+              style={selectStyle}
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div style={filterGroupStyle}>
+            <label style={filterLabelStyle}>Type</label>
+            <select
+              style={selectStyle}
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+            >
+              <option value="all">All Types</option>
+              <option value="FULL_DAY">Full Day</option>
+              <option value="HALF_DAY">Half Day</option>
+            </select>
+          </div>
+
+          <div style={filterGroupStyle}>
+            <label style={filterLabelStyle}>Month</label>
+            <select
+              style={selectStyle}
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              <option value="">All Months</option>
+              {availableMonths.map((month) => (
+                <option key={month} value={month}>
+                  {new Date(month + "-01").toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                  })}
+                </option>
+              ))}
+            </select>
+          </div>
+
+
+        </div>
+
+        {/* Results Count */}
+        <div style={{ marginBottom: "12px", fontSize: "14px", color: "#6b7280" }}>
+          Showing {filteredDayOffs.length} of {dayOffs.length} requests
+        </div>
+
         <table
           style={{
             ...tableStyle,

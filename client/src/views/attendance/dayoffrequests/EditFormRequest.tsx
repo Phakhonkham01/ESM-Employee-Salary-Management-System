@@ -3,16 +3,18 @@ import { FaTimes } from 'react-icons/fa'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import type { UserData } from '../../../services/Create_user/api'
+import type { DayOffRequest } from '@/services/Day_off_api/api'
 import { getAllDepartments, type DepartmentData } from '@/services/departments/api'
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
 
-interface AddFormRequestProps {
+interface EditFormRequestProps {
   showModal: boolean
   setShowModal: (show: boolean) => void
+  selectedRequest: DayOffRequest | null
   users: UserData[]
   loading: boolean
-  onSubmit: (formData: {
+  onUpdate: (requestId: string, formData: {
     employee_id: string
     supervisor_id: string
     department_id: string
@@ -23,12 +25,13 @@ interface AddFormRequestProps {
   }) => Promise<void>
 }
 
-const AddFormRequest: React.FC<AddFormRequestProps> = ({
+const EditFormRequest: React.FC<EditFormRequestProps> = ({
   showModal,
   setShowModal,
+  selectedRequest,
   users,
   loading,
-  onSubmit
+  onUpdate
 }) => {
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
@@ -87,6 +90,44 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
     }
   }, [showModal])
 
+  // Load selected request data
+  useEffect(() => {
+    if (selectedRequest && showModal) {
+      const employeeId = typeof selectedRequest.employee_id === 'object' 
+        ? selectedRequest.employee_id._id 
+        : selectedRequest.employee_id || (typeof selectedRequest.user_id === 'object' ? selectedRequest.user_id._id : selectedRequest.user_id)
+      
+      const supervisorId = typeof selectedRequest.supervisor_id === 'object'
+        ? selectedRequest.supervisor_id._id
+        : selectedRequest.supervisor_id
+
+      // Find employee's department
+      const employee = users.find(u => u._id === employeeId)
+      const departmentId = employee?.department_id?._id || ''
+
+      setFormData({
+        employee_id: employeeId,
+        supervisor_id: supervisorId,
+        department_id: departmentId,
+        day_off_type: selectedRequest.day_off_type,
+        start_date_time: new Date(selectedRequest.start_date_time).toISOString().slice(0, 16),
+        end_date_time: new Date(selectedRequest.end_date_time).toISOString().slice(0, 16),
+        title: selectedRequest.title,
+      })
+
+      const start = new Date(selectedRequest.start_date_time)
+      const end = new Date(selectedRequest.end_date_time)
+      setStartDate(start)
+      setEndDate(end)
+
+      // Detect half-day period
+      if (selectedRequest.day_off_type === 'HALF_DAY') {
+        const hours = start.getHours()
+        setHalfDayPeriod(hours < 13 ? 'MORNING' : 'AFTERNOON')
+      }
+    }
+  }, [selectedRequest, showModal, users])
+
   // Half day time presets
   const getHalfDayTimes = (period: 'MORNING' | 'AFTERNOON') => {
     if (period === 'MORNING') {
@@ -130,7 +171,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
     }
   }, [startDate, endDate, formData.day_off_type, halfDayPeriod])
 
-  if (!showModal) return null
+  if (!showModal || !selectedRequest) return null
 
   // Calculate days off correctly
   const calculatedDaysOff = (() => {
@@ -150,36 +191,20 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
     }
   })()
 
-  const resetForm = () => {
-    setFormData({
-      employee_id: '',
-      supervisor_id: '',
-      department_id: '',
-      day_off_type: 'FULL_DAY',
-      start_date_time: '',
-      end_date_time: '',
-      title: ''
-    })
-    setStartDate(null)
-    setEndDate(null)
-    setHalfDayPeriod('MORNING')
-  }
-
   const handleClose = () => {
     setShowModal(false)
-    resetForm()
   }
 
   const handleSubmit = async () => {
-    await onSubmit(formData)
-    resetForm()
+    if (!selectedRequest?._id) return
+    await onUpdate(selectedRequest._id, formData)
   }
 
   return (
     <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-8 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-3xl font-bold text-gray-900">New Day Off Request</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Edit Day Off Request</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <FaTimes className="text-2xl" />
           </button>
@@ -380,7 +405,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
               disabled={loading}
               className="px-8 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? 'Submitting...' : 'Submit Request'}
+              {loading ? 'Updating...' : 'Update Request'}
             </button>
           </div>
         </div>
@@ -389,4 +414,4 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   )
 }
 
-export default AddFormRequest
+export default EditFormRequest

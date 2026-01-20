@@ -113,3 +113,31 @@ export const updateDayOffStatus = async (
     throw error;
   }
 };
+
+
+// UPDATE DAY OFF REQUEST
+export const updateDayOffRequest = async (
+  requestId: string,
+  payload: Partial<CreateDayOffRequestPayload>
+) => {
+  try {
+    const response = await fetch(`${API_URL}/day-off-requests/${requestId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to update day-off request");
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error updating day off request:", error);
+    throw error;
+  }
+};

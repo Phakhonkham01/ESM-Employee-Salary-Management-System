@@ -4,7 +4,6 @@ import type { DayOffRequest } from '@/services/Day_off_api/api'
 import type { UserData } from '@/services/Create_user/api'
 import type { DepartmentData } from '@/services/departments/api'
 import Swal from 'sweetalert2'
-import { result } from 'lodash'
 
 interface UseExportToPDFProps {
   requests: DayOffRequest[]
