@@ -3,6 +3,8 @@ import autoTable from 'jspdf-autotable'
 import type { DayOffRequest } from '@/services/Day_off_api/api'
 import type { UserData } from '@/services/Create_user/api'
 import type { DepartmentData } from '@/services/departments/api'
+import Swal from 'sweetalert2'
+import { result } from 'lodash'
 
 interface UseExportToPDFProps {
   requests: DayOffRequest[]
@@ -36,10 +38,19 @@ export const useExportToPDF = ({ requests, users }: UseExportToPDFProps) => {
     return status === 'Accept' ? 'Accepted' : status
   }
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     // Show confirmation dialog
-    const confirmed = window.confirm('Do you want to export Day Off Requests to PDF?')
-    if (!confirmed) {
+    const confirmed = await Swal.fire({
+      title: 'Confirm Export',
+      html: `Do you want to export Day Off Requests to PDF?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Export',
+      cancelButtonText: 'Cancel',
+
+      reverseButtons: true,
+    })
+    if (!confirmed.isConfirmed) {
       return
     }
 
@@ -106,17 +117,17 @@ export const useExportToPDF = ({ requests, users }: UseExportToPDFProps) => {
     // Add summary statistics
     const totalRequests = requests.length
     const pendingRequests = requests.filter(r => r.status === 'Pending').length
-    const acceptedRequests = requests.filter(r => r.status === 'Accept').length
-    const rejectedRequests = requests.filter(r => r.status === 'Reject').length
+    const acceptedRequests = requests.filter(r => r.status === 'Accepted').length
+    const rejectedRequests = requests.filter(r => r.status === 'Rejected').length
     const totalDaysOff = requests
-      .filter(r => r.status === 'Accept')
+      .filter(r => r.status === 'Accepted')
       .reduce((sum, r) => sum + r.date_off_number, 0)
 
     const finalY = (doc as any).lastAutoTable.finalY || 100
     doc.setFontSize(12)
     doc.setTextColor(0, 0, 0)
     doc.text('Summary Statistics', 14, finalY + 10)
-    
+
     doc.setFontSize(10)
     doc.text(`Total Requests: ${totalRequests}`, 14, finalY + 18)
     doc.text(`Pending: ${pendingRequests}`, 14, finalY + 24)
@@ -196,10 +207,19 @@ export const useExportAttendanceToPDF = ({
     return Math.max(0, end - start)
   }
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     // Show confirmation dialog
-    const confirmed = window.confirm('Do you want to export Attendance Report to PDF?')
-    if (!confirmed) {
+    const confirmed = await Swal.fire({
+      title: 'Confirm Export',
+      html: `Do you want to export Attendance Report to PDF?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Export',
+      cancelButtonText: 'Cancel',
+
+      reverseButtons: true,
+    })
+    if (!confirmed.isConfirmed) {
       return
     }
 
@@ -228,7 +248,7 @@ export const useExportAttendanceToPDF = ({
     doc.setFontSize(12)
     doc.setTextColor(0, 0, 0)
     doc.text('Summary Statistics', 14, startY)
-    
+
     doc.setFontSize(10)
     startY += 8
     doc.text(`Total Attendance Days: ${summaryStats.totalAttendance}`, 14, startY)
@@ -238,7 +258,7 @@ export const useExportAttendanceToPDF = ({
     doc.text(`Total Leave Days: ${summaryStats.totalLeave.toFixed(1)}`, 14, startY)
     startY += 6
     doc.text(`Working Days in Month: ${summaryStats.workingDaysInMonth}`, 14, startY)
-    
+
     startY += 10
 
     // Prepare user attendance table data
@@ -254,20 +274,20 @@ export const useExportAttendanceToPDF = ({
     ])
 
     // Add user attendance table
-    const tableHeaders = otData.length > 0 
+    const tableHeaders = otData.length > 0
       ? [['Name (EN)', 'Name (LA)', 'Email', 'Year', 'Month', 'OT Hours', 'Leave Days', 'Attendance Days']]
       : [['Name (EN)', 'Name (LA)', 'Email', 'Year', 'Month', 'Leave Days', 'Attendance Days']]
-    
-    const tableDataWithoutOT = otData.length === 0 
+
+    const tableDataWithoutOT = otData.length === 0
       ? userStats.map((stats) => [
-          `${stats.user.first_name_en} ${stats.user.last_name_en}`,
-          `${stats.user.first_name_la} ${stats.user.last_name_la}`,
-          stats.user.email,
-          stats.year.toString(),
-          getMonthName(stats.month),
-          stats.leaveDays.toFixed(1),
-          stats.attendanceDays.toString()
-        ])
+        `${stats.user.first_name_en} ${stats.user.last_name_en}`,
+        `${stats.user.first_name_la} ${stats.user.last_name_la}`,
+        stats.user.email,
+        stats.year.toString(),
+        getMonthName(stats.month),
+        stats.leaveDays.toFixed(1),
+        stats.attendanceDays.toString()
+      ])
       : userTableData
 
     autoTable(doc, {
@@ -406,10 +426,19 @@ export const useExportOTToPDF = ({
     return Math.max(0, end - start)
   }
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     // Show confirmation dialog
-    const confirmed = window.confirm('Do you want to export OT & Field Work Requests to PDF?')
-    if (!confirmed) {
+    const confirmed = await Swal.fire({
+      title: 'Confirm Export',
+      html: `Do you want to export OT and Field Work to PDF?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Export',
+      cancelButtonText: 'Cancel',
+
+      reverseButtons: true,
+    })
+    if (!confirmed.isConfirmed) {
       return
     }
 
@@ -487,7 +516,7 @@ export const useExportOTToPDF = ({
     doc.setFontSize(12)
     doc.setTextColor(0, 0, 0)
     doc.text('Summary Statistics', 14, finalY + 10)
-    
+
     doc.setFontSize(10)
     doc.text(`Total Requests: ${totalRequests}`, 14, finalY + 18)
     doc.text(`Pending: ${pendingRequests}`, 14, finalY + 24)

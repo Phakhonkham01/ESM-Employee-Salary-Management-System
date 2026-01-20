@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { 
-    createDepartment, 
+import {
+    createDepartment,
     updateDepartment,
-    type DepartmentData 
+    type DepartmentData,
 } from '../../../services/departments/api'
 import { HiX, HiPlus, HiPencil } from 'react-icons/hi'
 
@@ -10,14 +10,14 @@ interface DepartmentModalProps {
     isOpen: boolean
     onClose: () => void
     onSuccess: () => void
-    editingDepartment?: DepartmentData | null // 新增：编辑模式支持
+    editingDepartment?: DepartmentData | null
 }
 
 const DepartmentModal: React.FC<DepartmentModalProps> = ({
     isOpen,
     onClose,
     onSuccess,
-    editingDepartment = null
+    editingDepartment = null,
 }) => {
     const [departmentName, setDepartmentName] = useState('')
     const [loading, setLoading] = useState(false)
@@ -26,7 +26,6 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
         text: string
     } | null>(null)
 
-    // 当编辑部门时，预填充表单
     useEffect(() => {
         if (editingDepartment) {
             setDepartmentName(editingDepartment.department_name)
@@ -38,11 +37,12 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+        e.stopPropagation() // 阻止事件冒泡
+
         if (!departmentName.trim()) {
             setMessage({
                 type: 'error',
-                text: 'Please enter department name'
+                text: 'Please enter department name',
             })
             return
         }
@@ -52,16 +52,14 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
         try {
             if (editingDepartment) {
-                // 编辑模式：更新部门
-                await updateDepartment(editingDepartment._id, { 
-                    department_name: departmentName 
+                await updateDepartment(editingDepartment._id, {
+                    department_name: departmentName,
                 })
                 setMessage({
                     type: 'success',
                     text: 'Department updated successfully!',
                 })
             } else {
-                // 创建模式：新建部门
                 await createDepartment({ department_name: departmentName })
                 setMessage({
                     type: 'success',
@@ -71,13 +69,17 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
 
             setTimeout(() => {
                 setDepartmentName('')
+                setMessage(null)
                 onSuccess()
                 onClose()
             }, 1000)
         } catch (error: any) {
+            console.error('Department operation error:', error)
             setMessage({
                 type: 'error',
-                text: error.message || 'Failed to process department',
+                text:
+                    error.message ||
+                    'Failed to process department. Please try again.',
             })
         } finally {
             setLoading(false)
@@ -96,13 +98,27 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
         }
     }
 
+    const handleModalClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation()
+    }
+
     if (!isOpen) return null
 
-    const modalTitle = editingDepartment ? 'Edit Department' : 'Add New Department'
-    const submitButtonText = editingDepartment 
-        ? (loading ? 'Updating...' : 'Update Department')
-        : (loading ? 'Creating...' : 'Create Department')
-    const modalIcon = editingDepartment ? <HiPencil size={20} color="#3b82f6" /> : <HiPlus size={20} color="#3b82f6" />
+    const modalTitle = editingDepartment
+        ? 'Edit Department'
+        : 'Add New Department'
+    const submitButtonText = editingDepartment
+        ? loading
+            ? 'Updating...'
+            : 'Update Department'
+        : loading
+          ? 'Creating...'
+          : 'Create Department'
+    const modalIcon = editingDepartment ? (
+        <HiPencil size={20} style={{ color: '#3b82f6' }} />
+    ) : (
+        <HiPlus size={20} style={{ color: '#3b82f6' }} />
+    )
 
     return (
         <div
@@ -112,12 +128,14 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                padding: '50px',
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 1001,
-                padding: '20px',
+                zIndex: 10000, // 确保比 UserFormModal 更高
+
+                animation: 'fadeIn 0.1s ease-out',
             }}
             onClick={handleBackdropClick}
         >
@@ -126,11 +144,14 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                     backgroundColor: 'white',
                     borderRadius: '12px',
                     width: '100%',
+                    padding: '30px',
                     maxWidth: '500px',
                     maxHeight: '90vh',
                     overflow: 'auto',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+                    animation: 'slideIn 0.1s ease-out',
                 }}
+                onClick={handleModalClick}
             >
                 {/* Modal Header */}
                 <div
@@ -140,7 +161,11 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        backgroundColor: editingDepartment ? '#fefce8' : '#ffffff'
+                        backgroundColor: editingDepartment
+                            ? '#ffffff'
+                            : '#ffffff',
+                        borderTopLeftRadius: '12px',
+                        borderTopRightRadius: '12px',
                     }}
                 >
                     <h3
@@ -167,7 +192,21 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                             color: '#6b7280',
                             padding: '4px',
                             borderRadius: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s',
                         }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f3f4f6'
+                            e.currentTarget.style.color = '#374151'
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                                'transparent'
+                            e.currentTarget.style.color = '#6b7280'
+                        }}
+                        aria-label="Close modal"
                     >
                         <HiX />
                     </button>
@@ -190,13 +229,25 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                         ? '#065f46'
                                         : '#991b1b',
                                 border: `1px solid ${
-                                    message.type === 'success' ? '#6ee7b7' : '#fca5a5'
+                                    message.type === 'success'
+                                        ? '#6ee7b7'
+                                        : '#fca5a5'
                                 }`,
                                 fontSize: '14px',
                                 fontWeight: '500',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
                             }}
                         >
-                            {message.text}
+                            <span>{message.text}</span>
+                            {message.type === 'success' && (
+                                <span
+                                    style={{ animation: 'pulse 1s infinite' }}
+                                >
+                                    ✓
+                                </span>
+                            )}
                         </div>
                     )}
 
@@ -210,10 +261,12 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                     fontWeight: '500',
                                     color: '#374151',
                                 }}
+                                htmlFor="department-name"
                             >
                                 Department Name *
                             </label>
                             <input
+                                id="department-name"
                                 type="text"
                                 value={departmentName}
                                 onChange={(e) =>
@@ -228,30 +281,39 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                     border: '1px solid #e0e0e0',
                                     fontSize: '14px',
                                     outline: 'none',
-                                    backgroundColor: editingDepartment ? '#f9fafb' : '#ffffff'
+                                    backgroundColor: editingDepartment
+                                        ? '#f9fafb'
+                                        : '#ffffff',
+                                    transition: 'all 0.2s',
+                                    boxSizing: 'border-box',
                                 }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = '#3b82f6'
+                                    e.target.style.boxShadow =
+                                        '0 0 0 3px rgba(59, 130, 246, 0.1)'
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = '#e0e0e0'
+                                    e.target.style.boxShadow = 'none'
+                                }}
+                                disabled={loading}
                                 autoFocus
                             />
                         </div>
 
                         {/* 编辑模式下显示部门ID信息 */}
                         {editingDepartment && (
-                            <div style={{ 
-                                marginBottom: '20px',
-                                padding: '12px',
-                                backgroundColor: '#f3f4f6',
-                                borderRadius: '8px',
-                                fontSize: '13px',
-                                color: '#6b7280'
-                            }}>
-                                <div style={{ marginBottom: '4px' }}>
-                                    <strong>Department ID:</strong> {editingDepartment._id}
-                                </div>
-                                <div>
-                                    <strong>Last Updated:</strong> {editingDepartment.updated_at 
-                                        ? new Date(editingDepartment.updated_at).toLocaleDateString()
-                                        : 'N/A'}
-                                </div>
+                            <div
+                                style={{
+                                    marginBottom: '20px',
+                                    padding: '12px',
+                                    backgroundColor: '#f3f4f6',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    color: '#6b7280',
+                                }}
+                            >
+                                <div style={{ display: 'flex' }}></div>
                             </div>
                         )}
 
@@ -268,56 +330,70 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                             <button
                                 type="button"
                                 onClick={handleClose}
+                                disabled={loading}
                                 style={{
                                     padding: '10px 20px',
                                     backgroundColor: '#f3f4f6',
                                     color: '#374151',
                                     border: '1px solid #d1d5db',
                                     borderRadius: '8px',
-                                    cursor: 'pointer',
+                                    cursor: loading ? 'not-allowed' : 'pointer',
                                     fontSize: '14px',
                                     fontWeight: '500',
                                     transition: 'all 0.2s',
+                                    opacity: loading ? 0.6 : 1,
                                 }}
                                 onMouseOver={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#e5e7eb'
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor =
+                                            '#e5e7eb'
+                                    }
                                 }}
                                 onMouseOut={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#f3f4f6'
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor =
+                                            '#f3f4f6'
+                                    }
                                 }}
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || !departmentName.trim()}
                                 style={{
                                     padding: '10px 20px',
                                     backgroundColor: loading
                                         ? '#9ca3af'
                                         : editingDepartment
-                                        ? '#f59e0b'
-                                        : '#3b82f6',
+                                          ? '#45CC67'
+                                          : '#45cc67',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    cursor:
+                                        loading || !departmentName.trim()
+                                            ? 'not-allowed'
+                                            : 'pointer',
                                     fontSize: '14px',
                                     fontWeight: '500',
                                     transition: 'all 0.2s',
+                                    opacity: !departmentName.trim() ? 0.5 : 1,
                                 }}
                                 onMouseOver={(e) => {
-                                    if (!loading) {
-                                        e.currentTarget.style.backgroundColor = editingDepartment
-                                            ? '#d97706'
-                                            : '#2563eb'
+                                    if (!loading && departmentName.trim()) {
+                                        e.currentTarget.style.backgroundColor =
+                                            editingDepartment
+                                                ? '#45cc67'
+                                                : '#45cc67'
                                     }
                                 }}
                                 onMouseOut={(e) => {
-                                    if (!loading) {
-                                        e.currentTarget.style.backgroundColor = editingDepartment
-                                            ? '#f59e0b'
-                                            : '#3b82f6'
+                                    if (!loading && departmentName.trim()) {
+                                        e.currentTarget.style.backgroundColor =
+                                            editingDepartment
+                                                ? '#45cc10'
+                                                : '#45cc67'
                                     }
                                 }}
                             >
@@ -327,6 +403,29 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                     </form>
                 </div>
             </div>
+
+            <style>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                }
+            `}</style>
         </div>
     )
 }

@@ -1,17 +1,14 @@
-'use client'
-
 import type React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { HiPlus, HiOutlinePencil, HiOutlineTrash } from 'react-icons/hi'
 import {
     updateDepartment,
     deleteDepartment,
     updatePosition,
     deletePosition,
-} from '../../services/departments/api'
-import type {
-    DepartmentData,
-    PositionData,
+    getAllDepartments,
+    type DepartmentData,
+    type PositionData,
 } from '../../services/departments/api'
 import DepartmentModal from './Department_Position/DepartmentModal'
 import PositionModal from './Department_Position/PositionModal'
@@ -52,6 +49,13 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
     )
     const [editDepartmentName, setEditDepartmentName] = useState('')
     const [editPositionName, setEditPositionName] = useState('')
+    const [localDepartments, setLocalDepartments] =
+        useState<DepartmentData[]>(departments)
+
+    // 同步 departments 数据
+    useEffect(() => {
+        setLocalDepartments(departments)
+    }, [departments])
 
     // Department Functions
     const handleEditDepartment = (
@@ -182,6 +186,41 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
         }
     }
 
+    // 修复点：添加按钮点击处理
+    const handleAddButtonClick = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        if (type === 'department') {
+            console.log('Opening department modal')
+            setDepartmentModalOpen(true)
+        } else {
+            console.log('Opening position modal')
+            setPositionModalOpen(true)
+        }
+    }
+
+    // 修复点：选择框点击处理
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        e.stopPropagation()
+        onSelect(e.target.value)
+    }
+
+    // 修复点：点击选择框阻止事件
+    const handleSelectClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+    }
+
+    // 修复点：编辑按钮点击处理
+    const handleEditButtonClick = (
+        e: React.MouseEvent,
+        callback: () => void,
+    ) => {
+        e.preventDefault()
+        e.stopPropagation()
+        callback()
+    }
+
     if (type === 'department') {
         if (editingDepartmentId) {
             return (
@@ -215,11 +254,12 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
         }
 
         return (
-            <div className="relative">
+            <>
                 <div className="flex gap-2">
                     <select
                         value={selectedId}
-                        onChange={(e) => onSelect(e.target.value)}
+                        onChange={handleSelectChange}
+                        onClick={handleSelectClick}
                         disabled={loadingDepartments}
                         className="flex-1 px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white disabled:bg-gray-100"
                     >
@@ -228,7 +268,7 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
                                 ? 'Loading departments...'
                                 : 'Select department'}
                         </option>
-                        {departments.map((dept) => (
+                        {localDepartments.map((dept) => (
                             <option key={dept._id} value={dept._id}>
                                 {dept.department_name}
                             </option>
@@ -237,7 +277,7 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
 
                     <button
                         type="button"
-                        onClick={() => setDepartmentModalOpen(true)}
+                        onClick={handleAddButtonClick}
                         className="text-xs text-[#1F3A5F] hover:text-[#152642] flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-sm hover:bg-gray-50"
                     >
                         <HiPlus className="w-3 h-3" />
@@ -246,50 +286,64 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
                 </div>
 
                 {selectedId && (
-                    <div className="absolute right-25 top-1/2 -translate-y-1/2 flex gap-1.5">
+                    <div className="flex gap-2 mt-2">
                         <button
                             type="button"
-                            onClick={() => {
-                                const dept = departments.find(
-                                    (d) => d._id === selectedId,
-                                )
-                                if (dept)
-                                    handleEditDepartment(
-                                        dept._id,
-                                        dept.department_name,
+                            onClick={(e) =>
+                                handleEditButtonClick(e, () => {
+                                    const dept = localDepartments.find(
+                                        (d) => d._id === selectedId,
                                     )
-                            }}
-                            className="p-1.5 text-gray-600 hover:text-[#1F3A5F] hover:bg-gray-100 rounded-sm"
+                                    if (dept)
+                                        handleEditDepartment(
+                                            dept._id,
+                                            dept.department_name,
+                                        )
+                                })
+                            }
+                            className="px-3 py-1 text-xs text-gray-600 hover:text-[#1F3A5F] hover:bg-gray-100 rounded-sm flex items-center gap-1"
                             title="Edit department"
                         >
-                            <HiOutlinePencil className="w-3.5 h-3.5" />
+                            <HiOutlinePencil className="w-3 h-3" />
+                            Edit
                         </button>
                         <button
                             type="button"
-                            onClick={() => {
-                                const dept = departments.find(
-                                    (d) => d._id === selectedId,
-                                )
-                                if (dept)
-                                    handleDeleteDepartment(
-                                        dept._id,
-                                        dept.department_name,
+                            onClick={(e) =>
+                                handleEditButtonClick(e, () => {
+                                    const dept = localDepartments.find(
+                                        (d) => d._id === selectedId,
                                     )
-                            }}
-                            className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-sm"
+                                    if (dept)
+                                        handleDeleteDepartment(
+                                            dept._id,
+                                            dept.department_name,
+                                        )
+                                })
+                            }
+                            className="px-3 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-sm flex items-center gap-1"
                             title="Delete department"
                         >
-                            <HiOutlineTrash className="w-3.5 h-3.5" />
+                            <HiOutlineTrash className="w-3 h-3" />
+                            Delete
                         </button>
                     </div>
                 )}
 
                 <DepartmentModal
                     isOpen={departmentModalOpen}
-                    onClose={() => setDepartmentModalOpen(false)}
-                    onSuccess={onDepartmentSuccess}
+                    onClose={() => {
+                        console.log('Closing department modal')
+                        setDepartmentModalOpen(false)
+                    }}
+                    onSuccess={() => {
+                        console.log('Department created/updated successfully')
+                        onDepartmentSuccess()
+                        setDepartmentModalOpen(false)
+                    }}
+                    editingDepartment={null}
                 />
-            </div>
+            </>
         )
     }
 
@@ -326,11 +380,12 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
     }
 
     return (
-        <div className="relative">
+        <>
             <div className="flex gap-2">
                 <select
                     value={selectedId}
-                    onChange={(e) => onSelect(e.target.value)}
+                    onChange={handleSelectChange}
+                    onClick={handleSelectClick}
                     disabled={!selectedDepartmentId || loadingPositions}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white disabled:bg-gray-100"
                 >
@@ -352,7 +407,7 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
 
                 <button
                     type="button"
-                    onClick={() => setPositionModalOpen(true)}
+                    onClick={handleAddButtonClick}
                     disabled={!selectedDepartmentId || loadingPositions}
                     className="text-xs text-[#1F3A5F] hover:text-[#152642] flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-sm hover:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                 >
@@ -362,45 +417,64 @@ const DepartmentPositionManager: React.FC<DepartmentPositionManagerProps> = ({
             </div>
 
             {selectedId && (
-                <div className="absolute right-25 top-1/2 -translate-y-1/2 flex gap-1.5">
+                <div className="flex gap-2 mt-2">
                     <button
                         type="button"
-                        onClick={() => {
-                            const pos = filteredPositions.find(
-                                (p) => p._id === selectedId,
-                            )
-                            if (pos)
-                                handleEditPosition(pos._id, pos.position_name)
-                        }}
-                        className="p-1.5 text-gray-600 hover:text-[#1F3A5F] hover:bg-gray-100 rounded-sm"
+                        onClick={(e) =>
+                            handleEditButtonClick(e, () => {
+                                const pos = filteredPositions.find(
+                                    (p) => p._id === selectedId,
+                                )
+                                if (pos)
+                                    handleEditPosition(
+                                        pos._id,
+                                        pos.position_name,
+                                    )
+                            })
+                        }
+                        className="px-3 py-1 text-xs text-gray-600 hover:text-[#FFFFFF] hover:bg-gray-100 rounded-sm flex items-center gap-1"
                         title="Edit position"
                     >
-                        <HiOutlinePencil className="w-3.5 h-3.5" />
+                        <HiOutlinePencil className="w-3 h-3" />
+                        Edit
                     </button>
                     <button
                         type="button"
-                        onClick={() => {
-                            const pos = filteredPositions.find(
-                                (p) => p._id === selectedId,
-                            )
-                            if (pos)
-                                handleDeletePosition(pos._id, pos.position_name)
-                        }}
-                        className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-sm"
+                        onClick={(e) =>
+                            handleEditButtonClick(e, () => {
+                                const pos = filteredPositions.find(
+                                    (p) => p._id === selectedId,
+                                )
+                                if (pos)
+                                    handleDeletePosition(
+                                        pos._id,
+                                        pos.position_name,
+                                    )
+                            })
+                        }
+                        className="px-3 py-1 text-xs text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded-sm flex items-center gap-1"
                         title="Delete position"
                     >
-                        <HiOutlineTrash className="w-3.5 h-3.5" />
+                        <HiOutlineTrash className="w-3 h-3" />
+                        Delete
                     </button>
                 </div>
             )}
 
             <PositionModal
                 isOpen={positionModalOpen}
-                onClose={() => setPositionModalOpen(false)}
-                onSuccess={onPositionSuccess}
+                onClose={() => {
+                    console.log('Closing position modal')
+                    setPositionModalOpen(false)
+                }}
+                onSuccess={() => {
+                    console.log('Position created successfully')
+                    onPositionSuccess()
+                    setPositionModalOpen(false)
+                }}
                 selectedDepartmentId={selectedDepartmentId}
             />
-        </div>
+        </>
     )
 }
 

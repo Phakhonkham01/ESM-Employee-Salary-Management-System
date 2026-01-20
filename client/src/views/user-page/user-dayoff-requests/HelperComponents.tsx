@@ -2,7 +2,7 @@ import React from "react"
 
 /* ================= TYPES ================= */
 
-export type RequestStatus = "Pending" | "Accepted" | "Reject"
+export type RequestStatus = "Pending" | "Accepted" | "Rejected"
 
 /* ================= COMPONENTS ================= */
 
@@ -33,7 +33,7 @@ export const statusBadge = (status: RequestStatus) => {
   const map: Record<RequestStatus, [string, string]> = {
     Pending: ["#fef3c7", "#92400e"],
     Accepted: ["#d1fae5", "#065f46"],
-    Reject: ["#fee2e2", "#991b1b"],
+    Rejected: ["#fee2e2", "#991b1b"],
   }
 
   return (

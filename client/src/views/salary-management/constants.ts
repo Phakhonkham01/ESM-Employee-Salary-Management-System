@@ -16,14 +16,14 @@ export const getVacationColorClass = (color: string) => {
 }
 
 
-export const getOtTypeThai = (type: string) => {
+export const getOtTypeLao = (type: string) => {
     switch (type) {
         case 'weekday':
-            return 'วันทำงานปกติ'
+            return 'ມື້ເຮັດວຽກປົກກະຕິ'
         case 'weekend':
-            return 'วันหยุดสุดสัปดาห์'
+            return 'ມື້ພັກເສົາ-ອາທິດ'
         case 'holiday':
-            return 'วันหยุดนักขัตฤกษ์'
+            return 'ມື້ພັກເທດສະການ'
         default:
             return type
     }
@@ -32,12 +32,13 @@ export const getOtTypeThai = (type: string) => {
 
 
 export const steps = [
-  "Basic Information",
-  "OT Rates",
-  "Additional Income",
-  "Deductions",
-  "Summary",
+  "ຂໍ້ມູນພື້ນຖານ",
+  "ອັດຕາຄ່າ OT",
+  "ລາຍຮັບເພີ່ມເຕີມ",
+  "ການຫັກລົດ",
+  "ສະຫຼຸບຜົນ",
 ]
+
 
 export const getMonthName = (month: number): string => {
   const months = [

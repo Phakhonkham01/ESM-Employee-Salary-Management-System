@@ -13,6 +13,7 @@ import {
   tr,
   RequestStatus,
 } from "./HelperComponents"
+import Swal from "sweetalert2"
 
 /* ================= TYPES ================= */
 
@@ -81,11 +82,14 @@ const ActionButton = ({
 
 /* ================= UI COMPONENT ================= */
 
-const UserOtFieldWorkRequests: React.FC<Props> = ({
+const UserOtFieldWorkRequests: React.FC<Props> = async ({
   requests,
   onEdit,
   onDelete,
 }) => {
+
+
+
   /* ================= FILTER STATE ================= */
 
   const [selectedStatus, setSelectedStatus] =
@@ -176,7 +180,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
             <option value="all">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Accepted">Accepted</option>
-            <option value="Reject">Rejected</option>
+            <option value="Rejected">Rejected</option>
           </select>
 
           <select
@@ -275,13 +279,19 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                         hoverColor="#dc2626"
                         disabled={!isPending}
                         onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to cancel this request?"
-                            )
-                          ) {
-                            onDelete(r._id)
-                          }
+                          Swal.fire({
+                            title: 'Confirm Cancellation',
+                            html: `Are you sure you want to cancel this request?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, Cancel',
+                            cancelButtonText: 'No',
+                            reverseButtons: true,
+                          }).then((result) => {
+                            if (result.isConfirmed) {
+                              onDelete(r._id)
+                            }
+                          })
                         }}
                       >
                         <HiTrash size={14} />

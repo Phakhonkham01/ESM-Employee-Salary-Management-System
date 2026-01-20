@@ -562,7 +562,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                                                 <div
                                                     className={`w-10 h-10 rounded-sm flex items-center justify-center text-sm font-medium border ${
                                                         index <= activeStep
-                                                            ? 'bg-[#1F3A5F] text-white border-[#1F3A5F]'
+                                                            ? 'bg-[#45cc67] text-white border-[#FFFFFF]'
                                                             : 'bg-white text-gray-500 border-gray-300'
                                                     }`}
                                                 >
@@ -642,7 +642,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         <button
                             onClick={handleNext}
                             disabled={!prefillData && activeStep === 0}
-                            className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] hover:bg-[#152642] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
+                            className="px-4 py-2 text-sm font-medium text-white bg-[#45cc67] hover:bg-[#3aa85a] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                         >
                             Next Step
                             <ChevronRight className="w-4 h-4" />
