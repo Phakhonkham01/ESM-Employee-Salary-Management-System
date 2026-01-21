@@ -1386,6 +1386,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
     const [svgRef, setSvgRef] = useState<HTMLDivElement | null>(null)
     const [isExporting, setIsExporting] = useState(false)
     const [isSendingEmail, setIsSendingEmail] = useState(false)
+    const [isCapturing, setIsCapturing] = useState(false) // ✅ เพิ่ม
     const [emailStatus, setEmailStatus] = useState<{
         success: boolean
         message: string
@@ -1426,9 +1427,11 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
         commission: formData.commission,
     }
 
-    // Calculate deductions
+    // Calculate deductions - ✅ แก้ไข: คำนวณยอดรวมที่ถูกต้อง
+    const cutOffTotal = formData.cut_off_pay_days * formData.cut_off_pay_amount
+
     const deductions = {
-        absence: formData.cut_off_pay_amount,
+        absence: cutOffTotal, // ✅ ใช้ยอดรวมที่คำนวณแล้ว
         socialSecurity: formData.social_security,
     }
 
@@ -1462,6 +1465,11 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
 
         try {
             setIsExporting(true)
+            setIsCapturing(true) // ✅ เพิ่ม
+
+            // รอให้ DOM update
+            await new Promise((resolve) => setTimeout(resolve, 100))
+
             const html2canvas = (await import('html2canvas')).default
 
             const canvas = await html2canvas(svgRef, {
@@ -1483,20 +1491,22 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
             console.error('Failed to export PNG:', error)
             alert('Failed to export PNG. Please try again.')
         } finally {
+            setIsCapturing(false) // ✅ เพิ่ม
             setIsExporting(false)
         }
     }
 
-    // Function to send email with PNG attachment
-    // Function to send email with PNG attachment - แก้ไขเวอร์ชันนี้
-    // ในฟังก์ชัน sendEmailWithPNG ของ Step5Summary
-    // ใน Step5Summary component
+    // ✅ แก้ไข Function to send email
     const sendEmailWithPNG = async () => {
         if (!svgRef) return
 
         try {
             setIsSendingEmail(true)
             setEmailStatus(null)
+            setIsCapturing(true) // ✅ เปิด capturing mode
+
+            // รอให้ DOM update
+            await new Promise((resolve) => setTimeout(resolve, 100))
 
             // Convert to image
             const html2canvas = (await import('html2canvas')).default
@@ -1505,7 +1515,13 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
+                ignoreElements: (element) => {
+                    // Ignore elements that might cause issues
+                    return element.classList?.contains('no-export')
+                },
             })
+
+            setIsCapturing(false) // ✅ ปิด capturing mode
 
             // Convert to JPEG
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
@@ -1567,66 +1583,89 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                 message: `❌ ${error.message || 'Failed to send email'}`,
             })
         } finally {
+            setIsCapturing(false) // ✅ ตรวจสอบให้แน่ใจว่าปิด
             setIsSendingEmail(false)
         }
     }
 
-    // ฟังก์ชันสำหรับส่ง email แบบแบ่ง chunks (ถ้าจำเป็น)
-    const sendEmailInChunks = async (chunks: string[], totalSize: number) => {
-        try {
-            // ส่ง chunk แรกกับ metadata
-            const firstChunkData = {
-                to: userEmail,
-                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year} (Part 1/2)`,
-                employeeName: userName,
-                month: getMonthName(formData.month),
-                year: formData.year,
-                baseSalary: prefillData.user.base_salary,
-                netSalary,
-                image: chunks[0],
-                fileName: `salary-summary-part1.jpg`,
-                isChunked: true,
-                totalChunks: 2,
-                currentChunk: 1,
-            }
-
-            const response1 = await fetch('/api/salary/send-email-chunk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(firstChunkData),
-            })
-
-            if (!response1.ok) throw new Error('Failed to send first chunk')
-
-            // ส่ง chunk ที่สอง
-            const secondChunkData = {
-                to: userEmail,
-                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year} (Part 2/2)`,
-                image: chunks[1],
-                fileName: `salary-summary-part2.jpg`,
-                isChunked: true,
-                totalChunks: 2,
-                currentChunk: 2,
-            }
-
-            const response2 = await fetch('/api/salary/send-email-chunk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(secondChunkData),
-            })
-
-            if (!response2.ok) throw new Error('Failed to send second chunk')
-
-            setEmailStatus({
-                success: true,
-                message: `✅ Salary summary has been sent in 2 parts (${totalSize.toFixed(2)}MB total)`,
-            })
-        } catch (error: any) {
-            throw new Error(`Chunked sending failed: ${error.message}`)
-        }
-    }
     return (
         <div className="min-h-[600px]">
+            {/* ✅ เพิ่ม style tag สำหรับ override oklch colors */}
+            <style jsx>{`
+                .export-mode,
+                .export-mode * {
+                    color: rgb(17, 24, 39) !important;
+                }
+
+                .export-mode .text-white {
+                    color: rgb(255, 255, 255) !important;
+                }
+
+                .export-mode .text-red-600 {
+                    color: rgb(220, 38, 38) !important;
+                }
+
+                .export-mode .text-red-700 {
+                    color: rgb(185, 28, 28) !important;
+                }
+
+                .export-mode .text-green-600 {
+                    color: rgb(22, 163, 74) !important;
+                }
+
+                .export-mode .text-gray-600 {
+                    color: rgb(75, 85, 99) !important;
+                }
+
+                .export-mode .text-gray-700 {
+                    color: rgb(55, 65, 81) !important;
+                }
+
+                .export-mode .text-gray-800 {
+                    color: rgb(31, 41, 55) !important;
+                }
+
+                .export-mode .bg-white {
+                    background-color: rgb(255, 255, 255) !important;
+                }
+
+                .export-mode .bg-gray-50 {
+                    background-color: rgb(249, 250, 251) !important;
+                }
+
+                .export-mode .bg-gray-100 {
+                    background-color: rgb(243, 244, 246) !important;
+                }
+
+                .export-mode .bg-blue-50 {
+                    background-color: rgb(239, 246, 255) !important;
+                }
+
+                .export-mode .bg-green-50 {
+                    background-color: rgb(240, 253, 244) !important;
+                }
+
+                .export-mode [class*='bg-[#45cc67]'] {
+                    background-color: rgb(69, 204, 103) !important;
+                }
+
+                .export-mode [class*='bg-[#1F3A5F]'] {
+                    background-color: rgb(31, 58, 95) !important;
+                }
+
+                .export-mode [class*='text-[#1F3A5F]'] {
+                    color: rgb(31, 58, 95) !important;
+                }
+
+                .export-mode .border-gray-200 {
+                    border-color: rgb(229, 231, 235) !important;
+                }
+
+                .export-mode .border-gray-300 {
+                    border-color: rgb(209, 213, 219) !important;
+                }
+            `}</style>
+
             <div>
                 {/* Header with buttons */}
                 <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-[#1F3A5F]">
@@ -1700,10 +1739,10 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                     </div>
                 </div>
 
-                {/* Salary Summary Content */}
+                {/* ✅ Salary Summary Content - เพิ่ม export-mode class */}
                 <div
                     ref={setSvgRef}
-                    className="border border-gray-300 rounded-lg p-6 bg-white"
+                    className={`border border-gray-300 rounded-lg p-6 bg-white ${isCapturing ? 'export-mode' : ''}`}
                 >
                     {/* Header */}
                     <div className="text-center mb-8 border-b pb-4">
@@ -1781,7 +1820,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                             </thead>
                             <tbody>
                                 {/* Base Salary Row */}
-                                <tr className="bg-[#FFFFFF] text-gray-800">
+                                <tr className="bg-white text-gray-800">
                                     <td className="p-3 border font-medium">
                                         ເງິນເດືອນພື້ນຖານ
                                     </td>
@@ -1798,17 +1837,14 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                         {formData.cut_off_pay_days > 0 && (
                                             <>
                                                 ({formData.cut_off_pay_days} ມື້
-                                                ×
+                                                {' × '}
                                                 {formData.cut_off_pay_amount.toLocaleString()}
                                                 /ມື້)
                                             </>
                                         )}
                                     </td>
                                     <td className="p-3 border text-red-600">
-                                        {formatCurrency(
-                                            formData.cut_off_pay_days *
-                                                formData.cut_off_pay_amount,
-                                        )}
+                                        {formatCurrency(cutOffTotal)}
                                     </td>
                                     <td
                                         className="p-3 border font-bold text-center"
@@ -1943,36 +1979,35 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <span className="text-gray-600">
-                                    Working Days:
+                                    ມື້ເຮັດວຽກ:
                                 </span>
                                 <span className="ml-2 font-medium">
-                                    {formData.working_days || 0} days
+                                    {formData.working_days || 0} ມື້
                                 </span>
                             </div>
                             <div>
                                 <span className="text-gray-600">
-                                    Vacation Days Left:
+                                    ວັນພັກທີ່ເຫຼືອ:
                                 </span>
                                 <span className="ml-2 font-medium">
                                     {prefillData.calculated
                                         .remaining_vacation_days || 0}{' '}
-                                    days
+                                    ມື້
                                 </span>
                             </div>
                             <div>
                                 <span className="text-gray-600">OT Hours:</span>
                                 <span className="ml-2 font-medium">
-                                    {prefillData.calculated.ot_hours || 0} hours
+                                    {prefillData.calculated.ot_hours || 0}{' '}
+                                    ຊົ່ວໂມງ
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-600">
-                                    Day Off Days:
-                                </span>
+                                <span className="text-gray-600">ມື້ພັກ:</span>
                                 <span className="ml-2 font-medium">
                                     {prefillData.calculated
                                         .day_off_days_this_month || 0}{' '}
-                                    d
+                                    ມື້
                                 </span>
                             </div>
                         </div>

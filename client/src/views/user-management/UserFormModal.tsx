@@ -937,7 +937,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             name="vacation_days"
                                             value={formData.vacation_days}
                                             onChange={handleInputChange}
-                                            min="0"
+                                            min="-365"
                                             placeholder="0"
                                             className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
                                         />
