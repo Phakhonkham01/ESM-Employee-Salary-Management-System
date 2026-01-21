@@ -62,7 +62,7 @@ const SideNav = ({
             )}
         >
             {/* 1. Header Section (Logo) */}
-            <div 
+            <div
                 className="side-nav-header flex flex-col justify-center"
                 style={{ height: HEADER_HEIGHT }}
             >
@@ -75,7 +75,7 @@ const SideNav = ({
                         mode={mode || defaultMode}
                         type={sideNavCollapse ? 'streamline' : 'full'}
                         className={classNames(
-                            sideNavCollapse 
+                            sideNavCollapse
                                 ? 'mx-auto' // Center icon when collapsed
                                 : LOGO_X_GUTTER,
                         )}
@@ -84,7 +84,12 @@ const SideNav = ({
             </div>
 
             {/* 2. Content Section (Navigation) */}
-            <div className={classNames('side-nav-content flex-grow overflow-hidden', contentClass)}>
+            <div
+                className={classNames(
+                    'side-nav-content flex-grow overflow-hidden',
+                    contentClass,
+                )}
+            >
                 <ScrollBar style={{ height: '100%' }} direction={direction}>
                     <VerticalMenuContent
                         collapsed={sideNavCollapse}
@@ -98,12 +103,12 @@ const SideNav = ({
             </div>
 
             {/* 3. Footer Section (User Profile) */}
-            <div className={classNames(
+            {/* <div className={classNames(
                 'side-nav-footer py-4 border-t border-gray-200 dark:border-gray-700',
                 sideNavCollapse ? 'flex justify-center' : 'px-4'
             )}>
                 <UserDropdown />
-            </div>
+            </div> */}
         </div>
     )
 }

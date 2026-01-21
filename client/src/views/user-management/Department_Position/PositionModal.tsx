@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import {
     createPosition,
+    updatePosition,
     getAllDepartments,
+    type DepartmentData,
+    type PositionData,
 } from '../../../services/departments/api'
-import type { DepartmentData } from '../../../services/departments/api'
-import { HiX, HiPlus } from 'react-icons/hi'
+import { HiX, HiPlus, HiPencil } from 'react-icons/hi'
 
 interface PositionModalProps {
     isOpen: boolean
     onClose: () => void
     onSuccess: () => void
+    editingPosition?: PositionData | null
     selectedDepartmentId?: string
 }
 
@@ -17,6 +20,8 @@ const PositionModal: React.FC<PositionModalProps> = ({
     isOpen,
     onClose,
     onSuccess,
+    editingPosition = null,
+    selectedDepartmentId = '',
 }) => {
     const [positionName, setPositionName] = useState('')
     const [selectedDepartment, setSelectedDepartment] = useState('')
@@ -30,8 +35,22 @@ const PositionModal: React.FC<PositionModalProps> = ({
     useEffect(() => {
         if (isOpen) {
             fetchDepartments()
+
+            // 如果是编辑模式，预填充数据
+            if (editingPosition) {
+                setPositionName(editingPosition.position_name)
+                setSelectedDepartment(editingPosition.department_id)
+            } else if (selectedDepartmentId) {
+                // 如果是创建模式且有传入的部门ID，自动选中
+                setSelectedDepartment(selectedDepartmentId)
+            } else {
+                // 重置表单
+                setPositionName('')
+                setSelectedDepartment('')
+            }
+            setMessage(null)
         }
-    }, [isOpen])
+    }, [isOpen, editingPosition, selectedDepartmentId])
 
     const fetchDepartments = async () => {
         try {
@@ -44,6 +63,7 @@ const PositionModal: React.FC<PositionModalProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        e.stopPropagation()
         setLoading(true)
         setMessage(null)
 
@@ -53,26 +73,48 @@ const PositionModal: React.FC<PositionModalProps> = ({
             return
         }
 
+        if (!positionName.trim()) {
+            setMessage({ type: 'error', text: 'Please enter position name' })
+            setLoading(false)
+            return
+        }
+
         try {
-            await createPosition({
-                department_id: selectedDepartment,
-                position_name: positionName,
-            })
-            setMessage({
-                type: 'success',
-                text: 'Position created successfully!',
-            })
+            if (editingPosition) {
+                // 编辑模式：更新职位
+                await updatePosition(editingPosition._id, {
+                    position_name: positionName,
+                    department_id: selectedDepartment,
+                })
+                setMessage({
+                    type: 'success',
+                    text: 'Position updated successfully!',
+                })
+            } else {
+                // 创建模式：新建职位
+                await createPosition({
+                    department_id: selectedDepartment,
+                    position_name: positionName,
+                })
+                setMessage({
+                    type: 'success',
+                    text: 'Position created successfully!',
+                })
+            }
 
             setTimeout(() => {
                 setPositionName('')
                 setSelectedDepartment('')
+                setMessage(null)
                 onSuccess()
                 onClose()
             }, 1000)
         } catch (error: any) {
             setMessage({
                 type: 'error',
-                text: error.message || 'Failed to create position',
+                text:
+                    error.message ||
+                    `Failed to ${editingPosition ? 'update' : 'create'} position`,
             })
         } finally {
             setLoading(false)
@@ -92,7 +134,25 @@ const PositionModal: React.FC<PositionModalProps> = ({
         }
     }
 
+    const handleModalClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation()
+    }
+
     if (!isOpen) return null
+
+    const modalTitle = editingPosition ? 'Edit Position' : 'Add New Position'
+    const submitButtonText = editingPosition
+        ? loading
+            ? 'Updating...'
+            : 'Update Position'
+        : loading
+          ? 'Creating...'
+          : 'Create Position'
+    const modalIcon = editingPosition ? (
+        <HiPencil size={20} color="#f59e0b" />
+    ) : (
+        <HiPlus size={20} color="#3b82f6" />
+    )
 
     return (
         <div
@@ -102,11 +162,11 @@ const PositionModal: React.FC<PositionModalProps> = ({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(0, 0, 0, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 1001,
+                zIndex: 10010,
                 padding: '20px',
             }}
             onClick={handleBackdropClick}
@@ -116,20 +176,26 @@ const PositionModal: React.FC<PositionModalProps> = ({
                     backgroundColor: 'white',
                     borderRadius: '12px',
                     width: '100%',
+                    padding: '20px',
                     maxWidth: '500px',
                     maxHeight: '90vh',
                     overflow: 'auto',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
                 }}
+                onClick={handleModalClick}
             >
                 {/* Modal Header */}
                 <div
                     style={{
-                        padding: '20px 24px',
+                        padding: '20px 30px',
                         borderBottom: '1px solid #e5e7eb',
                         display: 'flex',
+
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        backgroundColor: editingPosition
+                            ? '#ffffff'
+                            : '#ffffff',
                     }}
                 >
                     <h3
@@ -143,8 +209,8 @@ const PositionModal: React.FC<PositionModalProps> = ({
                             gap: '8px',
                         }}
                     >
-                        <HiPlus size={20} color="#3b82f6" />
-                        Add New Position
+                        {modalIcon}
+                        {modalTitle}
                     </h3>
                     <button
                         onClick={handleClose}
@@ -178,7 +244,11 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                     message.type === 'success'
                                         ? '#065f46'
                                         : '#991b1b',
-                                border: `1px solid ${message.type === 'success' ? '#6ee7b7' : '#fca5a5'}`,
+                                border: `1px solid ${
+                                    message.type === 'success'
+                                        ? '#6ee7b7'
+                                        : '#fca5a5'
+                                }`,
                                 fontSize: '14px',
                                 fontWeight: '500',
                             }}
@@ -206,14 +276,26 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                     setSelectedDepartment(e.target.value)
                                 }
                                 required
+                                disabled={
+                                    !!editingPosition &&
+                                    editingPosition.department_id !==
+                                        selectedDepartment
+                                }
                                 style={{
                                     width: '100%',
                                     padding: '10px 12px',
                                     borderRadius: '8px',
                                     border: '1px solid #e0e0e0',
                                     fontSize: '14px',
-                                    cursor: 'pointer',
-                                    outline: 'none',
+                                    backgroundColor: editingPosition
+                                        ? '#f3f4f6'
+                                        : '#ffffff',
+                                    cursor: editingPosition
+                                        ? 'not-allowed'
+                                        : 'pointer',
+                                    pointerEvents: editingPosition
+                                        ? 'none'
+                                        : 'auto',
                                 }}
                             >
                                 <option value="">Select Department</option>
@@ -223,6 +305,19 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                     </option>
                                 ))}
                             </select>
+                            {editingPosition && (
+                                <p
+                                    style={{
+                                        marginTop: '4px',
+                                        fontSize: '12px',
+                                        color: '#6b7280',
+                                        fontStyle: 'italic',
+                                    }}
+                                >
+                                    Note: Department cannot be changed for
+                                    existing positions
+                                </p>
+                            )}
                         </div>
 
                         <div style={{ marginBottom: '20px' }}>
@@ -252,9 +347,26 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                     border: '1px solid #e0e0e0',
                                     fontSize: '14px',
                                     outline: 'none',
+                                    backgroundColor: editingPosition
+                                        ? '#f9fafb'
+                                        : '#ffffff',
                                 }}
                             />
                         </div>
+
+                        {/* 编辑模式下显示职位信息 */}
+                        {editingPosition && (
+                            <div
+                                style={{
+                                    marginBottom: '20px',
+                                    padding: '12px',
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '8px',
+                                    fontSize: '13px',
+                                    color: '#ffffff',
+                                }}
+                            ></div>
+                        )}
 
                         {/* Modal Footer */}
                         <div
@@ -271,9 +383,9 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                 onClick={handleClose}
                                 style={{
                                     padding: '10px 20px',
-                                    backgroundColor: '#6b7280',
-                                    color: 'white',
-                                    border: 'none',
+                                    backgroundColor: '#FFFFFF',
+                                    color: '#6b7280',
+                                    border: '1px solid #d1d5db',
                                     borderRadius: '8px',
                                     cursor: 'pointer',
                                     fontSize: '14px',
@@ -289,7 +401,9 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                     padding: '10px 20px',
                                     backgroundColor: loading
                                         ? '#9ca3af'
-                                        : '#3b82f6',
+                                        : editingPosition
+                                          ? '#45cc67'
+                                          : '#45cc67',
                                     color: 'white',
                                     border: 'none',
                                     borderRadius: '8px',
@@ -298,7 +412,7 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                     fontWeight: '500',
                                 }}
                             >
-                                {loading ? 'Creating...' : 'Create Position'}
+                                {submitButtonText}
                             </button>
                         </div>
                     </form>
