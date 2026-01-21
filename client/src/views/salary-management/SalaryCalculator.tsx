@@ -50,6 +50,9 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         money_not_spent_on_holidays: 0,
         other_income: 0,
         office_expenses: 0,
+
+        cut_off_pay_days: 0,
+        cut_off_pay_amount: 0,
         salary: 0,
         social_security: 0,
         working_days: 22,
@@ -370,6 +373,8 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
             money_not_spent_on_holidays: 0,
             other_income: 0,
             office_expenses: 0,
+            cut_off_pay_days: 0,
+            cut_off_pay_amount: 0,
             social_security: 0,
             working_days: 22,
             notes: '',
@@ -419,10 +424,16 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         )
     }
 
+    // ✅ แก้ไข calculateTotalDeductions เพื่อคำนวณยอดรวมจากการขาด
     const calculateTotalDeductions = () => {
-        return formData.office_expenses + formData.social_security
-    }
+        // คำนวณยอดหักจากการขาดงาน = วันขาด × อัตราต่อวัน
+        const cutOffTotal =
+            formData.cut_off_pay_days * formData.cut_off_pay_amount
 
+        return (
+            formData.office_expenses + formData.social_security + cutOffTotal // ✅ ใช้ยอดที่คำนวณแล้ว
+        )
+    }
     const calculateNetSalary = () => {
         return calculateTotalIncome() - calculateTotalDeductions()
     }
