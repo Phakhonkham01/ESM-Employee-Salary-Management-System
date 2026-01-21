@@ -2,49 +2,51 @@ import { lazy } from 'react'
 import authRoute from './authRoute'
 import type { Routes } from '@/@types/routes'
 export const publicRoutes: Routes = [...authRoute]
+export type UserRole = 'Admin' | 'Supervisor' | 'Employee'
+
 export const protectedRoutes: Routes = [
     {
         key: 'home',
         path: '/home',
         component: lazy(() => import('@/views/Home')),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'SalaryManagement',
         path: '/salary-calculator',
         component: lazy(() => import('@/views/salary-management/Salary_List_User')),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     /** Example purpose only, please remove */
     {
         key: 'singleMenuItem',
         path: '/user-management',
         component: lazy(() => import('@/views/user-management/MainComponent')) as any,
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'RequestManagement',
         path: '/request-management',
         component: lazy(() => import('@/views/Requests-Management/SupervisorRequests')) as any,
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'RequestManagement.item22',
         path: '/request-dayoff-management',
         component: lazy(() => import('@/views/Requests-Management/SupervisorDayOffApproval')),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'salary.report',
         path: '/salary-report',
         component: lazy(() => import('@/views/salary-management/SalaryHistory')),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'send-email.salary.report',
         path: 'send-salary-email',
         component: lazy(() => import('@/views/')),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'groupMenu.single',
@@ -52,7 +54,7 @@ export const protectedRoutes: Routes = [
         component: lazy(() =>
             import('@/views/demo/GroupSingleMenuItemView')
         ),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'groupMenu.collapse.item1',
@@ -60,7 +62,7 @@ export const protectedRoutes: Routes = [
         component: lazy(() =>
             import('@/views/demo/GroupCollapseMenuItemView1')
         ),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'groupMenu.collapse.item2',
@@ -68,7 +70,7 @@ export const protectedRoutes: Routes = [
         component: lazy(() =>
             import('@/views/demo/GroupCollapseMenuItemView2')
         ),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'attendance.records',
@@ -76,7 +78,7 @@ export const protectedRoutes: Routes = [
         component: lazy(() =>
             import('@/views/attendance/Attendance')
         ),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'otandfieldwork.records',
@@ -84,7 +86,7 @@ export const protectedRoutes: Routes = [
         component: lazy(() =>
             import('@/views/attendance/OTandFieldWork')
         ),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
         key: 'dayoff.requests',
@@ -92,25 +94,25 @@ export const protectedRoutes: Routes = [
         component: lazy(() =>
             import('@/views/attendance/DayoffRequests')
         ),
-        authority: [],
+        authority: ['Admin', 'Supervisor'],
     },
     {
-        key: 'user.profile',
+        key: 'user',
         path: '/user-profile',
         component: lazy(() => import('@/views/user-page/user-profile/MainComponent')),
-        authority: [],
+        authority: ['Employee'],
     },
     {
         key: 'user.ot.fieldwork.requests',
         path: '/user-ot-fieldwork-requests',
         component: lazy(() => import('@/views/user-page/user-ot-fieldwork-requests/MainComponent')),
-        authority: [],
+        authority: ['Employee'],
     },
     {
         key: 'user.dayoff.requests',
         path: '/user-dayoff-requests',
         component: lazy(() => import('@/views/user-page/user-dayoff-requests/MainComponent')),
-        authority: [],
+        authority: ['Employee'],
     }
 
 ]

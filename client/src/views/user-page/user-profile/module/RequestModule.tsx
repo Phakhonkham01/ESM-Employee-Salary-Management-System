@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { createRequest } from '@/services/User_Page/request_api'
 import { getSupervisors, Supervisor } from '@/services/User_Page/user_api'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
+import Swal from 'sweetalert2'
 
 type RequestType = 'OT' | 'FIELD_WORK'
 
@@ -14,7 +17,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     /* =====================
        State
     ===================== */
-    const [date, setDate] = useState('')
+    const [startDate, setStartDate] = useState<Date | null>(null)
     const [startHour, setStartHour] = useState('08')
     const [startMinute, setStartMinute] = useState('00')
     const [endHour, setEndHour] = useState('17')
@@ -34,16 +37,9 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     const today = new Date()
     const currentYear = today.getFullYear()
     const currentMonth = today.getMonth()
-    
-    // First day of current month (YYYY-MM-DD format)
-    const minDate = new Date(currentYear, currentMonth, 1)
-        .toISOString()
-        .split('T')[0]
-    
-    // Last day of current month (YYYY-MM-DD format)
-    const maxDate = new Date(currentYear, currentMonth + 1, 0)
-        .toISOString()
-        .split('T')[0]
+
+    const currentMonthStart = new Date(currentYear, currentMonth, 1)
+    const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0)
 
     /* =====================
        Load supervisors
@@ -68,22 +64,41 @@ const RequestModule = ({ open, type, onClose }: Props) => {
     const toMinutes = (hour: string, minute: string) =>
         Number(hour) * 60 + Number(minute)
 
+    const formatDateToYYYYMMDD = (date: Date) => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+
     /* =====================
        Submit
     ===================== */
     const handleSubmit = async () => {
         if (!loggedUser?._id) {
-            alert('User not logged in')
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'User not logged in',
+            })
             return
         }
 
         if (!supervisorId) {
-            alert('Please select a supervisor')
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Information',
+                text: 'Please select a supervisor',
+            })
             return
         }
 
-        if (!date) {
-            alert('Please select a date')
+        if (!startDate) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Information',
+                text: 'Please select a date',
+            })
             return
         }
 
@@ -98,7 +113,11 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             sm < 0 || sm > 59 ||
             em < 0 || em > 59
         ) {
-            alert('Invalid time input')
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Input',
+                text: 'Invalid time input',
+            })
             return
         }
 
@@ -106,7 +125,11 @@ const RequestModule = ({ open, type, onClose }: Props) => {
         const endMinutes = toMinutes(endHour, endMinute)
 
         if (endMinutes <= startMinutes) {
-            alert('End time must be later than start time')
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Time Range',
+                text: 'End time must be later than start time',
+            })
             return
         }
 
@@ -114,7 +137,11 @@ const RequestModule = ({ open, type, onClose }: Props) => {
         if (type === 'FIELD_WORK') {
             const fuelNumber = Number(fuel)
             if (!fuel || isNaN(fuelNumber) || fuelNumber <= 0) {
-                alert('Please enter a valid fuel price')
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please enter a valid fuel price',
+                })
                 return
             }
         }
@@ -123,7 +150,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             await createRequest({
                 user_id: loggedUser._id,
                 supervisor_id: supervisorId,
-                date,
+                date: formatDateToYYYYMMDD(startDate),
                 title: type,
                 start_hour: toTimeString(startHour, startMinute),
                 end_hour: toTimeString(endHour, endMinute),
@@ -131,10 +158,22 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                 reason,
             })
 
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Request submitted successfully',
+                timer: 2000,
+                showConfirmButton: false,
+            })
+
             onClose()
         } catch (error) {
             console.error(error)
-            alert('Failed to submit request')
+            Swal.fire({
+                icon: 'error',
+                title: 'Submission Failed',
+                text: 'Failed to submit request. Please try again.',
+            })
         }
     }
 
@@ -161,13 +200,14 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                         <label className="block text-sm font-medium text-slate-700 mb-1">
                             Date
                         </label>
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            min={minDate}
-                            max={maxDate}
-                            className="w-full rounded-lg border px-3 py-2 text-sm"
+                        <DatePicker
+                            selected={startDate}
+                            onChange={(date: Date | null) => setStartDate(date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="Select date"
+                            minDate={currentMonthStart}
+                            maxDate={currentMonthEnd}
+                            className="w-full border rounded-lg px-3 py-2 text-sm"
                         />
                     </div>
 

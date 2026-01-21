@@ -210,6 +210,20 @@ const Attendance: React.FC = () => {
             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
 
+    // Update your getStatusColor function to return specific class names
+    // const getStatusColor = (status) => {
+    //     switch (status) {
+    //         case 'Accepted':
+    //             return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+    //         case 'Pending':
+    //             return 'bg-amber-50 text-amber-700 border border-amber-200';
+    //         case 'Rejected':
+    //             return 'bg-red-50 text-red-700 border border-red-200';
+    //         default:
+    //             return 'bg-gray-50 text-gray-700 border border-gray-200';
+    //     }
+    // };
+
     return (
         <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex justify-between items-center mb-8">
@@ -224,7 +238,7 @@ const Attendance: React.FC = () => {
                     </button>
                     <button
                         onClick={fetchData}
-                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                        className="px-4 py-2 bg-[#45CC67] hover:bg-[#1fd371] text-white text-sm font-medium rounded-lg transition-colors"
                     >
                         ໂຫຼດຂໍ້ມູນໃໝ່
                     </button>
@@ -365,7 +379,7 @@ const Attendance: React.FC = () => {
                                     <td className="px-4 py-4 text-center">
                                         <button
                                             onClick={() => handleViewDetail(user)}
-                                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors"
+                                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#45CC67] hover:bg-[#1fd371] text-white text-xs font-medium rounded-lg transition-colors"
                                         >
                                             <FaRegEye size={14} />
                                             ລາຍລະອຽດ
@@ -385,103 +399,203 @@ const Attendance: React.FC = () => {
                 )}
             </div>
 
-            {/* User Detail Modal */}
             {showModal && selectedUser && (
-                <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-t-xl">
-                            <h3 className="text-xl text-white font-semibold">
-                                ປະຫວັດການຂໍລາພັກ ຂອງພະນັກງານ - {getMonthName(selectedMonth)} {selectedYear}
-                            </h3>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    {/* Backdrop with blur effect */}
+                    <div
+                        className="absolute inset-0 bg-black/40 bg-opacity-50 transition-opacity"
+                        onClick={closeModal}
+                    />
+
+                    {/* Modal Container */}
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden transform transition-all">
+                        {/* Header */}
+                        <div className="sticky top-0 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">
+                                        ປະຫວັດການຂໍລາພັກ
+                                    </h3>
+                                    <p className="text-emerald-100 text-sm mt-1">
+                                        {getMonthName(selectedMonth)} {selectedYear} • {selectedUser.first_name_la} {selectedUser.last_name_la}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={closeModal}
+                                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="p-6 space-y-6">
-                            {/* User Information */}
-                            <div className="bg-gray-50 rounded-lg p-4">
-                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">ຂໍ້ມູນພະນັກງານ</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">ຊື່ (English)</p>
-                                        <p className="text-sm font-medium text-gray-800">
-                                            {selectedUser.first_name_en} {selectedUser.last_name_en}
-                                        </p>
+                        {/* Content */}
+                        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-120px)]">
+                            {/* Employee Info Card */}
+                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                    </svg>
+                                    ຂໍ້ມູນພະນັກງານ
+                                </h4>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <div>
+                                            <p className="text-xs text-gray-400 mb-1">🇬🇧 ຊື່ (English)</p>
+                                            <p className="text-sm font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg">
+                                                {selectedUser.first_name_en} {selectedUser.last_name_en}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">ຊື່ (Lao)</p>
-                                        <p className="text-sm font-medium text-gray-800">
-                                            {selectedUser.first_name_la} {selectedUser.last_name_la}
-                                        </p>
+                                    <div className="space-y-2">
+                                        <div>
+                                            <p className="text-xs text-gray-400 mb-1">🇱🇦 ຊື່ (Lao)</p>
+                                            <p className="text-sm font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg">
+                                                {selectedUser.first_name_la} {selectedUser.last_name_la}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="col-span-2">
-                                        <p className="text-xs text-gray-500 mb-1">ອີເມວ</p>
-                                        <p className="text-sm font-medium text-gray-800">{selectedUser.email}</p>
+                                    <div className="md:col-span-2">
+                                        <div>
+                                            <p className="text-xs text-gray-400 mb-1">📧 ອີເມວ</p>
+                                            <p className="text-sm font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg">
+                                                {selectedUser.email}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-xs text-gray-400 mb-1">ພະແໜກ</p>
+                                        <p className="text-sm font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg">
+                                            {selectedUser.department_id && typeof selectedUser.department_id === 'object'
+                                                ? selectedUser.department_id.department_name
+                                                : 'N/A'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Request History */}
                             <div>
-                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
-                                    ປະຫວັດຄຳຂໍ - {getMonthName(selectedMonth)} {selectedYear}
-                                </h4>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                        </svg>
+                                        ປະຫວັດຄຳຂໍ
+                                    </h4>
+                                    <span className="text-xs font-medium px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full">
+                                        {getUserRequestHistoryByMonth(selectedUser._id, selectedYear, selectedMonth).length} ລາຍການ
+                                    </span>
+                                </div>
+
                                 <div className="space-y-3">
                                     {getUserRequestHistoryByMonth(selectedUser._id, selectedYear, selectedMonth).map((request) => (
-                                        <div key={request._id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                            <div className="flex justify-between items-start mb-3">
+                                        <div
+                                            key={request._id}
+                                            className="group border border-gray-200 hover:border-emerald-200 rounded-xl p-4 hover:shadow-md transition-all duration-200 bg-white"
+                                        >
+                                            {/* Request Header */}
+                                            <div className="flex items-start justify-between mb-3">
                                                 <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-medium text-gray-800">{request.title}</span>
-                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                                                            {request.status}
-                                                        </span>
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        {/* Status Badge with Colors */}
+                                                        {request.status === 'Accepted' && (
+                                                            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                                                {request.status}
+                                                            </div>
+                                                        )}
+                                                        {request.status === 'Pending' && (
+                                                            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                                                                <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                                                {request.status}
+                                                            </div>
+                                                        )}
+                                                        {request.status === 'Rejected' && (
+                                                            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200 flex items-center gap-1">
+                                                                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                                                {request.status}
+                                                            </div>
+                                                        )}
+                                                        {!['Accepted', 'Pending', 'Rejected'].includes(request.status) && (
+                                                            <div className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 text-gray-700 border border-gray-200">
+                                                                {request.status}
+                                                            </div>
+                                                        )}
+
+                                                        <div className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                                            {request.day_off_type}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        ປະເພດ: {request.day_off_type}
-                                                    </div>
+                                                    <h5 className="font-medium text-gray-800 group-hover:text-emerald-700 transition-colors">
+                                                        {request.title}
+                                                    </h5>
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full font-bold text-sm">
-                                                        {request.date_off_number} {request.date_off_number === 1 ? 'day' : 'days'}
+                                                <div className="flex flex-col items-end">
+                                                    <div className="text-lg font-bold text-purple-600">
+                                                        {request.date_off_number}
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">
+                                                        {request.date_off_number === 1 ? 'ມື້' : 'ມື້'}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div>
-                                                    <span className="text-gray-500">ເລີ່ມ:</span>
-                                                    <span className="ml-1 text-gray-700">
-                                                        {new Date(request.start_date_time).toLocaleString()}
+
+                                            {/* Date Information */}
+                                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-1 text-gray-400">
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                                                        </svg>
+                                                        <span className="text-xs">ເລີ່ມ</span>
+                                                    </div>
+                                                    <span className="text-gray-700 font-medium">
+                                                        {new Date(request.start_date_time).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                <div>
-                                                    <span className="text-gray-500">ຮອດ:</span>
-                                                    <span className="ml-1 text-gray-700">
-                                                        {new Date(request.end_date_time).toLocaleString()}
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-1 text-gray-400">
+                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                                                        </svg>
+                                                        <span className="text-xs">ຮອດ</span>
+                                                    </div>
+                                                    <span className="text-gray-700 font-medium">
+                                                        {new Date(request.end_date_time).toLocaleDateString()}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="mt-2 text-xs text-gray-500">
-                                                ສ້າງໃນ: {new Date(request.created_at).toLocaleDateString()}
+
+                                            {/* Footer */}
+                                            <div className="flex items-center justify-between pt-3 border-t border-gray-100 text-xs">
+                                                <div className="flex items-center gap-1 text-gray-400">
+                                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                                                    </svg>
+                                                    ສ້າງໃນ: {new Date(request.created_at).toLocaleDateString()}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
 
+                                    {/* Empty State */}
                                     {getUserRequestHistoryByMonth(selectedUser._id, selectedYear, selectedMonth).length === 0 && (
-                                        <div className="text-center py-8 text-gray-500">
-                                            <div className="text-3xl mb-2 opacity-50">📋</div>
-                                            <p>ບໍ່ມີຂໍ້ມູນການຂໍລາໃນເດືອນນີ້</p>
+                                        <div className="text-center py-12">
+                                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-gray-500 font-medium">ບໍ່ມີຂໍ້ມູນການຂໍລາໃນເດືອນນີ້</p>
+                                            <p className="text-sm text-gray-400 mt-1">ພະນັກງານຍັງບໍ່ທັນມີການຂໍລາພັກໃນ {getMonthName(selectedMonth)}</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
-                            <button
-                                onClick={closeModal}
-                                className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
-                            >
-                                ປິດ
-                            </button>
                         </div>
                     </div>
                 </div>
