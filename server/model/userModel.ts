@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-// 1. สร้าง Schema สำหรับบันทึกประวัติการอัพเดทวันลา
+// 1. สร้าง Schema สําหรับบันทึกประวัติการอัพเดทวันลา
 const vacationDayUpdateSchema: Schema = new Schema({
   old_vacation_days: { 
     type: Number, 
@@ -35,10 +35,10 @@ export interface IUser extends Document {
   nickname_la: string;
   date_of_birth: Date;
   start_work: Date;
-  vacation_days: number; // สามารถติดลบได้
+  vacation_days: number;
   gender: "Male" | "Female" | "Other";
-  position_id: mongoose.Types.ObjectId;
-  department_id: mongoose.Types.ObjectId;
+  position_id?: mongoose.Types.ObjectId;  // 改为可选
+  department_id?: mongoose.Types.ObjectId; // 改为可选
   status: "Active" | "Inactive" | "On Leave";
   base_salary: number;
   created_at: Date;
@@ -50,10 +50,9 @@ export interface IUser extends Document {
     update_reason: string;
     updated_at: Date;
   }>;
-  // เพิ่มฟิลด์สำหรับติดตามสถิติ
   vacation_stats?: {
-    total_absent_days: number;  // รวมวันขาดทั้งหมด
-    last_calculation_date: Date; // วันที่คำนวณล่าสุด
+    total_absent_days: number;
+    last_calculation_date: Date;
   };
 }
 
@@ -85,7 +84,6 @@ const userSchema: Schema = new Schema({
   vacation_days: { 
     type: Number, 
     default: 0,
-    // เอา min: 0 ออกเพื่อให้สามารถติดลบได้
   },
   base_salary: {
     type: Number,
@@ -100,12 +98,12 @@ const userSchema: Schema = new Schema({
   position_id: {
     type: Schema.Types.ObjectId,
     ref: "Position",
-    required: true,
+    required: false, // 改为 false
   },
   department_id: {
     type: Schema.Types.ObjectId,
     ref: "Department",
-    required: true,
+    required: false, // 改为 false
   },
   status: {
     type: String,
@@ -123,13 +121,24 @@ const userSchema: Schema = new Schema({
     trim: true,
   },
   vacation_day_updates: [vacationDayUpdateSchema],
-  // เพิ่มฟิลด์สำหรับสถิติ
   vacation_stats: {
     total_absent_days: { type: Number, default: 0 },
     last_calculation_date: { type: Date }
   }
 }, { 
   timestamps: true
+});
+
+// 添加中间件来处理 Supervisor 的特殊情况
+userSchema.pre('validate', function(next) {
+  if (this.role === 'Supervisor') {
+    // Supervisor 不需要 position_id 和 department_id
+    if (!this.position_id) {
+      this.position_id = undefined;
+    }
+
+  }
+  next();
 });
 
 const User = mongoose.model<IUser>("User", userSchema);

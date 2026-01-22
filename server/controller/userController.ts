@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User, { IUser } from "../model/userModel.js";
 import bcrypt from "bcryptjs";
+
 interface AuthRequest extends Request {
   user?: {
     _id: string;
@@ -8,6 +9,7 @@ interface AuthRequest extends Request {
     email: string;
   };
 }
+
 // Create User
 export const createUser = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -24,7 +26,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       date_of_birth,
       start_work,
       vacation_days,
-      base_salary,  // เพิ่ม field นี้
+      base_salary,
       gender,
       position_id,
       department_id,
@@ -39,7 +41,8 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser: IUser = new User({
+    // 对 Supervisor 进行特殊处理
+    const userData: any = {
       email,
       password: hashedPassword,
       role,
@@ -51,15 +54,26 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       nickname_la,
       date_of_birth,
       start_work,
-      vacation_days: vacation_days || 0,
-      base_salary: base_salary || 0,  // เพิ่ม field นี้
       gender,
-      position_id,
-      department_id,
-      status: status || "Active",
+      status: status || "Active", // 默认 Active
       created_at: new Date(),
-    });
+    };
 
+    // 只有非 Supervisor 才需要这些字段
+    if (role !== 'Supervisor') {
+      userData.vacation_days = vacation_days || 0;
+      userData.base_salary = base_salary || 0;
+      
+      if (position_id) userData.position_id = position_id;
+      if (department_id) userData.department_id = department_id;
+    } else {
+      // Supervisor 设置默认值
+      userData.vacation_days = 0;
+      userData.base_salary = 0;
+      // position_id 和 department_id 留空
+    }
+
+    const newUser: IUser = new User(userData);
     await newUser.save();
     
     const userResponse: any = newUser.toObject();
@@ -73,6 +87,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ message: "Error creating user", error: error.message });
   }
 };
+
 
 // Get all users
 export const getAllUsers = async (
@@ -98,10 +113,10 @@ export const getUserById = async (
   try {
     const { id } = req.params;
 
-const user = await User.findById(id)
-  .populate("department_id", "department_name")
-  .populate("position_id", "position_name")
-  .select("-password");
+    const user = await User.findById(id)
+      .populate("department_id", "department_name")
+      .populate("position_id", "position_name")
+      .select("-password");
 
     if (!user) {
       res.status(404).json({ message: "User not found" });
@@ -113,15 +128,13 @@ const user = await User.findById(id)
     res.status(500).json({ message: error.message });
   }
 };
-// ในไฟล์ userController.js
-// ต้อง import Model User
 
+// Update vacation days
 export const updateVacationDays = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { vacation_days, updated_by, update_reason } = req.body;
 
-    // ตรวจสอบข้อมูลที่จำเป็น
     if (vacation_days === undefined || vacation_days === null) {
       return res.status(400).json({ 
         success: false, 
@@ -129,7 +142,6 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // ตรวจสอบว่าผู้ใช้มีอยู่หรือไม่
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ 
@@ -138,19 +150,15 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // คำนวณวันขาด (ถ้าวันลาใหม่ติดลบ)
     const absentDays = vacation_days < 0 ? Math.abs(vacation_days) : 0;
-    const daysReduced = user.vacation_days - vacation_days;
-    
-    // ใช้ค่า updated_by จาก body หรือจาก req.user (ถ้ามี)
+    const daysReduced = (user.vacation_days || 0) - vacation_days;
     const updatedBy = updated_by || (req.user ? req.user._id : null);
 
-    // อัพเดทวันลาพักร้อน (สามารถติดลบได้)
     const updateData: any = { 
       vacation_days: vacation_days,
       $push: {
         vacation_day_updates: {
-          old_vacation_days: user.vacation_days,
+          old_vacation_days: user.vacation_days || 0,
           new_vacation_days: vacation_days,
           updated_by: updatedBy,
           update_reason: update_reason || 
@@ -162,7 +170,6 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
       }
     };
 
-    // เพิ่ม vacation_stats ถ้ามี
     if (user.vacation_stats) {
       updateData.$inc = { 
         "vacation_stats.total_absent_days": absentDays 
@@ -172,17 +179,12 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
       };
     }
 
-    // อัพเดทข้อมูล
     const updatedUser = await User.findByIdAndUpdate(
       id,
       updateData,
-      { 
-        new: true, 
-        runValidators: true 
-      }
+      { new: true, runValidators: true }
     ).select("-password");
 
-    // ตรวจสอบว่า updatedUser ไม่ใช่ null
     if (!updatedUser) {
       return res.status(500).json({ 
         success: false, 
@@ -190,7 +192,6 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // สร้างข้อความตอบกลับ
     let message = "อัพเดทวันลาพักร้อนสำเร็จ";
     let details = "";
     
@@ -209,7 +210,7 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
       data: {
         ...updatedUser.toObject(),
         summary: {
-          previous_days: user.vacation_days,
+          previous_days: user.vacation_days || 0,
           current_days: vacation_days,
           days_changed: daysReduced,
           is_in_deficit: vacation_days < 0,
@@ -226,15 +227,31 @@ export const updateVacationDays = async (req: AuthRequest, res: Response) => {
   }
 };
 
-
 // Update user
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+    const { role } = updateData;
 
+    // 首先获取现有用户
+    const existingUser = await User.findById(id);
+    if (!existingUser) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    // 处理密码更新
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+
+    // 如果角色变为 Supervisor，清理相关字段
+    if (role === 'Supervisor') {
+      updateData.position_id = null;
+      
+      updateData.base_salary = 0;
+      updateData.vacation_days = 0;
     }
 
     const updatedUser = await User.findByIdAndUpdate(
