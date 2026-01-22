@@ -493,7 +493,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="bg-[#FFFFFF] px-4 py-5 flex items-center justify-between border-b border-[#FFFFFF] rounded-md">
+                    <div className="bg-[#FFFFFF] px-20 py-10 flex items-center justify-between border-b border-[#FFFFFF] rounded-md">
                         <div className="flex items-center gap-3 text-white">
                             {editingUser ? (
                                 <>
@@ -532,7 +532,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     </div>
 
                     {/* Body */}
-                    <div className="p-[60px] overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
+                    <div className="px-[120px] py-[50px] overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
                         {message && (
                             <div
                                 className={`mb-6 p-3 rounded border text-sm font-medium ${
@@ -554,12 +554,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
                         <form onSubmit={handleSubmit}>
                             {/* Account Information Section */}
-                            <div className="mb-6">
-                                <div className="flex items-center mb-4">
-                                    <h3 className="text-base font-medium text-gray-900">
-                                        ຂໍ້ມູນບັນຊີ
-                                    </h3>
-                                </div>
+                            <div className="mb-4">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-normal text-gray-700 mb-1">
@@ -784,11 +779,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                     </div>
                                     <div className="mb-7">
                                         {/* Use the wrapper to force the 50px height and gray background */}
-                                        <div
-                                            className="w-full h-[50px] bg-[#F2F2F2] rounded-sm px-3 flex items-center 
-                    [&_input]:w-full [&_input]:h-full [&_input]:bg-transparent 
-                    [&_input]:border-none [&_input]:outline-none [&_input]:text-sm"
-                                        >
+                                        <div className="">
                                             <DatePicker
                                                 label="Date of Birth" // This fixes the 'Property label is missing' error
                                                 value={formData.date_of_birth}

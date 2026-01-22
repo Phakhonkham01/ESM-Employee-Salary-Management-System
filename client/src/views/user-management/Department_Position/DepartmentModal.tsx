@@ -272,50 +272,15 @@ const DepartmentModal: React.FC<DepartmentModalProps> = ({
                                 onChange={(e) =>
                                     setDepartmentName(e.target.value)
                                 }
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                 required
                                 placeholder="Enter department name"
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e0e0e0',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    backgroundColor: editingDepartment
-                                        ? '#f9fafb'
-                                        : '#ffffff',
-                                    transition: 'all 0.2s',
-                                    boxSizing: 'border-box',
-                                }}
-                                onFocus={(e) => {
-                                    e.target.style.borderColor = '#3b82f6'
-                                    e.target.style.boxShadow =
-                                        '0 0 0 3px rgba(59, 130, 246, 0.1)'
-                                }}
-                                onBlur={(e) => {
-                                    e.target.style.borderColor = '#e0e0e0'
-                                    e.target.style.boxShadow = 'none'
-                                }}
                                 disabled={loading}
                                 autoFocus
                             />
                         </div>
 
                         {/* 编辑模式下显示部门ID信息 */}
-                        {editingDepartment && (
-                            <div
-                                style={{
-                                    marginBottom: '20px',
-                                    padding: '12px',
-                                    backgroundColor: '#f3f4f6',
-                                    borderRadius: '8px',
-                                    fontSize: '13px',
-                                    color: '#6b7280',
-                                }}
-                            >
-                                <div style={{ display: 'flex' }}></div>
-                            </div>
-                        )}
 
                         {/* Modal Footer */}
                         <div

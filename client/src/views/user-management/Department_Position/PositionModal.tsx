@@ -275,28 +275,8 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                 onChange={(e) =>
                                     setSelectedDepartment(e.target.value)
                                 }
-                                required
-                                disabled={
-                                    !!editingPosition &&
-                                    editingPosition.department_id !==
-                                        selectedDepartment
-                                }
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e0e0e0',
-                                    fontSize: '14px',
-                                    backgroundColor: editingPosition
-                                        ? '#f3f4f6'
-                                        : '#ffffff',
-                                    cursor: editingPosition
-                                        ? 'not-allowed'
-                                        : 'pointer',
-                                    pointerEvents: editingPosition
-                                        ? 'none'
-                                        : 'auto',
-                                }}
+                                disabled
+                                className="w-full h-[50px] px-3 py-2 rounded-sm bg-gray-200 text-sm cursor-not-allowed opacity-70"
                             >
                                 <option value="">Select Department</option>
                                 {departments.map((dept) => (
@@ -340,33 +320,11 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                 }
                                 required
                                 placeholder="Enter position name"
-                                style={{
-                                    width: '100%',
-                                    padding: '10px 12px',
-                                    borderRadius: '8px',
-                                    border: '1px solid #e0e0e0',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    backgroundColor: editingPosition
-                                        ? '#f9fafb'
-                                        : '#ffffff',
-                                }}
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
 
                         {/* 编辑模式下显示职位信息 */}
-                        {editingPosition && (
-                            <div
-                                style={{
-                                    marginBottom: '20px',
-                                    padding: '12px',
-                                    backgroundColor: '#ffffff',
-                                    borderRadius: '8px',
-                                    fontSize: '13px',
-                                    color: '#ffffff',
-                                }}
-                            ></div>
-                        )}
 
                         {/* Modal Footer */}
                         <div

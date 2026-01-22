@@ -389,7 +389,7 @@ const WeekendOTCard: React.FC<{
 
     return (
         <div className="border border-gray-300 rounded bg-white">
-            <div className="bg-[#FF5A3D] px-4 py-3 rounded-t">
+            <div className="bg-[#FFFFFF] px-4 py-3 rounded-t">
                 <h5 className="font-bold text-white">
                     ມື້ພັກ (ວັນເສົາ-ວັນອາທິດ)
                 </h5>
@@ -698,7 +698,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                             type="text"
                             value={`${user.first_name_en} ${user.last_name_en}`}
                             disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                     <div>
@@ -709,7 +709,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                             type="text"
                             value={user.email}
                             disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                     <div>
@@ -720,7 +720,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                             type="text"
                             value={`${getMonthName(month)} ${year}`}
                             disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                     <div>
@@ -733,7 +733,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                                 type="text"
                                 value={prefillData.user.base_salary.toLocaleString()}
                                 disabled
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -747,7 +747,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                         </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="border border-gray-200 rounded-xl bg-white p-5 shadow-sm">
+                        <div className="border-none bg-[#f2f2f2] rounded-xl bg-white p-5 shadow-sm">
                             {/* Header */}
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
@@ -1082,7 +1082,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="bonus"
                                 value={formData.bonus}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -1096,7 +1096,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="commission"
                                 value={formData.commission}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -1110,7 +1110,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="money_not_spent_on_holidays"
                                 value={formData.money_not_spent_on_holidays}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -1124,13 +1124,13 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="other_income"
                                 value={formData.other_income}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
                 </div>
-                <div className="mt-4 p-3 bg-blue-50 border border-[#1F3A5F] rounded">
-                    <p className="text-sm text-[#1F3A5F] font-medium">
+                <div className="mt-4 p-3 bg-blue-50 border border-[#f2f2f2f2] rounded">
+                    <p className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]">
                         Total Additional Income:
                         {(
                             formData.bonus +
@@ -1195,7 +1195,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                     onChange={handleCutOffDaysChange}
                                     min="0"
                                     step="0.5"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#FFFFFF] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                     placeholder="0"
                                 />
                                 <p className="mt-1 text-xs text-gray-500">
@@ -1209,16 +1209,13 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                     ອັດຕາການຫັກຕໍ່ວັນ (Cut Off Rate per Day)
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                        ₭
-                                    </span>
                                     <input
                                         type="number"
                                         name="cut_off_pay_amount"
                                         value={formData.cut_off_pay_amount}
                                         onChange={onInputChange}
                                         min="0"
-                                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                        className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#FFFFFF] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         placeholder="0"
                                     />
                                 </div>
@@ -1226,7 +1223,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                     ປ້ອນຈຳນວນເງິນທີ່ຕ້ອງການຫັກຕໍ່ 1 ວັນ
                                     {prefillData && (
                                         <span className="block font-medium text-gray-600 mt-1">
-                                            ແນະນຳ: ₭
+                                            ແນະນຳ:
                                             {(
                                                 prefillData.user.base_salary /
                                                 30
@@ -1251,7 +1248,6 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                         {formData.cut_off_pay_amount.toLocaleString()}
                                         /ວັນ =
                                         <span className="font-bold ml-1 text-lg">
-                                            ₭
                                             {calculateCutOffTotal().toLocaleString()}
                                         </span>
                                     </div>
@@ -1265,15 +1261,12 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                             Office Expenses (ຄ່າໃຊ້ຈ່າຍສຳນັກງານ)
                         </label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                ₭
-                            </span>
                             <input
                                 type="number"
                                 name="office_expenses"
                                 value={formData.office_expenses}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -1284,15 +1277,12 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                             Social Security (ປະກັນສັງຄົມ)
                         </label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                ₭
-                            </span>
                             <input
                                 type="number"
                                 name="social_security"
                                 value={formData.social_security}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -1309,7 +1299,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                             onChange={onInputChange}
                             min="0"
                             max="31"
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                         <p className="mt-1 text-xs text-gray-500">
                             ຈຳນວນວັນທີ່ເຮັດວຽກໃນເດືອນນີ້
@@ -1340,13 +1330,13 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                 ຄ່າໃຊ້ຈ່າຍສຳນັກງານ:
                             </span>
                             <span className="font-medium">
-                                ₭{formData.office_expenses.toLocaleString()}
+                                {formData.office_expenses.toLocaleString()}
                             </span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-700">ປະກັນສັງຄົມ:</span>
                             <span className="font-medium">
-                                ₭{formData.social_security.toLocaleString()}
+                                {formData.social_security.toLocaleString()}
                             </span>
                         </div>
                         <div className="flex justify-between text-sm">
@@ -1354,7 +1344,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                 ຫັກເງິນຈາກການຂາດງານ:
                             </span>
                             <span className="font-medium text-red-600">
-                                ₭{calculateCutOffTotal().toLocaleString()}
+                                {calculateCutOffTotal().toLocaleString()}
                             </span>
                         </div>
                         <div className="border-t border-red-300 pt-2 mt-2">
@@ -1363,7 +1353,6 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                     Total Deductions:
                                 </span>
                                 <span className="font-bold text-red-700 text-lg">
-                                    ₭
                                     {calculateTotalDeductions().toLocaleString()}
                                 </span>
                             </div>
@@ -1964,7 +1953,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                         className="p-4 border text-center text-xl"
                                         colSpan={2}
                                     >
-                                        {formatCurrency(netSalary)}
+                                        {formatCurrency(netSalary)} ກີບ
                                     </td>
                                 </tr>
                             </tbody>
