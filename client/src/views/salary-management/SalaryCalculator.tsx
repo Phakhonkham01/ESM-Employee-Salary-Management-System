@@ -10,6 +10,7 @@ import {
     Trash2,
 } from 'lucide-react'
 import axios from 'axios'
+import Swal from 'sweetalert2' // ✅ เพิ่ม import
 import {
     SalaryCalculatorProps,
     SalaryFormData,
@@ -50,6 +51,8 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         money_not_spent_on_holidays: 0,
         other_income: 0,
         office_expenses: 0,
+        cut_off_pay_days: 0,
+        cut_off_pay_amount: 0,
         salary: 0,
         social_security: 0,
         working_days: 22,
@@ -233,8 +236,45 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
         setActiveStep((prevStep) => prevStep - 1)
     }
 
-    // SalaryCalculator.tsx - ส่วน handleSubmit ที่แก้ไขแล้ว
+    // ✅ แก้ไข handleSubmit เพื่อเพิ่ม SweetAlert
     const handleSubmit = async () => {
+        // ✅ แสดง SweetAlert ยืนยัน
+        const result = await Swal.fire({
+            title: 'ຢືນຢັນການຄຳນວນເງິນເດືອນ?',
+            html: `
+                <div style="text-align: left; padding: 10px;">
+                    <p><strong>ພະນັກງານ:</strong> ${user.first_name_en} ${user.last_name_en}</p>
+                    <p><strong>ເດືອນ:</strong> ${getMonthName(month)} ${year}</p>
+                    <p><strong>ເງິນເດືອນສຸດທິ:</strong> ₭${calculateNetSalary().toLocaleString()}</p>
+                    <hr style="margin: 10px 0;">
+                    <p style="color: #666; font-size: 14px;">ກະລຸນາກວດສອບຂໍ້ມູນກ່ອນຢືນຢັນ</p>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#45cc67',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '✓ ຢືນຢັນ',
+            cancelButtonText: '✗ ຍົກເລີກ',
+            reverseButtons: true,
+        })
+
+        // ✅ ถ้ายกเลิก ให้ return
+        if (!result.isConfirmed) {
+            return
+        }
+
+        // ✅ แสดง loading
+        Swal.fire({
+            title: 'ກຳລັງດຳເນີນການ...',
+            html: 'ກະລຸນາລໍຖ້າ ກຳລັງຄຳນວນເງິນເດືອນ',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => {
+                Swal.showLoading()
+            },
+        })
+
         try {
             setLoading(true)
             setError(null)
@@ -279,31 +319,27 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                     `Manual OT: ${manualOTDetails.length > 0 ? 'Yes' : 'No'}`,
             }
 
-            // Step 1: 提交薪资记录
             const response = await axios.post('/api/salaries', payload)
 
             if (response.status === 201 || response.status === 200) {
-                // Step 2: 成功提交薪资后，更新用户的 vacation_days
                 try {
                     const remainingVacationDays =
                         prefillData?.calculated.remaining_vacation_days || 0
 
-                    // ตรวจสอบสถานะวันลา
                     let updateReason = ''
                     let vacationMessage = ''
 
                     if (remainingVacationDays < 0) {
                         updateReason = `คำนวณเงินเดือน ${getMonthName(month)} ${year} - ขาดงานเกินวันลา ${Math.abs(remainingVacationDays)} วัน`
-                        vacationMessage = `พนักงานขาดงานเกินวันลา ${Math.abs(remainingVacationDays)} วัน`
+                        vacationMessage = `ພະນັກງານຂາດວຽກເກີນວັນລາ ${Math.abs(remainingVacationDays)} ວັນ`
                     } else if (remainingVacationDays === 0) {
                         updateReason = `คำนวณเงินเดือน ${getMonthName(month)} ${year} - วันลาหมดแล้ว`
-                        vacationMessage = 'วันลาหมดแล้ว'
+                        vacationMessage = 'ວັນລາໝົດແລ້ວ'
                     } else {
                         updateReason = `คำนวณเงินเดือน ${getMonthName(month)} ${year} - เหลือวันลา ${remainingVacationDays} วัน`
-                        vacationMessage = `เหลือวันลา ${remainingVacationDays} วัน`
+                        vacationMessage = `ເຫຼືອວັນລາ ${remainingVacationDays} ວັນ`
                     }
 
-                    // เรียก API อัพเดทวันลา (สามารถติดลบได้)
                     await axios.put(
                         `/api/users/${user._id}/update-vacation-days`,
                         {
@@ -313,50 +349,78 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         },
                     )
 
-                    // Step 3: แสดงสถานะสำเร็จ
                     setSuccess(true)
 
-                    // แสดงข้อความตามสถานะวันลา (เป็นข้อความสำเร็จ ไม่ใช่ error)
-                    console.log(`คำนวณเงินเดือนสำเร็จ! ${updateReason}`)
-
-                    // แสดงข้อความใน UI (ถ้าต้องการ)
-                    if (remainingVacationDays < 0) {
-                        // แสดงเป็น warning message
-                        console.warn(
-                            `คำนวณเงินเดือนสำเร็จ แต่ ${vacationMessage}`,
-                        )
-                    }
+                    // ✅ แสดง Success Alert
+                    await Swal.fire({
+                        title: 'ສຳເລັດ!',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <p>✓ ຄຳນວນເງິນເດືອນສຳເລັດແລ້ວ</p>
+                                <p><strong>ພະນັກງານ:</strong> ${user.first_name_en} ${user.last_name_en}</p>
+                                <p><strong>ເງິນເດືອນສຸດທິ:</strong> ₭${netSalary.toLocaleString()}</p>
+                                ${vacationMessage ? `<p style="color: ${remainingVacationDays < 0 ? '#d33' : '#666'};">📅 ${vacationMessage}</p>` : ''}
+                            </div>
+                        `,
+                        icon: 'success',
+                        confirmButtonColor: '#45cc67',
+                        confirmButtonText: 'ປິດ',
+                    })
 
                     onSuccess()
                     setTimeout(() => {
                         handleClose()
-                    }, 3000)
+                    }, 500)
                 } catch (updateError: any) {
                     console.warn(
                         'คำนวณเงินเดือนสำเร็จ แต่ไม่สามารถอัพเดทวันลาได้:',
                         updateError,
                     )
                     setSuccess(true)
-                    // แสดงเฉพาะข้อความแจ้งเตือน
-                    console.log(
-                        'คำนวณเงินเดือนสำเร็จ แต่ไม่สามารถอัพเดทวันลาได้' +
-                            (updateError.response?.data?.message
-                                ? ` (${updateError.response.data.message})`
-                                : ''),
-                    )
+
+                    // ✅ แสดง Warning Alert
+                    await Swal.fire({
+                        title: 'ສຳເລັດ (ມີຂໍ້ຄວນສັງເກດ)',
+                        html: `
+                            <div style="text-align: left; padding: 10px;">
+                                <p>✓ ຄຳນວນເງິນເດືອນສຳເລັດແລ້ວ</p>
+                                <p style="color: #ff9800;">⚠ ແຕ່ບໍ່ສາມາດອັບເດດວັນລາໄດ້</p>
+                                <p style="font-size: 14px; color: #666;">${updateError.response?.data?.message || 'ກະລຸນາກວດສອບລະບົບ'}</p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        confirmButtonColor: '#ff9800',
+                        confirmButtonText: 'ເຂົ້າໃຈແລ້ວ',
+                    })
+
                     onSuccess()
                     setTimeout(() => {
                         handleClose()
-                    }, 3000)
+                    }, 500)
                 }
             }
         } catch (err: any) {
             console.error('คำนวณเงินเดือนล้มเหลว:', err.response?.data)
             setError(err.response?.data?.message || 'คำนวณเงินเดือนล้มเหลว')
+
+            // ✅ แสดง Error Alert
+            await Swal.fire({
+                title: 'ເກີດຂໍ້ຜິດພາດ!',
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p style="color: #d33;">✗ ບໍ່ສາມາດຄຳນວນເງິນເດືອນໄດ້</p>
+                        <p style="font-size: 14px; color: #666;">${err.response?.data?.message || 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ'}</p>
+                    </div>
+                `,
+                icon: 'error',
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'ປິດ',
+            })
         } finally {
             setLoading(false)
         }
     }
+
     const handleClose = () => {
         setActiveStep(0)
         setFormData({
@@ -370,6 +434,8 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
             money_not_spent_on_holidays: 0,
             other_income: 0,
             office_expenses: 0,
+            cut_off_pay_days: 0,
+            cut_off_pay_amount: 0,
             social_security: 0,
             working_days: 22,
             notes: '',
@@ -420,7 +486,10 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
     }
 
     const calculateTotalDeductions = () => {
-        return formData.office_expenses + formData.social_security
+        const cutOffTotal =
+            formData.cut_off_pay_days * formData.cut_off_pay_amount
+
+        return formData.office_expenses + formData.social_security + cutOffTotal
     }
 
     const calculateNetSalary = () => {
@@ -624,7 +693,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         <button
                             onClick={handleSubmit}
                             disabled={loading || success || !prefillData}
-                            className="px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] hover:bg-[#152642] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
+                            className="px-4 py-2 text-sm font-medium text-white bg-[#45cc67] hover:bg-[#3aa85a] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                         >
                             {loading ? (
                                 <>

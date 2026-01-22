@@ -29,6 +29,8 @@ export interface ISalary extends mongoose.Document {
   office_expenses: number;
   social_security: number;
   working_days: number;
+    cut_off_pay_days: number;          // ✅ เพิ่ม
+  cut_off_pay_amount: number;  
   day_off_days: number;
   remaining_vacation_days: number;
   net_salary: number;
@@ -163,6 +165,16 @@ const salarySchema = new mongoose.Schema({
     min: 0
   },
   social_security: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+    cut_off_pay_days: {              // ✅ เพิ่ม
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  cut_off_pay_amount: {            // ✅ เพิ่ม
     type: Number,
     default: 0,
     min: 0

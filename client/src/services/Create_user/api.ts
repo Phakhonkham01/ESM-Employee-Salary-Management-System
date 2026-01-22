@@ -14,19 +14,17 @@ export interface UserData {
   nickname_la: string;
   date_of_birth: string;
   start_work: string;
-  base_salary: string | number;  // ✅ Added this line
+  base_salary: string | number;
   vacation_days: number;
   gender: "Male" | "Female" | "Other";
- position_id: {
-  _id: string
-  position_name: string
-}
-
-department_id: {
-  _id: string
-  department_name: string
-}
-
+  position_id: {
+    _id: string
+    position_name: string
+  }
+  department_id: {
+    _id: string
+    department_name: string
+  }
   status: "Active" | "Inactive" | "On Leave";
   created_at: string;
 }
@@ -43,14 +41,13 @@ export interface CreateUserData {
   nickname_la: string
   date_of_birth: string
   start_work: string
-  vacation_days: number
+  vacation_days?: number  // 改为可选
   gender: "Male" | "Female" | "Other"
-  position_id: string
-  department_id: string
-  base_salary?: number
+  position_id?: string    // 改为可选
+  department_id?: string  // 改为可选
+  base_salary?: number    // 改为可选
   status?: "Active" | "Inactive" | "On Leave"
 }
-
 
 // ... rest of your API code remains the same
 

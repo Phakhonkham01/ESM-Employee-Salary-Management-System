@@ -25,7 +25,7 @@ import DatePicker from './DatePicker'
 import Swal from 'sweetalert2'
 import DepartmentModal from './Department_Position/DepartmentModal'
 import PositionModal from './Department_Position/PositionModal'
-
+import clsx from 'clsx'
 interface UserFormModalProps {
     isOpen: boolean
     onClose: () => void
@@ -39,9 +39,26 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     editingUser,
     onSuccess,
 }) => {
-    const [formData, setFormData] = useState<
-        Omit<CreateUserData, 'base_salary'> & { base_salary: number }
-    >({
+    // State สำหรับ form data
+    const [formData, setFormData] = useState<{
+        email: string
+        password: string
+        role: 'Supervisor' | 'Admin' | 'Employee'
+        first_name_en: string
+        last_name_en: string
+        nickname_en: string
+        first_name_la: string
+        last_name_la: string
+        nickname_la: string
+        date_of_birth: string
+        start_work: string
+        vacation_days: number
+        gender: 'Male' | 'Female' | 'Other'
+        position_id: string
+        department_id: string
+        status: 'Active' | 'Inactive' | 'On Leave'
+        base_salary: number
+    }>({
         email: '',
         password: '',
         role: 'Employee',
@@ -74,17 +91,28 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         text: string
     } | null>(null)
 
-    // 直接在这里管理模态框状态 - 需要两个不同的状态
+    // Modal states
     const [isDepartmentModalOpen, setIsDepartmentModalOpen] = useState(false)
     const [isPositionCreateModalOpen, setIsPositionCreateModalOpen] =
-        useState(false) // 新增：用于创建职位
+        useState(false)
     const [isPositionEditModalOpen, setIsPositionEditModalOpen] =
-        useState(false) // 用于编辑职位
+        useState(false)
     const [editingDepartment, setEditingDepartment] =
         useState<DepartmentData | null>(null)
     const [editingPosition, setEditingPosition] = useState<PositionData | null>(
         null,
     )
+
+    // ตรวจสอบว่าเป็น Supervisor หรือไม่
+    const isSupervisor = formData.role === 'Supervisor'
+
+    // ตรวจสอบว่าควรแสดง Position, Base Salary, Vacation Days หรือไม่
+    const shouldShowPositionSalaryVacationFields = () => {
+        // ถ้าไม่ใช่ Supervisor: แสดงทั้งหมด
+        if (!isSupervisor) return true
+        // ถ้าเป็น Supervisor: ไม่ต้องแสดง
+        return false
+    }
 
     useEffect(() => {
         if (isOpen) {
@@ -151,6 +179,19 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }, [formData.department_id, editingUser])
 
+    // ตรวจจับการเปลี่ยน Role เป็น Supervisor
+    useEffect(() => {
+        // ถ้าเลือกเป็น Supervisor ให้เคลียร์ค่าที่ไม่ต้องการ
+        if (formData.role === 'Supervisor') {
+            setFormData((prev) => ({
+                ...prev,
+                position_id: '',
+                base_salary: 0,
+                vacation_days: 0,
+            }))
+        }
+    }, [formData.role])
+
     const fetchDepartments = async () => {
         try {
             setLoadingDepartments(true)
@@ -198,7 +239,30 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     ) => {
         const { name, value } = e.target
 
-        if (name === 'vacation_days' || name === 'base_salary') {
+        if (name === 'role') {
+            const roleValue = value as 'Supervisor' | 'Admin' | 'Employee'
+
+            setFormData((prev) => {
+                const updatedData = {
+                    ...prev,
+                    role: roleValue,
+                }
+
+                // ถ้าเลือกเป็น Supervisor ให้เคลียร์ค่าที่ไม่ต้องการ
+                if (roleValue === 'Supervisor') {
+                    updatedData.position_id = ''
+                    updatedData.base_salary = 0
+                    updatedData.vacation_days = 0
+                }
+
+                return updatedData
+            })
+        } else if (name === 'vacation_days' || name === 'base_salary') {
+            // ถ้าเป็น Supervisor: ไม่ต้องเปลี่ยนค่า
+            if (formData.role === 'Supervisor') {
+                return
+            }
+
             const numericValue = Number.parseFloat(value) || 0
             setFormData((prev) => ({
                 ...prev,
@@ -213,6 +277,16 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             if (value) {
                 fetchPositionsByDepartment(value)
             }
+        } else if (name === 'position_id') {
+            // ถ้าเป็น Supervisor: ไม่ต้องเปลี่ยนค่า
+            if (formData.role === 'Supervisor') {
+                return
+            }
+
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }))
         } else {
             setFormData((prev) => ({
                 ...prev,
@@ -222,6 +296,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // ถ้าเป็น Supervisor: ไม่ต้องเปลี่ยนค่า
+        if (formData.role === 'Supervisor') {
+            return
+        }
+
         const value = e.target.value.replace(/[^0-9.]/g, '')
         const numericValue = Number.parseFloat(value) || 0
         setFormData((prev) => ({
@@ -242,9 +321,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         setLoading(true)
 
         try {
+            // สร้างข้อมูลที่จะส่ง
             const submitData: CreateUserData = {
                 email: formData.email,
-                password: formData.password,
+                password: formData.password || undefined,
                 role: formData.role,
                 first_name_en: formData.first_name_en,
                 last_name_en: formData.last_name_en,
@@ -254,21 +334,25 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 nickname_la: formData.nickname_la,
                 date_of_birth: formData.date_of_birth,
                 start_work: formData.start_work,
-                vacation_days: formData.vacation_days,
                 gender: formData.gender,
-                position_id: formData.position_id,
-                department_id: formData.department_id,
                 status: formData.status,
-                base_salary: formData.base_salary,
+                department_id: formData.department_id || undefined,
             }
 
-            if (editingUser && !submitData.password) {
+            // เพิ่มฟิลด์เพิ่มเติมเฉพาะเมื่อไม่ใช่ Supervisor
+            if (formData.role !== 'Supervisor') {
+                submitData.vacation_days = formData.vacation_days
+                submitData.position_id = formData.position_id || undefined
+                submitData.base_salary = formData.base_salary
+            }
+
+            // ถ้าเป็นการแก้ไข User และไม่ได้กรอกรหัสผ่านใหม่
+            if (editingUser && !formData.password) {
                 delete submitData.password
             }
 
             if (editingUser) {
                 await updateUser(editingUser._id, submitData)
-
                 await Swal.fire({
                     icon: 'success',
                     title: 'Updated Successfully',
@@ -278,7 +362,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 })
             } else {
                 await createUser(submitData)
-
                 await Swal.fire({
                     icon: 'success',
                     title: 'Created Successfully',
@@ -353,16 +436,15 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }).format(value)
     }
 
-    // 添加部门函数
+    // ฟังก์ชันเพิ่มแผนก
     const handleAddDepartment = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        console.log('Opening department modal from UserFormModal')
         setEditingDepartment(null)
         setIsDepartmentModalOpen(true)
     }
 
-    // 编辑部门函数
+    // ฟังก์ชันแก้ไขแผนก
     const handleEditDepartment = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -378,15 +460,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // 添加职位函数 - 修改这里
+    // ฟังก์ชันเพิ่มตำแหน่ง
     const handleAddPosition = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        console.log('Opening position create modal from UserFormModal')
         setIsPositionCreateModalOpen(true)
     }
 
-    // 编辑职位函数 - 修改这里
+    // ฟังก์ชันแก้ไขตำแหน่ง
     const handleEditPositionClick = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -409,10 +490,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 rounded-md">
                 <div
                     className="bg-white border border-gray-300 w-full max-w-6xl max-h-[1280px] shadow-lgq rounded-md"
-                    onClick={(e) => e.stopPropagation()} // 阻止点击内容时关闭
+                    onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="bg-[#FFFFFF] px-4 py-5 flex items-center justify-between border-b border-[#FFFFFF] rounded-md">
+                    <div className="bg-[#FFFFFF] px-20 py-10 flex items-center justify-between border-b border-[#FFFFFF] rounded-md">
                         <div className="flex items-center gap-3 text-white">
                             {editingUser ? (
                                 <>
@@ -451,7 +532,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     </div>
 
                     {/* Body */}
-                    <div className="p-[60px] overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
+                    <div className="px-[120px] py-[50px] overflow-y-auto max-h-[calc(90vh-140px)] bg-gray-50 no-scrollbar">
                         {message && (
                             <div
                                 className={`mb-6 p-3 rounded border text-sm font-medium ${
@@ -473,13 +554,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
                         <form onSubmit={handleSubmit}>
                             {/* Account Information Section */}
-                            <div className="mb-6">
-                                <div className="flex items-center mb-4">
-                                    <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
-                                    <h3 className="text-base font-medium text-gray-900">
-                                        Account Information
-                                    </h3>
-                                </div>
+                            <div className="mb-4">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label className="block text-sm font-normal text-gray-700 mb-1">
@@ -495,7 +570,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="Enter email address"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -505,12 +580,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             <span className="text-red-600">
                                                 *
                                             </span>
-                                            {editingUser && (
-                                                <span className="text-gray-500 text-xs ml-1">
-                                                    (leave blank to keep
-                                                    current)
-                                                </span>
-                                            )}
                                         </label>
                                         <input
                                             type="password"
@@ -519,7 +588,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required={!editingUser}
                                             placeholder="Enter password"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -535,7 +604,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             value={formData.role}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="Employee">
                                                 Employee
@@ -554,9 +623,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                             {/* Personal Information - English */}
                             <div className="mb-6">
                                 <div className="flex items-center mb-4">
-                                    <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
                                     <h3 className="text-base font-medium text-gray-900">
-                                        Personal Information (English)
+                                        ຂໍ້ມູນສ່ວນຕົວ (ພາສາອັງກິດ)
                                     </h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -574,7 +642,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="First name"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -592,7 +660,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="Last name"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -610,7 +678,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="Nickname"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
                                 </div>
@@ -619,9 +687,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                             {/* Personal Information - Lao */}
                             <div className="mb-6">
                                 <div className="flex items-center mb-4">
-                                    <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
                                     <h3 className="text-base font-medium text-gray-900">
-                                        Personal Information (Lao)
+                                        ຂໍ້ມູນສ່ວນຕົວ (ພາສາລາວ)
                                     </h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -639,7 +706,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="ຊື່"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -657,7 +724,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="ນາມສະກຸນ"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -675,7 +742,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="ຊື່ຫຍໍ້"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
                                 </div>
@@ -684,9 +751,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                             {/* Basic Information */}
                             <div className="mb-6">
                                 <div className="flex items-center mb-4">
-                                    <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
                                     <h3 className="text-base font-medium text-gray-900">
-                                        Basic Information
+                                        ຂໍ້ມູນພື້ນຖານ
                                     </h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -702,7 +768,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             value={formData.gender}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="Male">Male</option>
                                             <option value="Female">
@@ -711,19 +777,20 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             <option value="Other">Other</option>
                                         </select>
                                     </div>
-
-                                    <div>
-                                        <DatePicker
-                                            label="Date of Birth"
-                                            value={formData.date_of_birth}
-                                            onChange={(date) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    date_of_birth: date,
-                                                }))
-                                            }
-                                            required
-                                        />
+                                    <div className="mb-7">
+                                        {/* Use the wrapper to force the 50px height and gray background */}
+                                        <div className="">
+                                            <DatePicker
+                                                label="Date of Birth" // This fixes the 'Property label is missing' error
+                                                value={formData.date_of_birth}
+                                                onChange={(date: any) =>
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        date_of_birth: date,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
                                     </div>
 
                                     <div>
@@ -742,16 +809,53 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                 </div>
                             </div>
 
-                            {/* Employment Details - SIMPLIFIED VERSION */}
+                            {/* Employment Details */}
                             <div className="mb-6">
                                 <div className="flex items-center mb-4">
-                                    <div className="w-1 h-5 bg-[#1F3A5F] mr-2"></div>
                                     <h3 className="text-base font-medium text-gray-900">
-                                        Employment Details
+                                        ລາຍລະອຽດການຈ້າງງານ
                                     </h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Department Field - 简化版本 */}
+                                    {/* แสดงข้อมูลสำหรับ Supervisor */}
+                                    {isSupervisor && (
+                                        <div className="col-span-2">
+                                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-sm">
+                                                <div className="flex items-start">
+                                                    <svg
+                                                        className="w-5 h-5 text-blue-500 mr-2 mt-0.5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        ></path>
+                                                    </svg>
+                                                    <div>
+                                                        <p className="text-sm text-blue-800 font-medium">
+                                                            Supervisor
+                                                            Information
+                                                        </p>
+                                                        <p className="text-xs text-blue-600 mt-1">
+                                                            For Supervisor
+                                                            users, Position,
+                                                            Base Salary, and
+                                                            Vacation Days are
+                                                            not required and
+                                                            will be
+                                                            automatically set.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Department Field - แสดงเสมอ */}
                                     <div>
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="block text-sm font-normal text-gray-700">
@@ -763,7 +867,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             <button
                                                 type="button"
                                                 onClick={handleAddDepartment}
-                                                className="flex items-center gap-1 text-xs text-[#1F3A5F] hover:text-[#1F3A5F]/80 transition-colors"
+                                                className="flex items-center justify-center gap-1 w-[60px] h-[45px] rounded-[10px] bg-[#F2F2F2] text-xs text-[#1F3A5F] hover:text-[#1F3A5F]/80 transition-colors"
                                                 title="Add new department"
                                             >
                                                 <HiPlus className="w-3 h-3" />
@@ -776,10 +880,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 value={formData.department_id}
                                                 onChange={handleInputChange}
                                                 required
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
+                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                             >
                                                 <option value="">
                                                     Select Department
@@ -799,7 +900,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                     onClick={
                                                         handleEditDepartment
                                                     }
-                                                    className="px-3 py-2 text-sm text-gray-600 hover:text-[#1F3A5F] hover:bg-gray-100 rounded-sm"
+                                                    className="w-[45px] h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                                     title="Edit department"
                                                 >
                                                     <HiOutlinePencil className="w-4 h-4" />
@@ -808,141 +909,162 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                         </div>
                                     </div>
 
-                                    {/* Position Field - 简化版本 */}
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="block text-sm font-normal text-gray-700">
-                                                Position{' '}
+                                    {/* Position Field - แสดงเฉพาะที่ไม่ใช่ Supervisor */}
+                                    {shouldShowPositionSalaryVacationFields() ? (
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="block text-sm font-normal text-gray-700">
+                                                    Position{' '}
+                                                    <span className="text-red-600">
+                                                        *
+                                                    </span>
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAddPosition}
+                                                    className="flex items-center justify-center gap-1 w-[60px] h-[45px] rounded-[10px] bg-[#F2F2F2] text-xs text-[#1F3A5F] hover:text-[#1F3A5F]/80 transition-colors"
+                                                    title="Add new position"
+                                                >
+                                                    <HiPlus className="w-3 h-3" />
+                                                    ADD
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <select
+                                                    name="position_id"
+                                                    value={formData.position_id}
+                                                    onChange={handleInputChange}
+                                                    required={!isSupervisor}
+                                                    disabled={
+                                                        !formData.department_id
+                                                    }
+                                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                >
+                                                    <option value="">
+                                                        {formData.department_id
+                                                            ? 'Select Position'
+                                                            : 'Select Department first'}
+                                                    </option>
+                                                    {filteredPositions.map(
+                                                        (pos) => (
+                                                            <option
+                                                                key={pos._id}
+                                                                value={pos._id}
+                                                            >
+                                                                {
+                                                                    pos.position_name
+                                                                }
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select>
+                                                {formData.position_id && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            handleEditPositionClick
+                                                        }
+                                                        className="w-[45px] h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                        title="Edit position"
+                                                    >
+                                                        <HiOutlinePencil className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <label className="block text-sm font-normal text-gray-700 mb-1">
+                                                Position
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value="Not required for Supervisor"
+                                                readOnly
+                                                disabled
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm bg-gray-100 text-gray-500"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Base Salary Field - แสดงเฉพาะที่ไม่ใช่ Supervisor */}
+                                    {shouldShowPositionSalaryVacationFields() ? (
+                                        <div>
+                                            <label className="block text-sm font-normal text-gray-700 mb-1">
+                                                Base Salary (LAK){' '}
                                                 <span className="text-red-600">
                                                     *
                                                 </span>
                                             </label>
-                                            <button
-                                                type="button"
-                                                onClick={handleAddPosition}
-                                                disabled={
-                                                    !formData.department_id
-                                                }
-                                                className={`flex items-center gap-1 text-xs transition-colors ${
-                                                    !formData.department_id
-                                                        ? 'text-gray-400 cursor-not-allowed'
-                                                        : 'text-[#1F3A5F] hover:text-[#1F3A5F]/80'
-                                                }`}
-                                                title={
-                                                    !formData.department_id
-                                                        ? 'Please select a department first'
-                                                        : 'Add new position'
-                                                }
-                                            >
-                                                <HiPlus className="w-3 h-3" />
-                                                Add
-                                            </button>
-                                        </div>
-
-                                        <div className="flex gap-2">
-                                            <select
-                                                name="position_id"
-                                                value={formData.position_id}
-                                                onChange={handleInputChange}
-                                                required
-                                                disabled={
-                                                    !formData.department_id ||
-                                                    loadingPositions
-                                                }
-                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white disabled:bg-gray-100"
-                                                onClick={(e) =>
-                                                    e.stopPropagation()
-                                                }
-                                            >
-                                                <option value="">
-                                                    {loadingPositions
-                                                        ? 'Loading positions...'
-                                                        : !formData.department_id
-                                                          ? 'Select department first'
-                                                          : filteredPositions.length ===
-                                                              0
-                                                            ? 'No positions available'
-                                                            : 'Select position'}
-                                                </option>
-                                                {filteredPositions.map(
-                                                    (pos) => (
-                                                        <option
-                                                            key={pos._id}
-                                                            value={pos._id}
-                                                        >
-                                                            {pos.position_name}
-                                                        </option>
-                                                    ),
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    name="base_salary"
+                                                    value={getSalaryDisplayValue()}
+                                                    onChange={
+                                                        handleSalaryChange
+                                                    }
+                                                    required={!isSupervisor}
+                                                    placeholder="0"
+                                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                />
+                                                {formData.base_salary >= 0 && (
+                                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
+                                                        {formatCurrency(
+                                                            formData.base_salary,
+                                                        )}
+                                                    </span>
                                                 )}
-                                            </select>
-                                            {formData.position_id && (
-                                                <button
-                                                    type="button"
-                                                    onClick={
-                                                        handleEditPositionClick
-                                                    }
-                                                    disabled={
-                                                        !formData.position_id
-                                                    }
-                                                    className={`px-3 py-2 text-sm rounded-sm flex items-center gap-1 ${
-                                                        !formData.position_id
-                                                            ? 'text-gray-400 cursor-not-allowed bg-gray-100'
-                                                            : 'text-[#1F3A5F] hover:text-white hover:bg-[#45cc67] bg-white border border-gray-300'
-                                                    }`}
-                                                    title="Edit position"
-                                                >
-                                                    <HiOutlinePencil className="w-4 h-4" />
-                                                    Edit
-                                                </button>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-normal text-gray-700 mb-1">
-                                            Base Salary (LAK){' '}
-                                            <span className="text-red-600">
-                                                *
-                                            </span>
-                                        </label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600">
-                                                ₭
-                                            </span>
+                                    ) : (
+                                        <div>
+                                            <label className="block text-sm font-normal text-gray-700 mb-1">
+                                                Base Salary (LAK)
+                                            </label>
                                             <input
                                                 type="text"
-                                                name="base_salary"
-                                                value={getSalaryDisplayValue()}
-                                                onChange={handleSalaryChange}
-                                                required
-                                                placeholder="0.00"
-                                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
+                                                value="Not required for Supervisor"
+                                                readOnly
+                                                disabled
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm bg-gray-100 text-gray-500"
                                             />
-                                            {formData.base_salary > 0 && (
-                                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
-                                                    {formatCurrency(
-                                                        formData.base_salary,
-                                                    )}
-                                                </span>
-                                            )}
                                         </div>
-                                    </div>
+                                    )}
 
-                                    <div>
-                                        <label className="block text-sm font-normal text-gray-700 mb-1">
-                                            Annual Vacation Days
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="vacation_days"
-                                            value={formData.vacation_days}
-                                            onChange={handleInputChange}
-                                            min="0"
-                                            placeholder="0"
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
-                                        />
-                                    </div>
+                                    {/* Annual Vacation Days Field - แสดงเฉพาะที่ไม่ใช่ Supervisor */}
+                                    {shouldShowPositionSalaryVacationFields() ? (
+                                        <div>
+                                            <label className="block text-sm font-normal text-gray-700 mb-1">
+                                                Annual Vacation Days
+                                            </label>
+                                            <input
+                                                type="number"
+                                                name="vacation_days"
+                                                value={formData.vacation_days}
+                                                onChange={handleInputChange}
+                                                min="-365"
+                                                max="365"
+                                                placeholder="0"
+                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <label className="block text-sm font-normal text-gray-700 mb-1">
+                                                Annual Vacation Days
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value="Not required for Supervisor"
+                                                readOnly
+                                                disabled
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm bg-gray-100 text-gray-500"
+                                            />
+                                        </div>
+                                    )}
 
+                                    {/* Employment Status Field - แสดงเสมอ */}
                                     <div>
                                         <label className="block text-sm font-normal text-gray-700 mb-1">
                                             Employment Status{' '}
@@ -955,7 +1077,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             value={formData.status}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F] bg-white"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="Active">
                                                 Active
@@ -967,6 +1089,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 On Leave
                                             </option>
                                         </select>
+                                        {!editingUser && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                New users are automatically set
+                                                to Active
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1022,16 +1150,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 </div>
             </div>
 
-            {/* 直接在这里渲染部门模态框 */}
+            {/* Department Modal */}
             <DepartmentModal
                 isOpen={isDepartmentModalOpen}
                 onClose={() => {
-                    console.log('Closing department modal from parent')
                     setIsDepartmentModalOpen(false)
                     setEditingDepartment(null)
                 }}
                 onSuccess={() => {
-                    console.log('Department modal success from parent')
                     handleDepartmentSuccess()
                     setIsDepartmentModalOpen(false)
                     setEditingDepartment(null)
@@ -1039,23 +1165,21 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 editingDepartment={editingDepartment}
             />
 
-            {/* 直接在这里渲染创建职位模态框 */}
+            {/* Position Create Modal */}
             <PositionModal
                 isOpen={isPositionCreateModalOpen}
                 onClose={() => {
-                    console.log('Closing position create modal from parent')
                     setIsPositionCreateModalOpen(false)
                 }}
                 onSuccess={() => {
-                    console.log('Position create modal success from parent')
                     handlePositionSuccess()
                     setIsPositionCreateModalOpen(false)
                 }}
-                editingPosition={null} // 传递null表示创建模式
-                selectedDepartmentId={formData.department_id} // 传递当前选中的部门ID
+                editingPosition={null}
+                selectedDepartmentId={formData.department_id}
             />
 
-            {/* 直接在这里渲染编辑职位模态框 */}
+            {/* Position Edit Modal */}
             <PositionModal
                 isOpen={isPositionEditModalOpen}
                 onClose={() => {

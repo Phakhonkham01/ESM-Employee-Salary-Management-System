@@ -13,6 +13,8 @@ export interface SalaryFormData {
     other_income: number
     office_expenses: number
     social_security: number
+    cut_off_pay_days: number        // เพิ่มฟิลด์นี้
+    cut_off_pay_amount: number  
     working_days: number
     notes?: string
 }

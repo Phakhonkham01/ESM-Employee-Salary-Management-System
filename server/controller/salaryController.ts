@@ -268,6 +268,8 @@ export const createSalary = async (req: Request, res: Response): Promise<void> =
       other_income = 0,
       office_expenses = 0,
       social_security = 0,
+            cut_off_pay_days = 0,          // ✅ เพิ่ม
+      cut_off_pay_amount = 0,        // ✅ เพิ่ม
       working_days = 0,
       notes,
       salary,
@@ -420,7 +422,10 @@ let autoOTCalculation: {
         money_not_spent_on_holidays +
         other_income;
 
-      const totalDeductions = office_expenses + social_security;
+      const totalDeductions = 
+      office_expenses + 
+      social_security +
+        cut_off_pay_amount;
       net_salary_calculated = totalIncome - totalDeductions;
     }
 
@@ -442,6 +447,8 @@ let autoOTCalculation: {
         other_income,
         office_expenses,
         social_security,
+                cut_off_pay_days,          // ✅ เพิ่ม
+        cut_off_pay_amount,        // ✅ เพิ่ม
         working_days,
         day_off_days,
         remaining_vacation_days,
@@ -495,6 +502,8 @@ let autoOTCalculation: {
       other_income,
       office_expenses,
       social_security,
+            cut_off_pay_days,          // ✅ เพิ่ม
+      cut_off_pay_amount,        // ✅ เพิ่ม
       working_days,
       day_off_days,
       remaining_vacation_days,
@@ -910,6 +919,8 @@ export const updateSalary = async (req: Request, res: Response): Promise<void> =
       other_income,
       office_expenses,
       social_security,
+      cut_off_pay_days,          // ✅ เพิ่ม
+      cut_off_pay_amount,        // ✅ เพิ่ม
       working_days,
       notes
     } = req.body;
@@ -954,7 +965,10 @@ export const updateSalary = async (req: Request, res: Response): Promise<void> =
     const totalIncome = salary.base_salary + salary.ot_amount + salary.bonus + salary.commission + 
                        salary.fuel_costs + salary.money_not_spent_on_holidays + salary.other_income;
     
-    const totalDeductions = salary.office_expenses + salary.social_security;
+    const totalDeductions = salary.office_expenses + 
+    salary.social_security + 
+    salary.cut_off_pay_amount;
+
     salary.net_salary = totalIncome - totalDeductions;
     salary.updated_at = new Date();
 

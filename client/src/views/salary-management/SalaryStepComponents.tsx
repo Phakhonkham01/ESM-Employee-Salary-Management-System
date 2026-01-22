@@ -128,7 +128,7 @@ const OtDetailsTable: React.FC<{
     showDate?: boolean
 }> = ({ otDetails, title = 'Overtime (OT) Details', showDate = true }) => (
     <div className="overflow-x-auto border border-gray-300 rounded">
-        <div className="bg-[#1F3A5F] px-4 py-3">
+        <div className="bg-[#45cc67] px-4 py-3">
             <h4 className="font-semibold text-white">{title}</h4>
         </div>
         <table className="min-w-full divide-y divide-gray-200">
@@ -160,12 +160,15 @@ const OtDetailsTable: React.FC<{
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
                 {otDetails.map((detail, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr
+                        key={index}
+                        className="hover:bg-blue-50/50 transition-colors"
+                    >
                         {showDate && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 border-b border-gray-100">
                                 {detail.date
                                     ? new Date(detail.date).toLocaleDateString(
-                                          'en-US',
+                                          'lo-LA',
                                           {
                                               day: 'numeric',
                                               month: 'short',
@@ -175,46 +178,56 @@ const OtDetailsTable: React.FC<{
                                     : '-'}
                             </td>
                         )}
+
                         <td className="px-4 py-3 whitespace-nowrap border-b border-gray-100">
                             <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${getOtTypeColor(detail.ot_type)}`}
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold shadow-sm ${getOtTypeColor(detail.ot_type)}`}
                             >
-                                {getOtTypeEnglish(detail.ot_type)}
+                                {/* Assuming you have a function to get Lao names, or replace with logic below */}
+                                {detail.ot_type === 'weekday'
+                                    ? 'ມື້ທຳມະດາ'
+                                    : 'ມື້ພັກ'}
                             </span>
                         </td>
+
                         {showDate && (
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 border-b border-gray-100 italic">
                                 {detail.start_hour || '09:00'} -{' '}
                                 {detail.end_hour || '17:00'}
                             </td>
                         )}
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center border-b border-gray-100">
+
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-center border-b border-gray-100">
                             {detail.ot_type === 'weekday'
-                                ? `${detail.total_hours} hrs`
+                                ? `${detail.total_hours} ຊົ່ວໂມງ`
                                 : detail.days
-                                  ? `${detail.days} days`
-                                  : `${detail.total_hours} hrs`}
+                                  ? `${detail.days} ມື້`
+                                  : `${detail.total_hours} ຊົ່ວໂມງ`}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center border-b border-gray-100">
+
+                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 text-center border-b border-gray-100">
                             {detail.ot_type === 'weekday'
-                                ? `$${detail.hourly_rate?.toFixed(2) || '0.00'}/hr`
+                                ? `${detail.hourly_rate?.toLocaleString()} /ຊມ`
                                 : detail.days
-                                  ? `$${detail.rate_per_day?.toFixed(2) || '0.00'}/day`
-                                  : `$${detail.hourly_rate?.toFixed(2) || '0.00'}/hr`}
+                                  ? `${detail.rate_per_day?.toLocaleString()} /ມື້`
+                                  : `${detail.hourly_rate?.toLocaleString()} /ຊມ`}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 text-right border-b border-gray-100">
-                            ${detail.amount.toLocaleString()}
+
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-[#1F3A5F] text-right border-b border-gray-100 bg-slate-50/30">
+                            {detail.amount.toLocaleString()} ກີບ
                         </td>
                     </tr>
                 ))}
-                <tr className="bg-gray-50 font-semibold">
+
+                {/* Grand Total Row */}
+                <tr className="bg-slate-100 font-bold border-t-2 border-[#1F3A5F]">
                     <td
                         colSpan={showDate ? 3 : 2}
-                        className="px-4 py-3 text-right text-gray-700"
+                        className="px-4 py-4 text-right text-[#1F3A5F] uppercase tracking-wider text-xs"
                     >
-                        Grand Total:
+                        ລວມຍອດທັງໝົດ (Total):
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-700">
+                    <td className="px-4 py-4 text-center text-gray-800">
                         {otDetails.reduce(
                             (sum, detail) =>
                                 sum +
@@ -222,15 +235,19 @@ const OtDetailsTable: React.FC<{
                                     ? detail.total_hours
                                     : detail.days || detail.total_hours),
                             0,
-                        )}{' '}
-                        {otDetails.some((d) => d.days) ? 'days/hrs' : 'hrs'}
+                        )}
+                        <span className="ml-1 text-xs font-normal text-gray-500">
+                            {otDetails.some((d) => d.days)
+                                ? 'ມື້/ຊມ'
+                                : 'ຊົ່ວໂມງ'}
+                        </span>
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-700">-</td>
-                    <td className="px-4 py-3 text-right font-bold text-[#1F3A5F]">
-                        $
+                    <td className="px-4 py-4 text-center text-gray-400">-</td>
+                    <td className="px-4 py-4 text-right text-lg text-[#1F3A5F] bg-blue-50/50">
                         {otDetails
                             .reduce((sum, detail) => sum + detail.amount, 0)
-                            .toLocaleString()}
+                            .toLocaleString()}{' '}
+                        ກີບ
                     </td>
                 </tr>
             </tbody>
@@ -247,29 +264,68 @@ const WeekdayOTCard: React.FC<{
     const amount = hours * rate_per_hour
 
     return (
-        <div className="border border-gray-300 rounded bg-white">
-            <div className="bg-[#1F3A5F] px-4 py-3 rounded-t">
-                <h5 className="font-bold text-white">ມື້ທຳມະດາ (ຈັນ - ສຸກ)</h5>
+        <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="bg-[#45cc67] px-4 py-3">
+                <h5 className="font-bold text-white flex items-center gap-2">
+                    <span>ມື້ທຳມະດາ (ຈັນ - ສຸກ)</span>
+                </h5>
             </div>
+
             <div className="p-4">
                 <div className="space-y-4">
+                    {/* OT Hours Input with Plus/Minus Buttons */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            OT Hours
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            ຈຳນວນຊົ່ວໂມງ OT
                         </label>
-                        <input
-                            type="number"
-                            step="0.5"
-                            min="0"
-                            value={hours}
-                            onChange={(e) => onHoursChange(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
-                            placeholder="0"
-                        />
+                        <div className="flex items-center gap-2">
+                            {/* Minus Button */}
+                            <button
+                                onClick={() => {
+                                    const newValue = Math.max(
+                                        0,
+                                        Number(hours) - 0.5,
+                                    )
+                                    onHoursChange(String(newValue)) // Convert number to string
+                                }}
+                                className="w-12 h-10 flex items-center justify-center bg-gray-100 hover:bg-red-100 text-gray-600 hover:text-red-600 border border-gray-300 rounded-md transition-colors text-xl font-bold"
+                                type="button"
+                            >
+                                −
+                            </button>
+                            <div className="relative flex-1">
+                                <input
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    value={hours}
+                                    onChange={(e) =>
+                                        onHoursChange(e.target.value)
+                                    } // This is already a string
+                                    className="w-full px-3 py-2 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] font-bold text-lg"
+                                    placeholder="0"
+                                />
+                            </div>
+
+                            {/* Plus Button */}
+                            <button
+                                onClick={() => {
+                                    const newValue = Number(hours) + 0.5
+                                    onHoursChange(String(newValue)) // Convert number to string
+                                }}
+                                className="w-12 h-10 flex items-center justify-center bg-gray-100 hover:bg-green-100 text-gray-600 hover:text-green-600 border border-gray-300 rounded-md transition-colors text-xl font-bold"
+                                type="button"
+                            >
+                                +
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Rate Input */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            ອັດຕາຄ່າຈ້າງ (Rate per)
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                            ອັດຕາຄ່າຈ້າງ (ຕໍ່ຊົ່ວໂມງ)
                         </label>
                         <div className="relative">
                             <input
@@ -279,21 +335,27 @@ const WeekdayOTCard: React.FC<{
                                 onChange={(e) =>
                                     onRatePerHourChange(e.target.value)
                                 }
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded
-               focus:outline-none focus:ring-2 focus:ring-[#1F3A5F]"
+                                /* Added 'no-spinner' class here */
+                                className="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] transition-all"
                                 placeholder="0"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-4 p-3 rounded bg-blue-50 border border-blue-200">
-                    <div className="text-xl text-[#1F3A5F]">
-                        <div className="font-bold mb-1">
-                            Total: {amount.toFixed(2)} ກີບ
+                {/* Calculation Result Area */}
+                <div className="mt-5 p-4 rounded-lg bg-slate-50 border border-slate-200">
+                    <div className="flex flex-col">
+                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            ລວມເງິນທັງໝົດ
                         </div>
-                        <div className="text-xl text-gray-600">
-                            {hours} hrs x {rate_per_hour.toFixed(2)}/hr
+                        <div className="text-2xl font-black text-[#1F3A5F]">
+                            {amount.toLocaleString()}{' '}
+                            <span className="text-sm font-bold">ກີບ</span>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-slate-200 text-sm text-gray-500 font-medium">
+                            {hours || 0} ຊົ່ວໂມງ ×{' '}
+                            {rate_per_hour.toLocaleString()} ກີບ
                         </div>
                     </div>
                 </div>
@@ -327,7 +389,7 @@ const WeekendOTCard: React.FC<{
 
     return (
         <div className="border border-gray-300 rounded bg-white">
-            <div className="bg-[#D97706] px-4 py-3 rounded-t">
+            <div className="bg-[#FFFFFF] px-4 py-3 rounded-t">
                 <h5 className="font-bold text-white">
                     ມື້ພັກ (ວັນເສົາ-ວັນອາທິດ)
                 </h5>
@@ -335,52 +397,99 @@ const WeekendOTCard: React.FC<{
             <div className="p-4">
                 <div className="space-y-4">
                     {/* Weekend OT Hours */}
-                    <div className="border-b border-gray-200 pb-4">
-                        <h6 className="font-medium text-gray-700 mb-3">
-                            OT Hours
-                        </h6>
-                        <div className="space-y-3">
+                    <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+                        {/* Header */}
+
+                        <div className="p-4 space-y-4">
+                            {/* Quantity Selection */}
                             <div>
-                                <input
-                                    type="number"
-                                    step="0.5"
-                                    min="0"
-                                    value={hours}
-                                    onChange={(e) =>
-                                        onHoursChange(e.target.value)
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#D97706] focus:border-transparent"
-                                    placeholder="0"
-                                />
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    ຈຳນວນຊົ່ວໂມງ
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() =>
+                                            onHoursChange(
+                                                String(
+                                                    Math.max(
+                                                        0,
+                                                        Number(hours) - 0.5,
+                                                    ),
+                                                ),
+                                            )
+                                        }
+                                        className="w-12 h-10 flex items-center justify-center bg-gray-50 hover:bg-red-50 text-gray-500 border border-gray-300 rounded-md font-bold text-xl transition-colors"
+                                        type="button"
+                                    >
+                                        −
+                                    </button>
+                                    <input
+                                        type="number"
+                                        value={hours}
+                                        onChange={(e) =>
+                                            onHoursChange(e.target.value)
+                                        }
+                                        className="no-spinner flex-1 px-3 py-2 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D97706] focus:border-transparent outline-none font-bold text-lg"
+                                        placeholder="0"
+                                    />
+                                    <button
+                                        onClick={() =>
+                                            onHoursChange(
+                                                String(Number(hours) + 0.5),
+                                            )
+                                        }
+                                        className="w-12 h-10 flex items-center justify-center bg-gray-50 hover:bg-green-50 text-gray-500 border border-gray-300 rounded-md font-bold text-xl transition-colors"
+                                        type="button"
+                                    >
+                                        +
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Hourly Rate Input */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    ອັດຕາຄ່າຈ້າງ Hourly Rate
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                    ອັດຕາຄ່າຈ້າງ (Hourly Rate)
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></span>
                                     <input
                                         type="number"
                                         step="0.01"
                                         min="0"
-                                        value={rate_per_hour}
+                                        value={
+                                            rate_per_hour === 0
+                                                ? ''
+                                                : rate_per_hour
+                                        }
                                         onChange={(e) =>
                                             onRatePerHourChange(e.target.value)
                                         }
-                                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#D97706] focus:border-transparent"
+                                        className="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent outline-none"
                                         placeholder="0.00"
                                     />
                                 </div>
                             </div>
+
+                            {/* Summary Calculation Box */}
                             {hours > 0 && rate_per_hour > 0 && (
-                                <div className="p-2 rounded bg-amber-50 border border-amber-200">
-                                    <div className="text-xs text-amber-800">
-                                        <div>
-                                            OT Hours: {hours} hrs x
-                                            {rate_per_hour.toFixed(2)}
-                                        </div>
-                                        <div className="font-bold mt-1">
-                                            ຍອດລວມ : {hoursAmount.toFixed(2)}
+                                <div className="mt-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                                    <div className="flex justify-between items-center text-amber-900">
+                                        <span className="text-xs font-medium uppercase">
+                                            ລວມຍອດ OT:
+                                        </span>
+                                        <div className="text-right">
+                                            <div className="text-[10px] text-amber-700">
+                                                {hours} ຊມ x{' '}
+                                                {Number(
+                                                    rate_per_hour,
+                                                ).toLocaleString()}
+                                            </div>
+                                            <div className="text-lg font-black">
+                                                {hoursAmount.toLocaleString()}{' '}
+                                                <span className="text-xs">
+                                                    ກີບ
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -389,55 +498,107 @@ const WeekendOTCard: React.FC<{
                     </div>
 
                     {/* Weekend Work Days */}
-                    <div>
-                        <h6 className="font-medium text-gray-700 mb-3">
-                            ມື້ເຮັດວຽກ ເສົາ - ອາທິດ (ເຕັມມື້/ເຄິ່ງມື້)
-                        </h6>
-                        <div className="space-y-3">
+                    <div className="border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+                        {/* Header - Use a slightly different color if you want to distinguish from Hours */}
+                        <div className="bg-[#FFFFFF] px-4 py-3">
+                            <h5 className="font-bold text-[#000005] flex items-center gap-2">
+                                ມື້ເຮັດວຽກ ເສົາ - ອາທິດ (Full/Half Day)
+                            </h5>
+                        </div>
+
+                        <div className="p-4 space-y-4">
+                            {/* Day Quantity Selector */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
                                     ຈຳນວນມື້ (0.5 = ເຄິ່ງມື້)
                                 </label>
-                                <input
-                                    type="number"
-                                    step="0.5"
-                                    min="0"
-                                    value={days}
-                                    onChange={(e) =>
-                                        onDaysChange(e.target.value)
-                                    }
-                                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#D97706] focus:border-transparent"
-                                    placeholder="0"
-                                />
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() =>
+                                            onDaysChange(
+                                                String(
+                                                    Math.max(
+                                                        0,
+                                                        Number(days) - 0.5,
+                                                    ),
+                                                ),
+                                            )
+                                        }
+                                        className="w-12 h-10 flex items-center justify-center bg-gray-50 hover:bg-red-50 text-gray-500 border border-gray-300 rounded-md font-bold text-xl transition-colors"
+                                        type="button"
+                                    >
+                                        −
+                                    </button>
+                                    <input
+                                        type="number"
+                                        value={days}
+                                        onChange={(e) =>
+                                            onDaysChange(e.target.value)
+                                        }
+                                        className="no-spinner flex-1 px-3 py-2 text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-[#E67E22] focus:border-transparent outline-none font-bold text-lg"
+                                        placeholder="0"
+                                    />
+                                    <button
+                                        onClick={() =>
+                                            onDaysChange(
+                                                String(Number(days) + 0.5),
+                                            )
+                                        }
+                                        className="w-12 h-10 flex items-center justify-center bg-gray-50 hover:bg-green-50 text-gray-500 border border-gray-300 rounded-md font-bold text-xl transition-colors"
+                                        type="button"
+                                    >
+                                        +
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Daily Rate Input */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    ອັດຕາລາຍວັນ
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                    ອັດຕາລາຍວັນ (Daily Rate)
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></span>
                                     <input
                                         type="number"
                                         step="0.01"
                                         min="0"
-                                        value={rate_per_day}
+                                        value={
+                                            rate_per_day === 0
+                                                ? ''
+                                                : rate_per_day
+                                        }
                                         onChange={(e) =>
                                             onRatePerDayChange(e.target.value)
                                         }
-                                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#D97706] focus:border-transparent"
+                                        className="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#E67E22] focus:border-transparent outline-none"
                                         placeholder="0.00"
                                     />
+                                    <span className="absolute right-3 top-2 text-gray-400 text-sm italic pointer-events-none">
+                                        ກີບ/ມື້
+                                    </span>
                                 </div>
                             </div>
+
+                            {/* Calculation Result Summary */}
                             {days > 0 && rate_per_day > 0 && (
-                                <div className="p-2 rounded bg-amber-50 border border-amber-200">
-                                    <div className="text-xs text-amber-800">
-                                        <div>
-                                            Work Days: {days} days x
-                                            {rate_per_day.toFixed(2)}
-                                        </div>
-                                        <div className="font-bold mt-1">
-                                            ຍອດລວມ : {daysAmount.toFixed(2)}
+                                <div className="mt-4 p-3 rounded-lg bg-orange-50 border border-orange-200">
+                                    <div className="flex justify-between items-center text-orange-900">
+                                        <span className="text-xs font-medium uppercase text-orange-700">
+                                            ລວມຍອດລາຍວັນ:
+                                        </span>
+                                        <div className="text-right">
+                                            <div className="text-[10px] text-orange-600">
+                                                {days} ມື້ x{' '}
+                                                {Number(
+                                                    rate_per_day,
+                                                ).toLocaleString()}
+                                            </div>
+                                            <div className="text-lg font-black">
+                                                {daysAmount.toLocaleString()}{' '}
+                                                <span className="text-xs font-normal">
+                                                    ກີບ
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -447,17 +608,49 @@ const WeekendOTCard: React.FC<{
                 </div>
 
                 {(hours > 0 || days > 0) && (
-                    <div className="mt-4 p-3 rounded bg-amber-50 border border-amber-300">
-                        <div className="text-sm text-amber-900">
-                            <div className="font-bold mb-1">
-                                Weekend Total: ${totalAmount.toFixed(2)}
+                    <div className="mt-6 p-4 rounded-xl bg-[#FFF8E1] border-2 border-amber-200 shadow-sm">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                                <h4 className="text-amber-900 font-bold text-lg mb-1">
+                                    ລວມເງິນເສົາ-ອາທິດ (Weekend Total)
+                                </h4>
+                                <div className="text-amber-700 text-sm flex flex-wrap gap-x-3 items-center">
+                                    {hours > 0 && (
+                                        <span>
+                                            <span className="font-semibold">
+                                                {hours} ຊມ
+                                            </span>{' '}
+                                            ({hoursAmount.toLocaleString()} ກີບ)
+                                        </span>
+                                    )}
+
+                                    {hours > 0 && days > 0 && (
+                                        <span className="text-amber-400 font-bold text-lg">
+                                            +
+                                        </span>
+                                    )}
+
+                                    {days > 0 && (
+                                        <span>
+                                            <span className="font-semibold">
+                                                {days} ມື້
+                                            </span>{' '}
+                                            ({daysAmount.toLocaleString()} ກີບ)
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <div className="text-xs">
-                                {hours > 0 &&
-                                    `${hours} hrs (${hoursAmount.toFixed(2)})`}
-                                {hours > 0 && days > 0 && ' + '}
-                                {days > 0 &&
-                                    `${days} days (${daysAmount.toFixed(2)})`}
+
+                            <div className="text-right border-t md:border-t-0 border-amber-200 pt-3 md:pt-0">
+                                <span className="block text-xs uppercase tracking-wider text-amber-600 font-bold">
+                                    ຍອດລວມທັງໝົດ
+                                </span>
+                                <span className="text-3xl font-black text-[#1F3A5F]">
+                                    {totalAmount.toLocaleString()}
+                                    <span className="text-sm ml-1 font-semibold text-gray-500 uppercase">
+                                        ກີບ
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -493,19 +686,19 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
                     <Briefcase className="w-5 h-5 text-[#1F3A5F]" />
                     <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                        Employee Information
+                        ຂໍ້ມູນພະນັກງານ
                     </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Employee Name
+                            ຊື່ພະນັກງານ
                         </label>
                         <input
                             type="text"
                             value={`${user.first_name_en} ${user.last_name_en}`}
                             disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                     <div>
@@ -516,23 +709,23 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                             type="text"
                             value={user.email}
                             disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Period
+                            (ເດືອນ - ປີ)ທີ່ຈ່າຍເງິນ
                         </label>
                         <input
                             type="text"
                             value={`${getMonthName(month)} ${year}`}
                             disabled
-                            className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Base Salary
+                            ເງິນເດືອນພື້ນຖານ
                         </label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></span>
@@ -540,7 +733,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                                 type="text"
                                 value={prefillData.user.base_salary.toLocaleString()}
                                 disabled
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded bg-gray-50 text-gray-600"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -554,7 +747,7 @@ export const Step1BasicInfo: React.FC<StepComponentsProps> = ({
                         </h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="border border-gray-200 rounded-xl bg-white p-5 shadow-sm">
+                        <div className="border-none bg-[#f2f2f2] rounded-xl bg-white p-5 shadow-sm">
                             {/* Header */}
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2">
@@ -686,47 +879,52 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
                 </div>
 
                 {/* System OT Summary */}
-                <div className="mb-6 p-4 bg-blue-50 border border-[#1F3A5F] rounded">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="mb-6 p-5 bg-slate-50 rounded-r-lg shadow-sm">
+                    <div className="flex items-center gap-2 mb-4">
                         <Calculator className="w-5 h-5 text-[#1F3A5F]" />
-                        <h4 className="font-medium text-[#1F3A5F]">
+                        <h4 className="font-bold text-[#1F3A5F] uppercase tracking-wide text-sm">
                             OT ທີ່ອະນຸມັດແລ້ວ (System Approved OT)
                         </h4>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <span className="text-gray-700">
-                                ມື້ທຳມະດາ ຈັນ - ສຸກ:
-                            </span>
-                            <span className="ml-2 font-bold text-[#1F3A5F]">
-                                {prefillData.calculated.weekday_ot_hours || 0}{' '}
-                                hours
-                            </span>
-                        </div>
-                        <div>
-                            <span className="text-gray-700">
-                                ມື້ພັກ ເສົາ - ອາທິດ:
-                            </span>
-                            <span className="ml-2 font-bold text-amber-700">
-                                {prefillData.calculated.weekend_ot_hours || 0}{' '}
-                                hours
-                            </span>
-                        </div>
-                    </div>
-                    <div className="mt-2 text-sm text-gray-600">
-                        * OT hours from approved requests
-                    </div>
-                </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Weekday Card */}
+                        <div className="flex justify-between items-center p-3 bg-[#45cc67] border border-gray-100 rounded-md shadow-sm">
+                            <span className="text-[#FFFFFF] text-sm font-medium">
+                                ມື້ທຳມະດາ (Mon-Fri)
+                            </span>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold text-[#FFFFFF]">
+                                    {prefillData.calculated.weekday_ot_hours ||
+                                        0}
+                                </span>
+                                <span className="text-xs text-[#FFFFFF] font-normal">
+                                    hrs
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Weekend Card */}
+                        <div className="flex justify-between items-center p-3 bg-[#ff5a3d] border border-gray-100 rounded-md shadow-sm">
+                            <span className="text-[#FFFFFF] text-sm font-medium">
+                                ມື້ພັກ (Sat-Sun)
+                            </span>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold text-[#FFFFFF]">
+                                    {prefillData.calculated.weekend_ot_hours ||
+                                        0}
+                                </span>
+                                <span className="text-xs text-[#ffffff] font-normal">
+                                    hrs
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Summary Footer */}
+                </div>
                 {/* Manual OT Entry Section */}
                 <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-200">
-                        <Plus className="w-5 h-5 text-[#1F3A5F]" />
-                        <h4 className="text-base font-semibold text-gray-800">
-                            ເພີ່ມຊົ່ວໂມງເຮັດວຽກ OT
-                        </h4>
-                    </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <WeekdayOTCard
                             hours={manualOT.weekday.hours}
@@ -774,19 +972,44 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
                     {/* Summary and Action Buttons */}
                     <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 border border-gray-200 rounded">
                         <div>
-                            <h5 className="font-bold text-gray-700">
-                                Manual OT Summary
+                            <h5 className="font-bold text-[#1F3A5F]">
+                                ສະຫຼຸບ OT ທີ່ເພີ່ມມາ
                             </h5>
-                            <div className="text-sm text-gray-600 mt-1">
-                                <div>Weekday: {manualOT.weekday.hours} hrs</div>
-                                <div>
-                                    Weekend (hrs): {manualOT.weekend.hours} hrs
+                            <div className="text-sm text-gray-600 mt-2 space-y-2 border-t border-gray-100 pt-3">
+                                {/* Weekday Row */}
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-500">
+                                        ມື້ທຳມະດາ:
+                                    </span>
+                                    <span className="font-semibold text-gray-800">
+                                        {manualOT.weekday.hours} ຊົ່ວໂມງ
+                                    </span>
                                 </div>
-                                <div>
-                                    Weekend (days): {manualOT.weekend.days} days
+
+                                {/* Weekend Hours Row */}
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-500">
+                                        ມື້ພັກ (ຊົ່ວໂມງ):
+                                    </span>
+                                    <span className="font-semibold text-gray-800">
+                                        {manualOT.weekend.hours} ຊົ່ວໂມງ
+                                    </span>
                                 </div>
-                                <div className="font-bold mt-1 text-[#1F3A5F]">
-                                    Total: {totalAmount.toFixed(2)}
+
+                                {/* Weekend Days Row */}
+                                <div className="flex justify-between items-center text-amber-700">
+                                    <span>ມື້ພັກ (ຈຳນວນມື້):</span>
+                                    <span className="font-semibold">
+                                        {manualOT.weekend.days} ມື້
+                                    </span>
+                                </div>
+
+                                {/* Total Amount Row */}
+                                <div className="flex justify-between items-center font-bold mt-3 pt-2 border-t border-dashed border-gray-300 text-[#1F3A5F] text-base">
+                                    <span>ລວມເງິນທັງໝົດ:</span>
+                                    <span className="text-lg">
+                                        {totalAmount.toLocaleString()} ກີບ
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -811,7 +1034,7 @@ export const Step2OtRates: React.FC<StepComponentsProps> = ({
                                     (manualOT.weekend.days > 0 &&
                                         manualOT.weekend.rate_per_day === 0)
                                 }
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#1F3A5F] rounded hover:bg-[#2d4a6f] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#45cc67] rounded hover:bg-[#3aa85a] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             >
                                 <Plus className="w-4 h-4" />
                                 Add OT
@@ -845,7 +1068,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-[#1F3A5F]">
                     <DollarSign className="w-5 h-5 text-[#1F3A5F]" />
                     <h3 className="text-lg font-semibold text-[#1F3A5F]">
-                        Additional Income
+                        ລາຍໄດ້ເພີ່ມເຕີມ
                     </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -859,7 +1082,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="bonus"
                                 value={formData.bonus}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
@@ -873,13 +1096,13 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="commission"
                                 value={formData.commission}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Holiday Allowance
+                            ເງິນອຸດໜູນວັນພັກປະຈຳປີ
                         </label>
                         <div className="relative">
                             <input
@@ -887,13 +1110,13 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="money_not_spent_on_holidays"
                                 value={formData.money_not_spent_on_holidays}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Other Income
+                            ລາຍຮັບອື່ນໆ
                         </label>
                         <div className="relative">
                             <input
@@ -901,13 +1124,13 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                                 name="other_income"
                                 value={formData.other_income}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
                 </div>
-                <div className="mt-4 p-3 bg-blue-50 border border-[#1F3A5F] rounded">
-                    <p className="text-sm text-[#1F3A5F] font-medium">
+                <div className="mt-4 p-3 bg-blue-50 border border-[#f2f2f2f2] rounded">
+                    <p className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]">
                         Total Additional Income:
                         {(
                             formData.bonus +
@@ -926,20 +1149,116 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
     formData,
     onInputChange,
     calculateTotalDeductions,
+    prefillData,
 }) => {
+    // ✅ เปลี่ยนจากคำนวณอัตโนมัติเป็นรับค่า rate ที่ป้อนเข้ามา
+    const calculateCutOffTotal = () => {
+        // ใช้ cut_off_pay_amount เป็น rate ต่อวัน
+        return formData.cut_off_pay_days * formData.cut_off_pay_amount
+    }
+
+    // ✅ แก้ไขฟังก์ชันนี้ - ไม่ต้องคำนวณอัตโนมัติแล้ว
+    const handleCutOffDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const days = parseFloat(e.target.value) || 0
+        onInputChange(e) // อัพเดทจำนวนวัน
+        // ไม่ต้องคำนวณและอัพเดทจำนวนเงินอัตโนมัติอีกต่อไป
+    }
+
     return (
         <div className="min-h-[600px]">
             <div>
                 <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-red-600">
                     <UserX className="w-5 h-5 text-red-600" />
                     <h3 className="text-lg font-semibold text-red-600">
-                        Deductions
+                        Deductions (ລາຍການຫັກ)
                     </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Cut off pay for days off work */}
+                    <div className="col-span-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center gap-2 mb-3">
+                            <CalendarX className="w-5 h-5 text-red-600" />
+                            <h4 className="font-semibold text-red-700">
+                                ຫັກເງິນເດືອນຈາກການຂາດງານ
+                            </h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* ✅ Input 1: จำนวนวันที่ขาด */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    ຈຳນວນວັນທີ່ຂາດງານ (Days Off Work)
+                                </label>
+                                <input
+                                    type="number"
+                                    name="cut_off_pay_days"
+                                    value={formData.cut_off_pay_days}
+                                    onChange={handleCutOffDaysChange}
+                                    min="0"
+                                    step="0.5"
+                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#FFFFFF] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                    placeholder="0"
+                                />
+                                <p className="mt-1 text-xs text-gray-500">
+                                    ສາມາດໃສ່ 0.5 ສຳລັບເຄິ່ງວັນ
+                                </p>
+                            </div>
+
+                            {/* ✅ Input 2: อัตราการหักต่อวัน (ป้อนเอง) */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    ອັດຕາການຫັກຕໍ່ວັນ (Cut Off Rate per Day)
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        name="cut_off_pay_amount"
+                                        value={formData.cut_off_pay_amount}
+                                        onChange={onInputChange}
+                                        min="0"
+                                        className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#FFFFFF] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    ປ້ອນຈຳນວນເງິນທີ່ຕ້ອງການຫັກຕໍ່ 1 ວັນ
+                                    {prefillData && (
+                                        <span className="block font-medium text-gray-600 mt-1">
+                                            ແນະນຳ:
+                                            {(
+                                                prefillData.user.base_salary /
+                                                30
+                                            ).toLocaleString()}
+                                            /ວັນ
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* ✅ Summary Box - แสดงยอดรวมที่หัก */}
+                        {formData.cut_off_pay_days > 0 &&
+                            formData.cut_off_pay_amount > 0 && (
+                                <div className="mt-3 p-3 bg-white border border-red-300 rounded">
+                                    <div className="text-sm text-red-700">
+                                        <span className="font-medium">
+                                            ສະຫຼຸບ:
+                                        </span>{' '}
+                                        ຫັກເງິນ {formData.cut_off_pay_days} ວັນ
+                                        × ₭
+                                        {formData.cut_off_pay_amount.toLocaleString()}
+                                        /ວັນ =
+                                        <span className="font-bold ml-1 text-lg">
+                                            {calculateCutOffTotal().toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                    </div>
+
+                    {/* Office Expenses */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Office Expenses
+                            Office Expenses (ຄ່າໃຊ້ຈ່າຍສຳນັກງານ)
                         </label>
                         <div className="relative">
                             <input
@@ -947,13 +1266,15 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                 name="office_expenses"
                                 value={formData.office_expenses}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
+
+                    {/* Social Security */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Social Security
+                            Social Security (ປະກັນສັງຄົມ)
                         </label>
                         <div className="relative">
                             <input
@@ -961,13 +1282,15 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                 name="social_security"
                                 value={formData.social_security}
                                 onChange={onInputChange}
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
                     </div>
+
+                    {/* Working Days */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Working Days
+                            Working Days (ຈຳນວນວັນເຮັດວຽກ)
                         </label>
                         <input
                             type="number"
@@ -976,31 +1299,65 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                             onChange={onInputChange}
                             min="0"
                             max="31"
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                            Number of days worked this month
+                            ຈຳນວນວັນທີ່ເຮັດວຽກໃນເດືອນນີ້
                         </p>
                     </div>
+
+                    {/* Notes */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Notes
+                            Notes (ໝາຍເຫດ)
                         </label>
                         <textarea
                             name="notes"
                             value={formData.notes}
                             onChange={onInputChange}
                             rows={3}
-                            placeholder="Additional notes or comments..."
+                            placeholder="ໝາຍເຫດເພີ່ມເຕີມ..."
                             className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#1F3A5F] focus:border-transparent resize-none"
                         />
                     </div>
                 </div>
-                <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded">
-                    <p className="text-sm text-red-700 font-medium">
-                        Total Deductions:
-                        {calculateTotalDeductions().toLocaleString()}
-                    </p>
+
+                {/* Total Deductions Summary */}
+                <div className="mt-4 p-4 bg-red-50 border border-red-300 rounded">
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-700">
+                                ຄ່າໃຊ້ຈ່າຍສຳນັກງານ:
+                            </span>
+                            <span className="font-medium">
+                                {formData.office_expenses.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-700">ປະກັນສັງຄົມ:</span>
+                            <span className="font-medium">
+                                {formData.social_security.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-700">
+                                ຫັກເງິນຈາກການຂາດງານ:
+                            </span>
+                            <span className="font-medium text-red-600">
+                                {calculateCutOffTotal().toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="border-t border-red-300 pt-2 mt-2">
+                            <div className="flex justify-between">
+                                <span className="font-bold text-red-700">
+                                    Total Deductions:
+                                </span>
+                                <span className="font-bold text-red-700 text-lg">
+                                    {calculateTotalDeductions().toLocaleString()}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1018,6 +1375,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
     const [svgRef, setSvgRef] = useState<HTMLDivElement | null>(null)
     const [isExporting, setIsExporting] = useState(false)
     const [isSendingEmail, setIsSendingEmail] = useState(false)
+    const [isCapturing, setIsCapturing] = useState(false) // ✅ เพิ่ม
     const [emailStatus, setEmailStatus] = useState<{
         success: boolean
         message: string
@@ -1053,14 +1411,16 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
         ot: totalOTAmount,
         bonus: formData.bonus,
         holidayAllowance: formData.money_not_spent_on_holidays,
-        officeExpenses: 0,
+        officeExpenses: formData.office_expenses,
         other: formData.other_income,
         commission: formData.commission,
     }
 
-    // Calculate deductions
+    // Calculate deductions - ✅ แก้ไข: คำนวณยอดรวมที่ถูกต้อง
+    const cutOffTotal = formData.cut_off_pay_days * formData.cut_off_pay_amount
+
     const deductions = {
-        absence: 0,
+        absence: cutOffTotal, // ✅ ใช้ยอดรวมที่คำนวณแล้ว
         socialSecurity: formData.social_security,
     }
 
@@ -1094,6 +1454,11 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
 
         try {
             setIsExporting(true)
+            setIsCapturing(true) // ✅ เพิ่ม
+
+            // รอให้ DOM update
+            await new Promise((resolve) => setTimeout(resolve, 100))
+
             const html2canvas = (await import('html2canvas')).default
 
             const canvas = await html2canvas(svgRef, {
@@ -1115,20 +1480,22 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
             console.error('Failed to export PNG:', error)
             alert('Failed to export PNG. Please try again.')
         } finally {
+            setIsCapturing(false) // ✅ เพิ่ม
             setIsExporting(false)
         }
     }
 
-    // Function to send email with PNG attachment
-    // Function to send email with PNG attachment - แก้ไขเวอร์ชันนี้
-    // ในฟังก์ชัน sendEmailWithPNG ของ Step5Summary
-    // ใน Step5Summary component
+    // ✅ แก้ไข Function to send email
     const sendEmailWithPNG = async () => {
         if (!svgRef) return
 
         try {
             setIsSendingEmail(true)
             setEmailStatus(null)
+            setIsCapturing(true) // ✅ เปิด capturing mode
+
+            // รอให้ DOM update
+            await new Promise((resolve) => setTimeout(resolve, 100))
 
             // Convert to image
             const html2canvas = (await import('html2canvas')).default
@@ -1137,7 +1504,13 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
+                ignoreElements: (element) => {
+                    // Ignore elements that might cause issues
+                    return element.classList?.contains('no-export')
+                },
             })
+
+            setIsCapturing(false) // ✅ ปิด capturing mode
 
             // Convert to JPEG
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
@@ -1199,66 +1572,89 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                 message: `❌ ${error.message || 'Failed to send email'}`,
             })
         } finally {
+            setIsCapturing(false) // ✅ ตรวจสอบให้แน่ใจว่าปิด
             setIsSendingEmail(false)
         }
     }
 
-    // ฟังก์ชันสำหรับส่ง email แบบแบ่ง chunks (ถ้าจำเป็น)
-    const sendEmailInChunks = async (chunks: string[], totalSize: number) => {
-        try {
-            // ส่ง chunk แรกกับ metadata
-            const firstChunkData = {
-                to: userEmail,
-                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year} (Part 1/2)`,
-                employeeName: userName,
-                month: getMonthName(formData.month),
-                year: formData.year,
-                baseSalary: prefillData.user.base_salary,
-                netSalary,
-                image: chunks[0],
-                fileName: `salary-summary-part1.jpg`,
-                isChunked: true,
-                totalChunks: 2,
-                currentChunk: 1,
-            }
-
-            const response1 = await fetch('/api/salary/send-email-chunk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(firstChunkData),
-            })
-
-            if (!response1.ok) throw new Error('Failed to send first chunk')
-
-            // ส่ง chunk ที่สอง
-            const secondChunkData = {
-                to: userEmail,
-                subject: `Salary Summary - ${getMonthName(formData.month)} ${formData.year} (Part 2/2)`,
-                image: chunks[1],
-                fileName: `salary-summary-part2.jpg`,
-                isChunked: true,
-                totalChunks: 2,
-                currentChunk: 2,
-            }
-
-            const response2 = await fetch('/api/salary/send-email-chunk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(secondChunkData),
-            })
-
-            if (!response2.ok) throw new Error('Failed to send second chunk')
-
-            setEmailStatus({
-                success: true,
-                message: `✅ Salary summary has been sent in 2 parts (${totalSize.toFixed(2)}MB total)`,
-            })
-        } catch (error: any) {
-            throw new Error(`Chunked sending failed: ${error.message}`)
-        }
-    }
     return (
         <div className="min-h-[600px]">
+            {/* ✅ เพิ่ม style tag สำหรับ override oklch colors */}
+            <style jsx>{`
+                .export-mode,
+                .export-mode * {
+                    color: rgb(17, 24, 39) !important;
+                }
+
+                .export-mode .text-white {
+                    color: rgb(255, 255, 255) !important;
+                }
+
+                .export-mode .text-red-600 {
+                    color: rgb(220, 38, 38) !important;
+                }
+
+                .export-mode .text-red-700 {
+                    color: rgb(185, 28, 28) !important;
+                }
+
+                .export-mode .text-green-600 {
+                    color: rgb(22, 163, 74) !important;
+                }
+
+                .export-mode .text-gray-600 {
+                    color: rgb(75, 85, 99) !important;
+                }
+
+                .export-mode .text-gray-700 {
+                    color: rgb(55, 65, 81) !important;
+                }
+
+                .export-mode .text-gray-800 {
+                    color: rgb(31, 41, 55) !important;
+                }
+
+                .export-mode .bg-white {
+                    background-color: rgb(255, 255, 255) !important;
+                }
+
+                .export-mode .bg-gray-50 {
+                    background-color: rgb(249, 250, 251) !important;
+                }
+
+                .export-mode .bg-gray-100 {
+                    background-color: rgb(243, 244, 246) !important;
+                }
+
+                .export-mode .bg-blue-50 {
+                    background-color: rgb(239, 246, 255) !important;
+                }
+
+                .export-mode .bg-green-50 {
+                    background-color: rgb(240, 253, 244) !important;
+                }
+
+                .export-mode [class*='bg-[#45cc67]'] {
+                    background-color: rgb(69, 204, 103) !important;
+                }
+
+                .export-mode [class*='bg-[#1F3A5F]'] {
+                    background-color: rgb(31, 58, 95) !important;
+                }
+
+                .export-mode [class*='text-[#1F3A5F]'] {
+                    color: rgb(31, 58, 95) !important;
+                }
+
+                .export-mode .border-gray-200 {
+                    border-color: rgb(229, 231, 235) !important;
+                }
+
+                .export-mode .border-gray-300 {
+                    border-color: rgb(209, 213, 219) !important;
+                }
+            `}</style>
+
             <div>
                 {/* Header with buttons */}
                 <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-[#1F3A5F]">
@@ -1332,10 +1728,10 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                     </div>
                 </div>
 
-                {/* Salary Summary Content */}
+                {/* ✅ Salary Summary Content - เพิ่ม export-mode class */}
                 <div
                     ref={setSvgRef}
-                    className="border border-gray-300 rounded-lg p-6 bg-white"
+                    className={`border border-gray-300 rounded-lg p-6 bg-white ${isCapturing ? 'export-mode' : ''}`}
                 >
                     {/* Header */}
                     <div className="text-center mb-8 border-b pb-4">
@@ -1350,7 +1746,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                     {/* Employee Information */}
                     <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <h3 className="font-bold text-[#1F3A5F] mb-3">
-                            Employee Information
+                            ຂໍ້ມູນພື້ນພະນັກງານ
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -1367,7 +1763,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                             </div>
                             <div>
                                 <span className="text-gray-600">
-                                    Base Salary:
+                                    ເງິນເດືອນພື້ນຖານ:
                                 </span>
                                 <span className="ml-2 font-bold text-[#1F3A5F]">
                                     {formatCurrency(
@@ -1377,10 +1773,10 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                             </div>
                             <div>
                                 <span className="text-gray-600">
-                                    Working Days:
+                                    ມື້ເຮັດວຽກ:
                                 </span>
                                 <span className="ml-2 font-medium">
-                                    {formData.working_days || 0} days
+                                    {formData.working_days || 0} ມື້
                                 </span>
                             </div>
                         </div>
@@ -1388,41 +1784,57 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
 
                     {/* Salary Table */}
                     <div className="overflow-x-auto mb-8">
-                        <table className="min-w-full border border-gray-300 text-sm">
+                        <table className="min-w-full border text-sm text-gray-900">
                             <thead>
-                                <tr className="bg-[#1F3A5F] text-white">
-                                    <th className="p-3 border text-left font-medium">
-                                        Income
+                                <tr className="bg-[#45cc67] text-white">
+                                    <th className="p-3 border text-left font-bold">
+                                        ລາຍຮັບ
                                     </th>
-                                    <th className="p-3 border text-left font-medium">
-                                        Additional Income
+                                    <th className="p-3 border text-left font-bold">
+                                        ລາຍຮັບເພີ່ມເຕີມ
                                     </th>
-                                    <th className="p-3 border text-left font-medium">
-                                        Amount
+                                    <th className="p-3 border text-left font-bold">
+                                        ຈຳນວນເງິນ
                                     </th>
-                                    <th className="p-3 border text-left font-medium">
-                                        Deductions
+                                    <th className="p-3 border text-left font-bold">
+                                        ລາຍການຫັກ
                                     </th>
-                                    <th className="p-3 border text-left font-medium">
-                                        Amount
+                                    <th className="p-3 border text-left font-bold">
+                                        ຈຳນວນເງິນ
                                     </th>
-                                    <th className="p-3 border text-left font-medium">
-                                        Payment Date
+                                    <th className="p-3 border text-left font-bold">
+                                        ວັນທີຈ່າຍ
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {/* Base Salary Row */}
-                                <tr>
-                                    <td className="p-3 border">Base Salary</td>
-                                    <td className="p-3 border">-</td>
+                                <tr className="bg-white text-gray-800">
+                                    <td className="p-3 border font-medium">
+                                        ເງິນເດືອນພື້ນຖານ
+                                    </td>
+                                    <td className="p-3 border text-center text-gray-400">
+                                        -
+                                    </td>
                                     <td className="p-3 border font-bold">
                                         {formatCurrency(
                                             prefillData.user.base_salary,
                                         )}
                                     </td>
-                                    <td className="p-3 border">Absence</td>
-                                    <td className="p-3 border">-</td>
+                                    <td className="p-3 border">
+                                        ມື້ຂາດວຽກ{' '}
+                                        {formData.cut_off_pay_days > 0 && (
+                                            <>
+                                                ({formData.cut_off_pay_days} ມື້
+                                                {' × '}
+                                                {formData.cut_off_pay_amount.toLocaleString()}
+                                                /ມື້)
+                                            </>
+                                        )}
+                                    </td>
+                                    <td className="p-3 border text-red-600">
+                                        {formatCurrency(cutOffTotal)}
+                                    </td>
                                     <td
                                         className="p-3 border font-bold text-center"
                                         rowSpan={7}
@@ -1433,24 +1845,30 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
 
                                 {/* Additional Income Rows */}
                                 <tr>
-                                    <td className="p-3 border" rowSpan={6}>
-                                        Additional Income
+                                    <td
+                                        className="p-3 border bg-gray-50 font-medium"
+                                        rowSpan={7}
+                                    >
+                                        ລາຍໄດ້ອື່ນໆ
                                     </td>
-                                    <td className="p-3 border">Fuel Costs</td>
+                                    <td className="p-3 border">ຄ່ານ້ຳມັນ</td>
                                     <td className="p-3 border">
                                         {formatCurrency(additionalIncome.fuel)}
                                     </td>
                                     <td className="p-3 border" rowSpan={2}>
-                                        Social Security
+                                        ປະກັນສັງຄົມ
                                     </td>
-                                    <td className="p-3 border" rowSpan={2}>
+                                    <td
+                                        className="p-3 border text-red-600"
+                                        rowSpan={2}
+                                    >
                                         {formatCurrency(
                                             deductions.socialSecurity,
                                         )}
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td className="p-3 border">Commission</td>
+                                    <td className="p-3 border">ຄ່າຄອມມິດຊັນ</td>
                                     <td className="p-3 border">
                                         {formatCurrency(
                                             additionalIncome.commission,
@@ -1459,7 +1877,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                 </tr>
                                 <tr>
                                     <td className="p-3 border">
-                                        Overtime (OT)
+                                        ຄ່າລ່ວງເວລາ (OT)
                                     </td>
                                     <td className="p-3 border">
                                         {formatCurrency(additionalIncome.ot)}
@@ -1467,7 +1885,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                     <td className="p-3 border" colSpan={2}></td>
                                 </tr>
                                 <tr>
-                                    <td className="p-3 border">Bonus</td>
+                                    <td className="p-3 border">ເງິນໂບນັດ</td>
                                     <td className="p-3 border">
                                         {formatCurrency(additionalIncome.bonus)}
                                     </td>
@@ -1475,7 +1893,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                 </tr>
                                 <tr>
                                     <td className="p-3 border">
-                                        Holiday Allowance
+                                        ຄ່າເຮັດວຽກມື້ພັກ
                                     </td>
                                     <td className="p-3 border">
                                         {formatCurrency(
@@ -1485,7 +1903,18 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                     <td className="p-3 border" colSpan={2}></td>
                                 </tr>
                                 <tr>
-                                    <td className="p-3 border">Other</td>
+                                    <td className="p-3 border">
+                                        ຄ່າໃຊ້ຈ່າຍຫ້ອງການ
+                                    </td>
+                                    <td className="p-3 border">
+                                        {formatCurrency(
+                                            additionalIncome.officeExpenses,
+                                        )}
+                                    </td>
+                                    <td className="p-3 border" colSpan={2}></td>
+                                </tr>
+                                <tr>
+                                    <td className="p-3 border">ອື່ນໆ</td>
                                     <td className="p-3 border">
                                         {formatCurrency(additionalIncome.other)}
                                     </td>
@@ -1493,41 +1922,38 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                                 </tr>
 
                                 {/* Totals Row */}
-                                <tr className="bg-gray-50 font-bold">
+                                <tr className="bg-gray-100 font-bold text-[#1F3A5F]">
                                     <td
                                         className="p-3 border text-right"
                                         colSpan={2}
                                     >
-                                        Total Income:
+                                        ລວມລາຍຮັບທັງໝົດ:
                                     </td>
                                     <td className="p-3 border">
                                         {formatCurrency(totalIncome)}
                                     </td>
-                                    <td
-                                        className="p-3 border text-right"
-                                        colSpan={1}
-                                    >
-                                        Total Deductions:
+                                    <td className="p-3 border text-right">
+                                        ລວມລາຍການຫັກ:
                                     </td>
-                                    <td className="p-3 border">
+                                    <td className="p-3 border text-red-600">
                                         {formatCurrency(totalDeductions)}
                                     </td>
                                     <td className="p-3 border"></td>
                                 </tr>
 
                                 {/* Net Salary Row */}
-                                <tr className="bg-[#1F3A5F] text-white font-bold">
+                                <tr className="bg-[#45cc67] text-white font-bold">
                                     <td
                                         className="p-4 border text-center text-lg"
                                         colSpan={4}
                                     >
-                                        NET SALARY:
+                                        ເງິນເດືອນສຸດທິ (NET SALARY)
                                     </td>
                                     <td
                                         className="p-4 border text-center text-xl"
                                         colSpan={2}
                                     >
-                                        {formatCurrency(netSalary)}
+                                        {formatCurrency(netSalary)} ກີບ
                                     </td>
                                 </tr>
                             </tbody>
@@ -1537,41 +1963,40 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                     {/* Additional Information */}
                     <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                         <h3 className="font-bold text-[#1F3A5F] mb-3">
-                            Additional Information
+                            ຂໍ້ມູນເພີ່ມເຕີມ
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <span className="text-gray-600">
-                                    Working Days:
+                                    ມື້ເຮັດວຽກ:
                                 </span>
                                 <span className="ml-2 font-medium">
-                                    {formData.working_days || 0} days
+                                    {formData.working_days || 0} ມື້
                                 </span>
                             </div>
                             <div>
                                 <span className="text-gray-600">
-                                    Vacation Days Left:
+                                    ວັນພັກທີ່ເຫຼືອ:
                                 </span>
                                 <span className="ml-2 font-medium">
                                     {prefillData.calculated
                                         .remaining_vacation_days || 0}{' '}
-                                    days
+                                    ມື້
                                 </span>
                             </div>
                             <div>
                                 <span className="text-gray-600">OT Hours:</span>
                                 <span className="ml-2 font-medium">
-                                    {prefillData.calculated.ot_hours || 0} hours
+                                    {prefillData.calculated.ot_hours || 0}{' '}
+                                    ຊົ່ວໂມງ
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-600">
-                                    Day Off Days:
-                                </span>
+                                <span className="text-gray-600">ມື້ພັກ:</span>
                                 <span className="ml-2 font-medium">
                                     {prefillData.calculated
                                         .day_off_days_this_month || 0}{' '}
-                                    d
+                                    ມື້
                                 </span>
                             </div>
                         </div>
