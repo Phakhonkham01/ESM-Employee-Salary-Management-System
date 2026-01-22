@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { updateRequest } from '@/services/User_Page/request_api'
 import { RequestItem } from './UserOtFieldWorkRequests'
+import DatePicker from 'react-datepicker'
+import Swal from 'sweetalert2'
+import 'react-datepicker/dist/react-datepicker.css'
 
 type Props = {
   open: boolean
@@ -18,7 +21,7 @@ const EditRequestModule = ({
   /* =====================
      State
   ===================== */
-  const [date, setDate] = useState('')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [startHour, setStartHour] = useState('08')
   const [startMinute, setStartMinute] = useState('00')
   const [endHour, setEndHour] = useState('17')
@@ -32,7 +35,9 @@ const EditRequestModule = ({
   useEffect(() => {
     if (!item || !open) return
 
-    setDate(item.date.split('T')[0])
+    // Parse date string to Date object
+    const dateStr = item.date.split('T')[0]
+    setSelectedDate(new Date(dateStr))
 
     const [sh, sm] = item.start_hour.split(':')
     const [eh, em] = item.end_hour.split(':')
@@ -47,6 +52,22 @@ const EditRequestModule = ({
   }, [item, open])
 
   /* =====================
+     Date restrictions
+  ===================== */
+  const getCurrentMonthRange = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth()
+    
+    const minDate = new Date(year, month, 1)
+    const maxDate = new Date(year, month + 1, 0)
+    
+    return { minDate, maxDate }
+  }
+
+  const { minDate, maxDate } = getCurrentMonthRange()
+
+  /* =====================
      Helpers
   ===================== */
   const toTimeString = (hour: string, minute: string) =>
@@ -55,42 +76,72 @@ const EditRequestModule = ({
   const toMinutes = (h: string, m: string) =>
     Number(h) * 60 + Number(m)
 
+  const formatDateToString = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   /* =====================
-     Submit
+    Submit
   ===================== */
   const handleSubmit = async () => {
-    if (!item) return
+    if (!item || !selectedDate) return
 
     const start = toMinutes(startHour, startMinute)
     const end = toMinutes(endHour, endMinute)
 
     if (end <= start) {
-      alert('End time must be later than start time')
+      Swal.fire({
+        icon: 'error',
+        title: 'ຜິດພາດ',
+        text: 'ເວລາສິ້ນສຸດຕ້ອງຫຼັງຈາກເວລາເລີ່ມ',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
     if (item.title === 'FIELD_WORK') {
       const fuelNumber = Number(fuel)
       if (!fuel || isNaN(fuelNumber) || fuelNumber <= 0) {
-        alert('Please enter a valid fuel price')
+        Swal.fire({
+          icon: 'error',
+          title: 'ຜິດພາດ',
+          text: 'ກະລຸນາໃສ່ຄ່ານ້ຳມັນທີ່ຖືກຕ້ອງ',
+          confirmButtonColor: '#2563eb',
+        })
         return
       }
     }
 
     try {
       await updateRequest(item._id, {
-        date,
+        date: formatDateToString(selectedDate),
         start_hour: toTimeString(startHour, startMinute),
         end_hour: toTimeString(endHour, endMinute),
         fuel: item.title === 'FIELD_WORK' ? Number(fuel) : 0,
         reason,
       })
 
+      Swal.fire({
+        icon: 'success',
+        title: 'ແກ້ໄຂສຳເລັດ',
+        text: 'ບັນທຶກຂໍ້ມູນສຳເລັດແລ້ວ',
+        confirmButtonColor: '#2563eb',
+        timer: 2000,
+      })
+
       onSaved()
       onClose()
     } catch (error) {
       console.error(error)
-      alert('Failed to update request')
+      Swal.fire({
+        icon: 'error',
+        title: 'ຜິດພາດ',
+        text: 'ບໍ່ສາມາດອັບເດດຂໍ້ມູນໄດ້',
+        confirmButtonColor: '#2563eb',
+      })
     }
   }
 
@@ -115,13 +166,16 @@ const EditRequestModule = ({
           {/* Date */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ລົບ
+              ວັນທີ
             </label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+            <DatePicker
+              selected={selectedDate}
+              onChange={(date: Date | null) => setSelectedDate(date)}
+              minDate={minDate}
+              maxDate={maxDate}
+              dateFormat="dd/MM/yyyy"
               className="w-full rounded-lg border px-3 py-2 text-sm"
+              placeholderText="ເລືອກວັນທີ"
             />
           </div>
 
@@ -154,7 +208,7 @@ const EditRequestModule = ({
           {/* End Time */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ຮອດ
+              ເວລາສິ້ນສຸດ
             </label>
             <div className="flex gap-2 items-center">
               <input
@@ -196,7 +250,7 @@ const EditRequestModule = ({
           {/* Reason */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ເລື່ອງ
+              ເຫດຜົນ
             </label>
             <textarea
               rows={3}
@@ -211,13 +265,13 @@ const EditRequestModule = ({
         <div className="flex justify-end gap-3 mt-8">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-100 rounded-lg"
+            className="px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
           >
             ຍົກເລິກ
           </button>
           <button
             onClick={handleSubmit}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg"
+            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             ບັນທຶກ
           </button>

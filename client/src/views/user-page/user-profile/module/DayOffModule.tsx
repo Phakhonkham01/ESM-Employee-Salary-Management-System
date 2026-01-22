@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
+import Swal from 'sweetalert2'
 
 import { getSupervisors, Supervisor } from '@/services/User_Page/user_api'
 import { createDayOffRequest } from '@/services/User_Page/day_off_request_api'
@@ -51,7 +52,15 @@ const DayOffModule = ({ open, onClose }: Props) => {
 
     getSupervisors()
       .then((res) => setSupervisors(res.supervisors))
-      .catch(console.error)
+      .catch((error) => {
+        console.error(error)
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load supervisors',
+          confirmButtonColor: '#2563eb',
+        })
+      })
   }, [open])
 
   /* =====================
@@ -108,27 +117,52 @@ const DayOffModule = ({ open, onClose }: Props) => {
   ===================== */
   const handleSubmit = async () => {
     if (!loggedUser?._id) {
-      alert('User not logged in')
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'User not logged in',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
     if (!supervisorId) {
-      alert('Please select a supervisor')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Information',
+        text: 'Please select a supervisor',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
     if (!startDate) {
-      alert('Please select start date')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Information',
+        text: 'Please select start date',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
     if (dayOffType === 'FULL_DAY' && !endDate) {
-      alert('Please select end date')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Information',
+        text: 'Please select end date',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
     if (!title.trim()) {
-      alert('Please enter a reason')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Information',
+        text: 'Please enter a reason',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
@@ -137,7 +171,12 @@ const DayOffModule = ({ open, onClose }: Props) => {
       role === 'Admin' ? employeeId : loggedUser._id
 
     if (!targetEmployeeId) {
-      alert('Please select an employee')
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Information',
+        text: 'Please select an employee',
+        confirmButtonColor: '#2563eb',
+      })
       return
     }
 
@@ -146,12 +185,22 @@ const DayOffModule = ({ open, onClose }: Props) => {
 
     if (dayOffType === 'FULL_DAY') {
       if (!endDate) {
-        alert('Please select end date')
+        Swal.fire({
+          icon: 'warning',
+          title: 'Missing Information',
+          text: 'Please select end date',
+          confirmButtonColor: '#2563eb',
+        })
         return
       }
       
       if (endDate < startDate) {
-        alert('End date must be later than or equal to start date')
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Date Range',
+          text: 'End date must be later than or equal to start date',
+          confirmButtonColor: '#2563eb',
+        })
         return
       }
 
@@ -175,10 +224,23 @@ const DayOffModule = ({ open, onClose }: Props) => {
         title,
       })
 
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Day off request submitted successfully',
+        confirmButtonColor: '#2563eb',
+        timer: 2000,
+      })
+
       onClose()
     } catch (error) {
       console.error(error)
-      alert('Failed to submit day off request')
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed',
+        text: 'Failed to submit day off request',
+        confirmButtonColor: '#2563eb',
+      })
     }
   }
 
