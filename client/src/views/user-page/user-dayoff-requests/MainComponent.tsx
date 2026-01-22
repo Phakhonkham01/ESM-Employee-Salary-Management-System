@@ -65,8 +65,9 @@ const MainComponent: React.FC = () => {
             <UserDayOffRequest
                 dayOffs={dayOffs}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
-            />
+                onDelete={handleDelete} refreshRequests={function (): void {
+                    throw new Error('Function not implemented.')
+                } }            />
 
             <EditDayOffModal
                 open={openEdit}

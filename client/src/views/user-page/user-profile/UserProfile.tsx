@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react'
 import RequestModule from './module/RequestModule'
 import DayOffModule from './module/DayOffModule'
 import { getAllDayOffRequests, type DayOffRequest } from '@/services/Day_off_api/api'
+import { InfoRow } from './HelperComponents'
 import {
     MdEmail,
     MdCake,
     MdOutlineWork,
     MdOutlineCalendarToday,
-    MdOutlineAccessTime,
     MdOutlineDashboard,
     MdOutlineReceipt,
 } from 'react-icons/md'
@@ -47,7 +47,6 @@ import {
     CheckCircle,
     Clock,
     XCircle,
-    Trash2,
     Calendar,
     TrendingDown,
     DollarSign,
@@ -160,6 +159,17 @@ const UserDashboard = ({ user }: Props) => {
     // Day off requests state
     const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
     const [loadingDayOffs, setLoadingDayOffs] = useState(false)
+    // Stats state
+    const [stats, setStats] = useState<DashboardStats>({
+        totalRequests: 0,
+        acceptedRequests: 0,
+        pendingRequests: 0,
+        remainingDayOffs: 15,
+        totalOTHours: 42,
+        rejectedRequests: 0
+    })
+
+    console.log('--------------->', dayOffRequests);
 
     // Fetch day off requests
     const fetchDayOffRequests = async () => {
@@ -167,25 +177,6 @@ const UserDashboard = ({ user }: Props) => {
             setLoadingDayOffs(true)
             const response = await getAllDayOffRequests()
 
-            if (response && response.requests) {
-                // Filter requests for current user - Fixed: compare user_id with user._id
-                const userRequests = response.requests.filter(
-                    (request: DayOffRequest) => request._id === user._id
-                )
-                setDayOffRequests(userRequests)
-
-                // Calculate statistics from the requests
-                const totalRequests = userRequests.length
-                const acceptedRequests = userRequests.filter(
-                    (req: DayOffRequest) => req.status === 'Accepted'
-                ).length
-                const pendingRequests = userRequests.filter(
-                    (req: DayOffRequest) => req.status === 'Pending'
-                ).length
-                const rejectedRequests = userRequests.filter(
-                    (req: DayOffRequest) => req.status === 'Rejected'
-                ).length
-            }
         } catch (error) {
             console.error('Error fetching day off requests:', error)
         } finally {
@@ -323,8 +314,26 @@ const UserDashboard = ({ user }: Props) => {
         }
     ]
 
+    const StatsCard = ({ title, value, icon }: {
+        title: string
+        value: number
+        icon: React.ReactNode
+    }) => {
+        return (
+            <div className="bg-white rounded-xl p-6 border border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                    <span className="text-slate-600 text-sm font-medium">{title}</span>
+                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                        {icon}
+                    </div>
+                </div>
+                <div className="text-3xl font-bold text-slate-900 mb-2">{value}</div>
+            </div>
+        )
+    }
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+        <div className="max-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
             {/* Main Dashboard Container */}
             <div className="max-w-7xl mx-auto space-y-6">
 
@@ -385,6 +394,37 @@ const UserDashboard = ({ user }: Props) => {
                     <div className="p-6">
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
+                                {/* Statistics Cards */}
+                                {loadingDayOffs ? (
+                                    <div className="text-center py-8">
+                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                        <p className="mt-2 text-slate-600">Loading dashboard data...</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <StatsCard
+                                            title="Total Requests"
+                                            value={stats.totalRequests}
+                                            icon={<PiChartLineUp />}
+                                        />
+                                        <StatsCard
+                                            title="Approved"
+                                            value={stats.acceptedRequests}
+                                            icon={<CheckCircle />}
+                                        />
+                                        <StatsCard
+                                            title="Pending"
+                                            value={stats.pendingRequests}
+                                            icon={<PiClock />}
+                                        />
+                                        <StatsCard
+                                            title="Rejected"
+                                            value={stats.rejectedRequests}
+                                            icon={<XCircle />}
+                                        />
+                                    </div>
+                                )}
+
                                 {/* Quick Actions & Department Summary Side by Side */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <QuickActions actions={quickActions} />
@@ -462,38 +502,66 @@ const UserDashboard = ({ user }: Props) => {
                                 </div>
                             </div>
                         )}
-
                         {activeTab === 'viewpayslip' && (
                             <div className="space-y-6">
-                                {/* Header Section */}
-                                {loadingSalaries ? (
-                                    <div className="flex justify-center items-center min-h-[400px]">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <div className="relative">
-                                                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600"></div>
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <FileText className="w-6 h-6 text-blue-600" />
-                                                </div>
+                                {/* ================= HEADER ================= */}
+                                <div className="bg-gradient-to-r from-sky-200 to-indigo-200 rounded-2xl p-6 text-slate-700 shadow-sm border border-slate-200">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-2xl font-bold mb-1">Salary History & Payslips</h3>
+                                            <p className="text-sm text-slate-600">
+                                                View and manage your compensation records
+                                            </p>
+                                        </div>
+
+                                        <div className="bg-white rounded-xl px-5 py-3 text-center border border-slate-200">
+                                            <div className="text-xs text-slate-500">Total Records</div>
+                                            <div className="text-3xl font-bold text-slate-700">
+                                                {filteredSalaries.length}
                                             </div>
-                                            <span className="text-gray-600 font-medium text-lg">Loading salary history...</span>
-                                            <span className="text-gray-400 text-sm">Please wait while we fetch your records</span>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* ================= LOADING ================= */}
+                                {loadingSalaries ? (
+                                    <div className="flex justify-center items-center min-h-[350px]">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="animate-spin rounded-full h-14 w-14 border-4 border-slate-200 border-t-sky-400" />
+                                            <p className="text-slate-600 font-medium">
+                                                Loading salary history...
+                                            </p>
+                                        </div>
+                                    </div>
+
                                 ) : salaryError ? (
-                                    <div className="bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-8 text-center shadow-md">
-                                        <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                                        <p className="text-red-700 font-semibold text-lg mb-2">Error Loading Data</p>
-                                        <p className="text-red-600">{salaryError}</p>
+
+                                    /* ================= ERROR ================= */
+                                    <div className="bg-rose-50 border border-rose-200 rounded-xl p-8 text-center">
+                                        <XCircle className="w-14 h-14 text-rose-400 mx-auto mb-3" />
+                                        <p className="text-rose-700 font-semibold text-lg">
+                                            Error Loading Data
+                                        </p>
+                                        <p className="text-rose-600 text-sm">{salaryError}</p>
                                     </div>
+
                                 ) : filteredSalaries.length === 0 ? (
-                                    <div className="bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-dashed border-slate-300 rounded-xl p-12 text-center">
-                                        <FileText className="w-20 h-20 text-slate-400 mx-auto mb-4" />
-                                        <p className="text-slate-700 font-semibold text-xl mb-2">No salary records found</p>
-                                        <p className="text-slate-500">Your payslips will appear here once processed</p>
+
+                                    /* ================= EMPTY ================= */
+                                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-12 text-center">
+                                        <FileText className="w-16 h-16 text-slate-300 mx-auto mb-3" />
+                                        <p className="text-slate-600 font-semibold text-lg">
+                                            No salary records found
+                                        </p>
+                                        <p className="text-slate-400 text-sm">
+                                            Your payslips will appear here once processed
+                                        </p>
                                     </div>
+
                                 ) : (
+
+                                    /* ================= SALARY LIST ================= */
                                     <div className="space-y-4">
-                                        {/* Salary Cards Grid */}
                                         {filteredSalaries.map((salary) => {
                                             const isExpanded = expandedRows.includes(salary._id)
                                             const statusInfo = getStatusInfo(salary.status)
@@ -505,342 +573,247 @@ const UserDashboard = ({ user }: Props) => {
                                                 salary.commission +
                                                 salary.fuel_costs +
                                                 salary.money_not_spent_on_holidays +
-                                                salary.other_income;
+                                                salary.other_income
 
                                             const totalDeductions =
                                                 salary.office_expenses +
-                                                salary.social_security;
+                                                salary.social_security
 
                                             return (
                                                 <div
                                                     key={salary._id}
-                                                    className={`bg-white border-2 rounded-xl shadow-md overflow-hidden transition-all duration-300 ${isExpanded ? 'border-blue-400 shadow-xl' : 'border-slate-200 hover:border-blue-300 hover:shadow-lg'
+                                                    className={`bg-white rounded-2xl border transition-all
+              ${isExpanded
+                                                            ? 'border-sky-300 shadow-md'
+                                                            : 'border-slate-200 hover:border-sky-200 hover:shadow-sm'
                                                         }`}
                                                 >
-                                                    {/* Card Header */}
-                                                    <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b border-slate-200">
-                                                        <div className="flex items-center justify-between">
+
+                                                    {/* ===== CARD HEADER ===== */}
+                                                    <div className="bg-gradient-to-r from-slate-50 to-sky-50 px-6 py-4 border-b border-slate-100">
+                                                        <div className="flex justify-between items-center">
+
                                                             <div className="flex items-center gap-4">
-                                                                <div className="bg-blue-500 text-white rounded-lg p-3 shadow-md">
-                                                                    <Calendar className="w-6 h-6" />
+                                                                <div className="bg-sky-300 text-white p-3 rounded-xl">
+                                                                    <Calendar className="w-5 h-5" />
                                                                 </div>
+
                                                                 <div>
-                                                                    <div className="text-lg font-bold text-slate-900">
+                                                                    <p className="text-lg font-bold text-slate-700">
                                                                         {getMonthName(salary.month)} {salary.year}
-                                                                    </div>
-                                                                    <div className="text-sm text-slate-600 flex items-center gap-2">
+                                                                    </p>
+                                                                    <p className="text-sm text-slate-500 flex items-center gap-1">
                                                                         <Clock className="w-4 h-4" />
                                                                         {salary.working_days} working days
-                                                                    </div>
+                                                                    </p>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex items-center gap-4">
+                                                            <div className="flex items-center gap-5">
                                                                 <div className="text-right">
-                                                                    <div className="text-sm text-slate-600 mb-1">Net Salary</div>
-                                                                    <div className="text-2xl font-bold text-emerald-600">
+                                                                    <p className="text-xs text-slate-500">Net Salary</p>
+                                                                    <p className="text-2xl font-bold text-emerald-500">
                                                                         ฿{salary.net_salary.toLocaleString()}
-                                                                    </div>
-                                                                    <div className="text-xs text-slate-500">
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-400">
                                                                         Base: ฿{salary.base_salary.toLocaleString()}
-                                                                    </div>
+                                                                    </p>
                                                                 </div>
 
-                                                                <div className="flex flex-col gap-2">
-                                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${statusInfo.color} shadow-sm`}>
-                                                                        {statusInfo.icon}
-                                                                        {statusInfo.label}
+                                                                <div className="flex flex-col items-end gap-1">
+                                                                    <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${statusInfo.color}`}>
+                                                                        {statusInfo.icon} {statusInfo.label}
                                                                     </span>
-                                                                    <div className="text-xs text-slate-500 text-center">
+                                                                    <span className="text-xs text-slate-400">
                                                                         {moment(salary.payment_date).format('DD/MM/YYYY')}
-                                                                    </div>
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    {/* Quick Stats Bar */}
-                                                    <div className="bg-white px-6 py-3 border-b border-slate-100">
-                                                        <div className="grid grid-cols-3 gap-4">
-                                                            <div className="text-center">
-                                                                <div className="text-xs text-slate-500 mb-1">Total Income</div>
-                                                                <div className="text-sm font-bold text-emerald-600">฿{totalIncome.toLocaleString()}</div>
-                                                            </div>
-                                                            <div className="text-center border-x border-slate-200">
-                                                                <div className="text-xs text-slate-500 mb-1">Deductions</div>
-                                                                <div className="text-sm font-bold text-rose-600">฿{totalDeductions.toLocaleString()}</div>
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <div className="text-xs text-slate-500 mb-1">Vacation Days</div>
-                                                                <div className="text-sm font-bold text-blue-600">{salary.remaining_vacation_days} days</div>
-                                                            </div>
+                                                    {/* ===== QUICK STATS ===== */}
+                                                    <div className="grid grid-cols-3 px-6 py-3 border-b text-center">
+                                                        <div>
+                                                            <p className="text-xs text-slate-400">Income</p>
+                                                            <p className="font-semibold text-emerald-500">
+                                                                ฿{totalIncome.toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                        <div className="border-x">
+                                                            <p className="text-xs text-slate-400">Deductions</p>
+                                                            <p className="font-semibold text-rose-400">
+                                                                ฿{totalDeductions.toLocaleString()}
+                                                            </p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-slate-400">Vacation</p>
+                                                            <p className="font-semibold text-sky-500">
+                                                                {salary.remaining_vacation_days} days
+                                                            </p>
                                                         </div>
                                                     </div>
 
-                                                    {/* Action Buttons */}
-                                                    <div className="bg-slate-50 px-6 py-3 flex items-center justify-between">
-                                                        <div className="text-xs text-slate-600 flex items-center gap-2">
+                                                    {/* ===== ACTIONS ===== */}
+                                                    <div className="flex justify-between items-center px-6 py-3 bg-slate-50">
+                                                        <span className="text-xs text-slate-500 flex items-center gap-1">
                                                             <User className="w-4 h-4" />
-                                                            Created by {salary.created_by.first_name_en} {salary.created_by.last_name_en}
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
+                                                            {salary.created_by.first_name_en} {salary.created_by.last_name_en}
+                                                        </span>
+
+                                                        <div className="flex gap-2">
                                                             <button
                                                                 onClick={() => toggleRow(salary._id)}
-                                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${isExpanded
-                                                                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-                                                                        : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                                                                className={`px-4 py-2 rounded-lg text-sm font-medium transition
+                    ${isExpanded
+                                                                        ? 'bg-sky-400 text-white'
+                                                                        : 'bg-white border border-sky-200 text-sky-600 hover:bg-sky-50'
                                                                     }`}
                                                             >
-                                                                {isExpanded ? (
-                                                                    <>
-                                                                        <ChevronUp className="w-4 h-4" />
-                                                                        Hide Details
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <ChevronDown className="w-4 h-4" />
-                                                                        Show Details
-                                                                    </>
-                                                                )}
+                                                                {isExpanded ? 'Hide Details' : 'Show Details'}
+                                                            </button>
+
+                                                            <button className="px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-white rounded-lg text-sm">
+                                                                <Eye className="w-4 h-4 inline mr-1" />
+                                                                View
                                                             </button>
                                                         </div>
                                                     </div>
 
-                                                    {/* Expanded Details */}
+                                                    {/* ===== EXPANDED ===== */}
                                                     {isExpanded && (
-                                                        <div className="bg-gradient-to-br from-slate-50 to-blue-50 px-6 py-6">
+                                                        <div className="bg-slate-50 px-6 py-6 rounded-xl border border-slate-200">
                                                             <div className="space-y-6">
-                                                                {/* Summary Cards Row */}
-                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                    {/* Total Income Card */}
-                                                                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-5 text-white shadow-lg transform transition-all hover:scale-105">
-                                                                        <div className="flex items-center justify-between mb-2">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <TrendingUp className="w-5 h-5" />
-                                                                                <span className="text-sm font-medium opacity-90">Total Income</span>
-                                                                            </div>
-                                                                            <DollarSign className="w-6 h-6 opacity-70" />
-                                                                        </div>
-                                                                        <div className="text-3xl font-bold">฿{totalIncome.toLocaleString()}</div>
-                                                                        <div className="text-xs opacity-80 mt-1">Before deductions</div>
-                                                                    </div>
 
-                                                                    {/* Total Deductions Card */}
-                                                                    <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl p-5 text-white shadow-lg transform transition-all hover:scale-105">
-                                                                        <div className="flex items-center justify-between mb-2">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <TrendingDown className="w-5 h-5" />
-                                                                                <span className="text-sm font-medium opacity-90">Deductions</span>
-                                                                            </div>
-                                                                            <Shield className="w-6 h-6 opacity-70" />
-                                                                        </div>
-                                                                        <div className="text-3xl font-bold">฿{totalDeductions.toLocaleString()}</div>
-                                                                        <div className="text-xs opacity-80 mt-1">Total removed</div>
-                                                                    </div>
-
-                                                                    {/* Net Salary Card */}
-                                                                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg transform transition-all hover:scale-105">
-                                                                        <div className="flex items-center justify-between mb-2">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <Briefcase className="w-5 h-5" />
-                                                                                <span className="text-sm font-medium opacity-90">Net Salary</span>
-                                                                            </div>
-                                                                            <DollarSign className="w-6 h-6 opacity-70" />
-                                                                        </div>
-                                                                        <div className="text-3xl font-bold">฿{salary.net_salary.toLocaleString()}</div>
-                                                                        <div className="text-xs opacity-80 mt-1">Take home pay</div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Detailed Breakdown */}
                                                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                                                    {/* Income Breakdown */}
-                                                                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-emerald-100">
-                                                                        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 py-4">
-                                                                            <div className="flex items-center gap-2 text-white">
-                                                                                <TrendingUp className="w-5 h-5" />
-                                                                                <h4 className="font-bold text-lg">Income Breakdown</h4>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="p-5 space-y-3">
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                                                                    <span className="text-gray-700 font-medium">Base Salary</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.base_salary.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                                                                    <span className="text-gray-700 font-medium">Overtime</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.ot_amount.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-emerald-300"></div>
-                                                                                    <span className="text-gray-700 font-medium">Bonus</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.bonus.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-emerald-200"></div>
-                                                                                    <span className="text-gray-700 font-medium">Commission</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.commission.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-teal-400"></div>
-                                                                                    <span className="text-gray-700 font-medium">Fuel Costs</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.fuel_costs.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-teal-300"></div>
-                                                                                    <span className="text-gray-700 font-medium">Holiday Money</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.money_not_spent_on_holidays.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-emerald-50 px-2 rounded transition-colors">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <div className="w-2 h-2 rounded-full bg-teal-200"></div>
-                                                                                    <span className="text-gray-700 font-medium">Other Income</span>
-                                                                                </div>
-                                                                                <span className="font-bold text-gray-900">฿{salary.other_income.toLocaleString()}</span>
-                                                                            </div>
-                                                                            <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg p-3 mt-2">
-                                                                                <div className="flex items-center justify-between">
-                                                                                    <span className="font-bold text-emerald-900 text-lg">Total Income</span>
-                                                                                    <span className="font-bold text-emerald-700 text-xl">฿{totalIncome.toLocaleString()}</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
 
-                                                                    {/* Deductions & Info */}
-                                                                    <div className="space-y-6">
-                                                                        {/* Deductions */}
-                                                                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-rose-100">
-                                                                            <div className="bg-gradient-to-r from-rose-500 to-rose-600 px-5 py-4">
-                                                                                <div className="flex items-center gap-2 text-white">
-                                                                                    <TrendingDown className="w-5 h-5" />
-                                                                                    <h4 className="font-bold text-lg">Deductions</h4>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="p-5 space-y-3">
-                                                                                <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-rose-50 px-2 rounded transition-colors">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                                                                                        <span className="text-gray-700 font-medium">Office Expenses</span>
-                                                                                    </div>
-                                                                                    <span className="font-bold text-gray-900">฿{salary.office_expenses.toLocaleString()}</span>
-                                                                                </div>
-                                                                                <div className="flex items-center justify-between py-2 border-b border-gray-100 hover:bg-rose-50 px-2 rounded transition-colors">
-                                                                                    <div className="flex items-center gap-2">
-                                                                                        <div className="w-2 h-2 rounded-full bg-rose-400"></div>
-                                                                                        <span className="text-gray-700 font-medium">Social Security</span>
-                                                                                    </div>
-                                                                                    <span className="font-bold text-gray-900">฿{salary.social_security.toLocaleString()}</span>
-                                                                                </div>
-                                                                                <div className="bg-gradient-to-r from-rose-50 to-rose-100 rounded-lg p-3 mt-2">
-                                                                                    <div className="flex items-center justify-between">
-                                                                                        <span className="font-bold text-rose-900 text-lg">Total Deductions</span>
-                                                                                        <span className="font-bold text-rose-700 text-xl">฿{totalDeductions.toLocaleString()}</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
+                                                                    {/* ================= INCOME ================= */}
+                                                                    <div className="bg-white rounded-2xl border border-emerald-200 overflow-hidden">
+
+                                                                        <div className="bg-emerald-100 px-5 py-4 flex items-center gap-2 text-emerald-700">
+                                                                            <TrendingUp className="w-5 h-5" />
+                                                                            <h4 className="font-semibold text-lg">Income Breakdown</h4>
                                                                         </div>
 
-                                                                        {/* Additional Information */}
-                                                                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-blue-100">
-                                                                            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-4">
-                                                                                <div className="flex items-center gap-2 text-white">
-                                                                                    <FileText className="w-5 h-5" />
-                                                                                    <h4 className="font-bold text-lg">Additional Information</h4>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="p-5 space-y-3">
-                                                                                <div className="flex items-center justify-between py-2 hover:bg-blue-50 px-2 rounded transition-colors">
-                                                                                    <div className="flex items-center gap-2 text-gray-700">
-                                                                                        <Clock className="w-4 h-4 text-blue-500" />
-                                                                                        <span className="font-medium">Working Days</span>
-                                                                                    </div>
-                                                                                    <span className="font-bold text-gray-900">{salary.working_days} days</span>
-                                                                                </div>
-                                                                                <div className="flex items-center justify-between py-2 hover:bg-blue-50 px-2 rounded transition-colors">
-                                                                                    <div className="flex items-center gap-2 text-gray-700">
-                                                                                        <Calendar className="w-4 h-4 text-blue-500" />
-                                                                                        <span className="font-medium">Day Off Days</span>
-                                                                                    </div>
-                                                                                    <span className="font-bold text-gray-900">{salary.day_off_days} days</span>
-                                                                                </div>
-                                                                                <div className="flex items-center justify-between py-2 hover:bg-blue-50 px-2 rounded transition-colors">
-                                                                                    <div className="flex items-center gap-2 text-gray-700">
-                                                                                        <Calendar className="w-4 h-4 text-blue-500" />
-                                                                                        <span className="font-medium">Vacation Days Left</span>
-                                                                                    </div>
-                                                                                    <span className="font-bold text-emerald-600">{salary.remaining_vacation_days} days</span>
-                                                                                </div>
-                                                                                <div className="flex items-center justify-between py-2 hover:bg-blue-50 px-2 rounded transition-colors">
-                                                                                    <div className="flex items-center gap-2 text-gray-700">
-                                                                                        <User className="w-4 h-4 text-blue-500" />
-                                                                                        <span className="font-medium">Created By</span>
-                                                                                    </div>
-                                                                                    <span className="font-bold text-gray-900">
-                                                                                        {salary.created_by.first_name_en} {salary.created_by.last_name_en}
+                                                                        <div className="p-5 space-y-3 text-sm">
+
+                                                                            {[
+                                                                                ['Base Salary', salary.base_salary],
+                                                                                ['Overtime', salary.ot_amount],
+                                                                                ['Bonus', salary.bonus],
+                                                                                ['Commission', salary.commission],
+                                                                                ['Fuel Costs', salary.fuel_costs],
+                                                                                ['Holiday Money', salary.money_not_spent_on_holidays],
+                                                                                ['Other Income', salary.other_income],
+                                                                            ].map(([label, value], i) => (
+                                                                                <div
+                                                                                    key={i}
+                                                                                    className="flex justify-between items-center py-2 px-2 rounded hover:bg-emerald-50 transition"
+                                                                                >
+                                                                                    <span className="text-slate-600">{label}</span>
+                                                                                    <span className="font-semibold text-slate-800">
+                                                                                        ฿{Number(value).toLocaleString()}
                                                                                     </span>
                                                                                 </div>
+                                                                            ))}
+
+                                                                            <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 flex justify-between">
+                                                                                <span className="font-semibold text-emerald-700">
+                                                                                    Total Income
+                                                                                </span>
+                                                                                <span className="font-bold text-emerald-600 text-lg">
+                                                                                    ฿{totalIncome.toLocaleString()}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* ================= RIGHT SIDE ================= */}
+                                                                    <div className="space-y-6">
+
+                                                                        {/* -------- DEDUCTIONS -------- */}
+                                                                        <div className="bg-white rounded-2xl border border-rose-200 overflow-hidden">
+                                                                            <div className="bg-rose-100 px-5 py-4 flex items-center gap-2 text-rose-700">
+                                                                                <TrendingDown className="w-5 h-5" />
+                                                                                <h4 className="font-semibold text-lg">Deductions</h4>
+                                                                            </div>
+
+                                                                            <div className="p-5 space-y-3 text-sm">
+                                                                                {[
+                                                                                    ['Office Expenses', salary.office_expenses],
+                                                                                    ['Social Security', salary.social_security],
+                                                                                ].map(([label, value], i) => (
+                                                                                    <div
+                                                                                        key={i}
+                                                                                        className="flex justify-between items-center py-2 px-2 rounded hover:bg-rose-50 transition"
+                                                                                    >
+                                                                                        <span className="text-slate-600">{label}</span>
+                                                                                        <span className="font-semibold text-slate-800">
+                                                                                            ฿{Number(value).toLocaleString()}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                ))}
+
+                                                                                <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3 flex justify-between">
+                                                                                    <span className="font-semibold text-rose-700">
+                                                                                        Total Deductions
+                                                                                    </span>
+                                                                                    <span className="font-bold text-rose-600 text-lg">
+                                                                                        ฿{totalDeductions.toLocaleString()}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* -------- ADDITIONAL INFO -------- */}
+                                                                        <div className="bg-white rounded-2xl border border-sky-200 overflow-hidden">
+                                                                            <div className="bg-sky-100 px-5 py-4 flex items-center gap-2 text-sky-700">
+                                                                                <FileText className="w-5 h-5" />
+                                                                                <h4 className="font-semibold text-lg">Additional Information</h4>
+                                                                            </div>
+
+                                                                            <div className="p-5 space-y-3 text-sm">
+
+                                                                                <InfoRow icon={<Clock />} label="Working Days" value={`${salary.working_days} days`} />
+                                                                                <InfoRow icon={<Calendar />} label="Day Off Days" value={`${salary.day_off_days} days`} />
+                                                                                <InfoRow
+                                                                                    icon={<Calendar />}
+                                                                                    label="Vacation Days Left"
+                                                                                    value={`${salary.remaining_vacation_days} days`}
+                                                                                    highlight
+                                                                                />
+                                                                                <InfoRow
+                                                                                    icon={<User />}
+                                                                                    label="Created By"
+                                                                                    value={`${salary.created_by.first_name_en} ${salary.created_by.last_name_en}`}
+                                                                                />
+
                                                                                 {salary.notes && (
-                                                                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                                                                        <div className="flex items-start gap-2 bg-amber-50 rounded-lg p-3 border border-amber-200">
-                                                                                            <FileText className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                                                                                            <div>
-                                                                                                <span className="font-semibold text-amber-900 block mb-1">Notes:</span>
-                                                                                                <p className="text-sm text-amber-800">{salary.notes}</p>
-                                                                                            </div>
-                                                                                        </div>
+                                                                                    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                                                                        <p className="text-sm font-semibold text-amber-700 mb-1">
+                                                                                            Notes
+                                                                                        </p>
+                                                                                        <p className="text-sm text-amber-600">
+                                                                                            {salary.notes}
+                                                                                        </p>
                                                                                     </div>
                                                                                 )}
                                                                             </div>
                                                                         </div>
+
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
+
                                                     )}
                                                 </div>
                                             )
                                         })}
-
-                                        {/* Footer Summary */}
-                                        <div className="bg-gradient-to-r from-slate-100 to-blue-100 rounded-xl p-6 border-2 border-slate-300 shadow-md">
-                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="bg-blue-500 text-white rounded-lg p-2">
-                                                        <FileText className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm text-slate-600">Records Summary</div>
-                                                        <div className="text-lg font-bold text-slate-900">
-                                                            Showing {filteredSalaries.length} of {salaries.length} records
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="bg-white rounded-lg px-6 py-4 shadow-md border border-emerald-200">
-                                                    <div className="text-sm text-slate-600 mb-1">Total Net Salary</div>
-                                                    <div className="text-2xl font-bold text-emerald-600">
-                                                        ฿{calculateTotal('net_salary').toLocaleString()}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
                                     </div>
                                 )}
                             </div>
+
                         )}
                     </div>
                 </div>

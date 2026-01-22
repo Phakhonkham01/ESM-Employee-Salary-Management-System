@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getSupervisors, Supervisor } from '@/services/User_Page/user_api'
 import { updateDayOffRequest } from '@/services/User_Page/day_off_request_api'
-import { DayOffItem } from './UserDayOffRequest'  
+import { DayOffItem } from './UserDayOffRequest'
+import DatePicker from 'react-datepicker'
+import "react-datepicker/dist/react-datepicker.css"
+import Swal from 'sweetalert2'
 
 type Props = {
     open: boolean
@@ -10,7 +13,6 @@ type Props = {
     onSaved: () => void
 }
 
-
 const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     /* =====================
        State
@@ -18,12 +20,38 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
     const [dayOffType, setDayOffType] = useState<'FULL_DAY' | 'HALF_DAY'>(
         'FULL_DAY'
     )
-    const [startDateTime, setStartDateTime] = useState('')
-    const [endDateTime, setEndDateTime] = useState('')
-    const [title, setTitle] = useState('') // ✅ renamed
+    const [startDate, setStartDate] = useState<Date | null>(null)
+    const [endDate, setEndDate] = useState<Date | null>(null)
+    const [title, setTitle] = useState('')
 
     const [supervisors, setSupervisors] = useState<Supervisor[]>([])
     const [supervisorId, setSupervisorId] = useState('')
+
+    /* =====================
+       Get current month range
+    ===================== */
+    const getCurrentMonthRange = () => {
+        const now = new Date()
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        return { startOfMonth, endOfMonth }
+    }
+
+    /* =====================
+       Check if date is in current month
+    ===================== */
+    const isDateInCurrentMonth = (date: Date) => {
+        const now = new Date()
+        return date.getMonth() === now.getMonth() && 
+               date.getFullYear() === now.getFullYear()
+    }
+
+    /* =====================
+       Custom filter for DatePicker
+    ===================== */
+    const filterDate = (date: Date) => {
+        return isDateInCurrentMonth(date)
+    }
 
     /* =====================
        Load supervisors
@@ -43,63 +71,163 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
         if (!item) return
 
         setDayOffType(item.day_off_type)
-        setStartDateTime(item.start_date_time.slice(0, 16))
-        setEndDateTime(item.end_date_time.slice(0, 16))
-        setTitle(item.title)            // ✅ changed
+        setStartDate(new Date(item.start_date_time))
+        setEndDate(new Date(item.end_date_time))
+        setTitle(item.title)
         setSupervisorId(item.supervisor_id)
     }, [item])
 
     /* =====================
-       Submit
+       Format date for API
+    ===================== */
+    const formatDateForAPI = (date: Date): string => {
+        // Format as YYYY-MM-DD (without time)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+
+    /* =====================
+       Submit with SweetAlert2
     ===================== */
     const handleSubmit = async () => {
         if (!item) return
 
+        // Validation with SweetAlert2
         if (!supervisorId) {
-            alert('Please select a supervisor')
+            await Swal.fire({
+                icon: 'warning',
+                title: 'ກະລຸນາເລືອກຫົວໜ້າ',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#3085d6',
+            })
             return
         }
 
-        if (!startDateTime || !endDateTime) {
-            alert('Please select start and end date/time')
+        if (!startDate || !endDate) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'ກະລຸນາເລືອກວັນທີເລີ່ມ ແລະ ວັນທີສິ້ນສຸດ',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#3085d6',
+            })
             return
         }
 
-        if (new Date(endDateTime) <= new Date(startDateTime)) {
-            alert('End date must be later than start date')
+        // Check if dates are in current month
+        if (!isDateInCurrentMonth(startDate) || !isDateInCurrentMonth(endDate)) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'ກະລຸນາເລືອກວັນທີໃນເດືອນປະຈຸບັນ',
+                text: 'ບໍ່ສາມາດເລືອກວັນທີໃນເດືອນກ່ອນ ຫຼື ເດືອນຕໍ່ໄປ',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#3085d6',
+            })
+            return
+        }
+
+        if (endDate < startDate) {
+            await Swal.fire({
+                icon: 'warning',
+                title: 'ວັນທີສິ້ນສຸດຕ້ອງຫຼັງວັນທີເລີ່ມ',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#3085d6',
+            })
             return
         }
 
         if (!title.trim()) {
-            alert('Please enter a reason')
+            await Swal.fire({
+                icon: 'warning',
+                title: 'ກະລຸນາໃສ່ເຫດຜົນ',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#3085d6',
+            })
             return
         }
 
         try {
+            // Show loading alert
+            Swal.fire({
+                title: 'ກຳລັງອັບເດດ...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                }
+            })
+
             await updateDayOffRequest(item._id, {
                 supervisor_id: supervisorId,
                 day_off_type: dayOffType,
-                start_date_time: startDateTime,
-                end_date_time: endDateTime,
-                title, // ✅ changed
+                start_date_time: formatDateForAPI(startDate),
+                end_date_time: formatDateForAPI(endDate),
+                title,
+            })
+
+            // Success alert
+            await Swal.fire({
+                icon: 'success',
+                title: 'ອັບເດດສຳເລັດ!',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#3085d6',
             })
 
             onSaved()
             onClose()
         } catch (error) {
             console.error(error)
-            alert('Failed to update day off request')
+            
+            // Error alert
+            await Swal.fire({
+                icon: 'error',
+                title: 'ອັບເດດລົ້ມເຫຼວ',
+                text: 'ກະລຸນາລອງໃໝ່ອີກຄັ້ງ',
+                confirmButtonText: 'ຕົກລົງ',
+                confirmButtonColor: '#d33',
+            })
+        }
+    }
+
+    // Confirm cancel with SweetAlert2
+    const handleCancel = async () => {
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'ຕ້ອງການທີ່ຈະຍົກເລີກ?',
+            text: 'ຂໍ້ມູນທີ່ປ່ຽນແປງຈະບໍ່ຖືກບັນທຶກ',
+            showCancelButton: true,
+            confirmButtonText: 'ຕົກລົງ',
+            cancelButtonText: 'ຍົກເລີກ',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+        })
+
+        if (result.isConfirmed) {
+            onClose()
         }
     }
 
     if (!open || !item) return null
+
+    // Custom date picker styles
+    const customDatePickerStyles = {
+        width: '100%',
+        padding: '8px 12px',
+        fontSize: '14px',
+        border: '1px solid #d1d5db',
+        borderRadius: '8px',
+        outline: 'none',
+        backgroundColor: 'white',
+    }
+
+    const { startOfMonth, endOfMonth } = getCurrentMonthRange()
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/40"
-                onClick={onClose}
+                onClick={handleCancel}
             />
 
             {/* Modal */}
@@ -107,15 +235,18 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                 {/* Header */}
                 <div className="mb-4">
                     <h2 className="text-xl font-semibold text-slate-900">
-                        Edit Day Off Request
+                        ແກ້ໄຂການຂໍພັກ
                     </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                        ໝາຍເຫດ: ສາມາດເລືອກວັນທີໄດ້ໃນເດືອນປະຈຸບັນເທົ່ານັ້ນ
+                    </p>
                 </div>
 
                 <div className="space-y-4">
                     {/* Day Off Type */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Day Off Type
+                            ປະເພດການພັກ
                         </label>
                         <select
                             value={dayOffType}
@@ -126,45 +257,61 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                             }
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         >
-                            <option value="FULL_DAY">Full Day</option>
-                            <option value="HALF_DAY">Half Day</option>
+                            <option value="FULL_DAY">ໝົດມື້</option>
+                            <option value="HALF_DAY">ເຄີ່ງມື້</option>
                         </select>
                     </div>
 
-                    {/* Start Date Time */}
+                    {/* Start Date */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Start Date & Time
+                            ເລີ່ມວັນທີ
                         </label>
-                        <input
-                            type="datetime-local"
-                            value={startDateTime}
-                            onChange={(e) =>
-                                setStartDateTime(e.target.value)
-                            }
+                        <DatePicker
+                            selected={startDate}
+                            onChange={(date: Date | null) => setStartDate(date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="ເລືອກວັນທີເລີ່ມ"
                             className="w-full border rounded-lg px-3 py-2 text-sm"
+                            wrapperClassName="w-full"
+                            customInput={<input style={customDatePickerStyles} />}
+                            filterDate={filterDate}
+                            minDate={startOfMonth}
+                            maxDate={endOfMonth}
+                            locale="lo"
+                            isClearable
+                            showMonthYearDropdown
+                            dropdownMode="select"
                         />
                     </div>
 
-                    {/* End Date Time */}
+                    {/* End Date */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            End Date & Time
+                            ຮອດວັນທີ
                         </label>
-                        <input
-                            type="datetime-local"
-                            value={endDateTime}
-                            onChange={(e) =>
-                                setEndDateTime(e.target.value)
-                            }
+                        <DatePicker
+                            selected={endDate}
+                            onChange={(date: Date | null) => setEndDate(date)}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="ເລືອກວັນທີສິ້ນສຸດ"
                             className="w-full border rounded-lg px-3 py-2 text-sm"
+                            wrapperClassName="w-full"
+                            customInput={<input style={customDatePickerStyles} />}
+                            filterDate={filterDate}
+                            minDate={startDate || startOfMonth}
+                            maxDate={endOfMonth}
+                            locale="lo"
+                            isClearable
+                            showMonthYearDropdown
+                            dropdownMode="select"
                         />
                     </div>
 
                     {/* Supervisor */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Supervisor
+                            ຫົວໜ້າ
                         </label>
                         <select
                             value={supervisorId}
@@ -173,7 +320,7 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                             }
                             className="w-full border rounded-lg px-3 py-2 text-sm"
                         >
-                            <option value="">Select Supervisor</option>
+                            <option value="">ເລືອກຫົວໜ້າ</option>
                             {supervisors.map((s) => (
                                 <option key={s._id} value={s._id}>
                                     {s.first_name_en} {s.last_name_en}
@@ -185,13 +332,14 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                     {/* Title (Reason) */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Reason
+                            ເລື່ອງ
                         </label>
                         <textarea
                             rows={3}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="w-full border rounded-lg px-3 py-2 text-sm"
+                            placeholder="ໃສ່ເຫດຜົນການຂໍພັກ..."
                         />
                     </div>
                 </div>
@@ -199,16 +347,16 @@ const EditDayOffModal = ({ open, item, onClose, onSaved }: Props) => {
                 {/* Actions */}
                 <div className="flex justify-end gap-3 mt-6">
                     <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-slate-100 rounded-lg"
+                        onClick={handleCancel}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
                     >
-                        Cancel
+                        ຍົກເລິກ
                     </button>
                     <button
                         onClick={handleSubmit}
-                        className="px-5 py-2 bg-blue-600 text-white rounded-lg"
+                        className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                     >
-                        Save Changes
+                        ບັນທຶກ
                     </button>
                 </div>
             </div>

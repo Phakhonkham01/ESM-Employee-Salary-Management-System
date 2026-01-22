@@ -8,6 +8,7 @@ import appConfig from '@/configs/app.config'
 import { useAuth } from '@/auth'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import type { LayoutType } from '@/@types/theme'
+import { getEntryPathByRole } from '@/utils/getEntryPathByRole'
 
 interface ViewsProps {
     pageContainerType?: 'default' | 'gutterless' | 'contained'
@@ -21,20 +22,24 @@ const { authenticatedEntryPath } = appConfig
 const AllRoutes = (props: AllRoutesProps) => {
     const { user } = useAuth()
 
+    const entryPath = getEntryPathByRole(user?.authority?.[0])
+    // 👆 adjust if your role is user.role instead
+
     return (
         <Routes>
             <Route path="/" element={<ProtectedRoute />}>
                 <Route
                     path="/"
-                    element={<Navigate replace to={authenticatedEntryPath} />}
+                    element={<Navigate replace to={entryPath} />}
                 />
+
                 {protectedRoutes.map((route, index) => (
                     <Route
                         key={route.key + index}
                         path={route.path}
                         element={
                             <AuthorityGuard
-                                userAuthority={user.authority}
+                                userAuthority={user?.authority}
                                 authority={route.authority}
                             >
                                 <PageContainer {...props} {...route.meta}>
@@ -48,8 +53,11 @@ const AllRoutes = (props: AllRoutesProps) => {
                         }
                     />
                 ))}
-                <Route path="*" element={<Navigate replace to="/" />} />
+
+                {/* fallback */}
+                <Route path="*" element={<Navigate replace to={entryPath} />} />
             </Route>
+
             <Route path="/" element={<PublicRoute />}>
                 {publicRoutes.map((route) => (
                     <Route
@@ -68,5 +76,6 @@ const AllRoutes = (props: AllRoutesProps) => {
         </Routes>
     )
 }
+
 
 export default AllRoutes

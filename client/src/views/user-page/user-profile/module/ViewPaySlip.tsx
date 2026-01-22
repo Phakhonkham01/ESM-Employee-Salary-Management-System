@@ -4,7 +4,7 @@ import SalaryHistory from '@/views/salary-management/SalaryHistory'
 const ViewPaySlip = () => {
   return (
     <div>
-       <SalaryHistory />
+      <SalaryHistory />
     </div>
   )
 }

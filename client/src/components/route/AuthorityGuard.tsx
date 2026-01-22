@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react'
 import { Navigate } from 'react-router-dom'
 import useAuthority from '@/utils/hooks/useAuthority'
+import { getEntryPathByRole } from '@/utils/getEntryPathByRole'
 
 type AuthorityGuardProps = PropsWithChildren<{
     userAuthority?: string[]
@@ -12,7 +13,19 @@ const AuthorityGuard = (props: AuthorityGuardProps) => {
 
     const roleMatched = useAuthority(userAuthority, authority)
 
-    return <>{roleMatched ? children : <Navigate to="/access-denied" />}</>
+    if (roleMatched) {
+        return <>{children}</>
+    }
+
+    // 👇 assume first role is primary role
+    const role = userAuthority[0]
+
+    return (
+        <Navigate
+            replace
+            to={getEntryPathByRole(role)}
+        />
+    )
 }
 
 export default AuthorityGuard

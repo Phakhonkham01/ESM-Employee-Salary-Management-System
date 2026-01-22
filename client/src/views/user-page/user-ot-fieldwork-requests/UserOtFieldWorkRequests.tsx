@@ -136,9 +136,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-      <h2 style={titleStyle}>📄 My Requests</h2>
-
-      <Section title="⏱ OT / Field Work Requests">
+      <Section title="⏱ ຄຳຂໍ OT ແລະ ວຽກນອກສະຖານທີ່">
         {/* FILTERS */}
         <div
           style={{
@@ -162,9 +160,9 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               fontSize: "12px",
             }}
           >
-            <option value="all">All Types</option>
+            <option value="all">ປະເພດທັງໝົດ</option>
             <option value="OT">OT</option>
-            <option value="FIELD_WORK">Field Work</option>
+            <option value="FIELD_WORK">ວຽກນອກສະຖານທີ່</option>
           </select>
 
           <select
@@ -177,7 +175,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               fontSize: "12px",
             }}
           >
-            <option value="all">All Status</option>
+            <option value="all">ສະຖານະທັງໝົດ</option>
             <option value="Pending">Pending</option>
             <option value="Accepted">Accepted</option>
             <option value="Rejected">Rejected</option>
@@ -193,7 +191,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
               fontSize: "12px",
             }}
           >
-            <option value="">All Months</option>
+            <option value="">ເດືອນ</option>
             {availableMonths.map((m) => (
               <option key={m} value={m}>
                 {new Date(m + "-01").toLocaleDateString("en-US", {
@@ -225,12 +223,12 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
           <thead>
             <tr>
-              <th style={th}>Type</th>
-              <th style={th}>Date</th>
-              <th style={th}>Time</th>
-              <th style={th}>Fuel</th>
-              <th style={th}>Reason</th>
-              <th style={th}>Status</th>
+              <th style={th}>ປະເພດ</th>
+              <th style={th}>ວັນທີ່</th>
+              <th style={th}>ເວລາ</th>
+              <th style={th}>ຄ່ານ້ຳມັນ</th>
+              <th style={th}>ເລື່ອງ</th>
+              <th style={th}>ສະຖານະ</th>
               <th style={th}>Actions</th>
             </tr>
           </thead>
@@ -271,7 +269,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                         onClick={() => onEdit(r)}
                       >
                         <HiPencil size={14} />
-                        Edit
+                        ແກ້ໄຂ
                       </ActionButton>
 
                       <ActionButton
@@ -295,7 +293,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                         }}
                       >
                         <HiTrash size={14} />
-                        Cancel
+                        ຍົກເລິກ
                       </ActionButton>
                     </div>
                   </td>

@@ -73,7 +73,7 @@ const MainComponent = () => {
 
   // Success state
   return (
-    <div className="p-8 max-w-5xl min-h-screen bg-gray-100">
+    <div className="max-w-100xl min-h-screen bg-gray-100">
       <UserProfile user={user} />
     </div>
   )

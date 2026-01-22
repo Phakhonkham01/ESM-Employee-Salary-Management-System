@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { HiPencil, HiTrash } from "react-icons/hi"
 import {
   Section,
@@ -6,13 +6,14 @@ import {
   formatDate,
   statusBadge,
   containerStyle,
-  titleStyle,
   tableStyle,
   th,
   td,
   tr,
   RequestStatus,
 } from "./HelperComponents"
+import Swal from 'sweetalert2';
+import axios from "axios";
 
 /* ================= TYPES ================= */
 
@@ -34,7 +35,8 @@ export interface DayOffItem {
 interface Props {
   dayOffs: DayOffItem[]
   onEdit: (item: DayOffItem) => void
-  onDelete: (id: string) => void
+  onDelete: (id: string) => Promise<void> // Changed to async function
+  refreshRequests: () => void // Added this prop to refresh list
 }
 
 /* ================= BUTTON ================= */
@@ -121,17 +123,19 @@ const selectStyle: React.CSSProperties = {
 
 /* ================= COMPONENT ================= */
 
-const UserDayOffRequests: React.FC<Props> = ({
+const UserDayOffRequest: React.FC<Props> = ({
   dayOffs,
   onEdit,
   onDelete,
+  refreshRequests, // Use this instead of calling loadDayOffRequests directly
 }) => {
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const role = auth?.user?.role
 
-  const [selectedStatus, setSelectedStatus] = React.useState<string>("all")
-  const [selectedMonth, setSelectedMonth] = React.useState<string>("")
-  const [selectedType, setSelectedType] = React.useState<string>("all")
+  const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [selectedMonth, setSelectedMonth] = useState<string>("")
+  const [selectedType, setSelectedType] = useState<string>("all")
+  const [isDeleting, setIsDeleting] = useState<string | null>(null) // Track deleting state
 
   const filteredDayOffs = dayOffs.filter((d) => {
     if (selectedStatus !== "all" && d.status !== selectedStatus)
@@ -158,23 +162,93 @@ const UserDayOffRequests: React.FC<Props> = ({
     )
   ).sort().reverse()
 
+  // Delete handler with proper error handling
+  const handleDelete = async (id: string) => {
+    // Show confirmation dialog
+    const result = await Swal.fire({
+      title: 'ຕ້ອງການທີ່ຈະຍົກເລິກ?',
+      text: "ການຍົກເລິກນີ້ບໍ່ສາມາດກັບຄືນໄດ້",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ດຳເນີນການ',
+      cancelButtonText: 'ຍົກເລີກ',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      reverseButtons: true,
+      customClass: {
+        confirmButton: 'mr-2',
+        cancelButton: 'ml-2'
+      }
+    });
+
+    // If user confirms deletion
+    if (result.isConfirmed) {
+      setIsDeleting(id); // Set deleting state
+
+      try {
+        // Show loading state
+        Swal.fire({
+          title: 'ກຳລັງຍົກເລິກ...',
+          allowOutsideClick: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
+        // Call the delete function from props
+        await onDelete(id);
+
+        // Close loading state
+        Swal.close();
+
+        // Show success message
+        await Swal.fire({
+          icon: 'success',
+          title: 'ຍົກເລິກສຳເລັດ!',
+          confirmButtonText: 'ຕົກລົງ',
+          confirmButtonColor: '#10b981',
+          timer: 2000,
+          timerProgressBar: true
+        });
+
+        // Refresh the list
+        refreshRequests();
+
+      } catch (error: any) {
+        console.error('Delete error:', error);
+        
+        // Close loading state
+        Swal.close();
+        
+        // Show error message
+        const errorMessage = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດ';
+        
+        await Swal.fire({
+          icon: 'error',
+          title: 'ຍົກເລິກລົ້ມເຫຼວ',
+          text: errorMessage,
+          confirmButtonText: 'ຕົກລົງ',
+          confirmButtonColor: '#dc2626'
+        });
+      } finally {
+        setIsDeleting(null); // Reset deleting state
+      }
+    }
+  };
+
   return (
     <div style={containerStyle}>
-      <h2 style={titleStyle}>
-        {role === "Admin" ? "📄 Day Off Requests" : "📄 My Requests"}
-      </h2>
-
       <Section title="🏖 Day Off Requests">
         {/* Filter Section */}
         <div style={filterContainerStyle}>
           <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>Status</label>
+            <label style={filterLabelStyle}>ສະຖານະ</label>
             <select
               style={selectStyle}
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
             >
-              <option value="all">All Statuses</option>
+              <option value="all">ສະຖານະທັງໝົດ</option>
               <option value="Pending">Pending</option>
               <option value="Accepted">Accepted</option>
               <option value="Rejected">Rejected</option>
@@ -182,26 +256,26 @@ const UserDayOffRequests: React.FC<Props> = ({
           </div>
 
           <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>Type</label>
+            <label style={filterLabelStyle}>ປະເພດ</label>
             <select
               style={selectStyle}
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
             >
-              <option value="all">All Types</option>
-              <option value="FULL_DAY">Full Day</option>
-              <option value="HALF_DAY">Half Day</option>
+              <option value="all">ປະເພດທັງໝົດ</option>
+              <option value="FULL_DAY">ໝົດມື້</option>
+              <option value="HALF_DAY">ເຄີ່ງມື້</option>
             </select>
           </div>
 
           <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>Month</label>
+            <label style={filterLabelStyle}>ເດືອນ</label>
             <select
               style={selectStyle}
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
             >
-              <option value="">All Months</option>
+              <option value="">ເດືອນ</option>
               {availableMonths.map((month) => (
                 <option key={month} value={month}>
                   {new Date(month + "-01").toLocaleDateString("en-US", {
@@ -213,7 +287,28 @@ const UserDayOffRequests: React.FC<Props> = ({
             </select>
           </div>
 
-
+          {/* Clear Filters Button */}
+          {(selectedStatus !== "all" || selectedType !== "all" || selectedMonth !== "") && (
+            <button
+              onClick={() => {
+                setSelectedStatus("all");
+                setSelectedType("all");
+                setSelectedMonth("");
+              }}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#f3f4f6",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "14px",
+                marginTop: "20px",
+              }}
+            >
+              ລ້າງຕົວກອງ
+            </button>
+          )}
         </div>
 
         {/* Results Count */}
@@ -244,14 +339,14 @@ const UserDayOffRequests: React.FC<Props> = ({
           <thead>
             <tr>
               {role === "Admin" ? (
-                <th style={th}>Employee ID</th>
+                <th style={th}>ພະນັກງານ ID</th>
               ) : null}
-              <th style={th}>Type</th>
-              <th style={th}>Start</th>
-              <th style={th}>End</th>
-              <th style={th}>Days</th>
-              <th style={th}>Reason</th>
-              <th style={th}>Status</th>
+              <th style={th}>ປະເພດ</th>
+              <th style={th}>ເລີ່ມ</th>
+              <th style={th}>ຮອດ</th>
+              <th style={th}>ມື້</th>
+              <th style={th}>ເລື່ອງ</th>
+              <th style={th}>ສະຖານະ</th>
               <th style={th}>Actions</th>
             </tr>
           </thead>
@@ -259,6 +354,7 @@ const UserDayOffRequests: React.FC<Props> = ({
           <tbody>
             {filteredDayOffs.map((d) => {
               const isPending = d.status === "Pending"
+              const isDeletingThis = isDeleting === d._id
 
               return (
                 <tr key={d._id} style={tr}>
@@ -289,21 +385,30 @@ const UserDayOffRequests: React.FC<Props> = ({
                       <ActionButton
                         color="#3b82f6"
                         hoverColor="#2563eb"
-                        disabled={!isPending}
+                        disabled={!isPending || isDeletingThis}
                         onClick={() => onEdit(d)}
                       >
                         <HiPencil size={14} />
-                        Edit
+                        ແກ້ໄຂ
                       </ActionButton>
 
                       <ActionButton
                         color="#ef4444"
                         hoverColor="#dc2626"
-                        disabled={!isPending}
-                        onClick={() => onDelete(d._id)}
+                        disabled={!isPending || isDeletingThis}
+                        onClick={() => handleDelete(d._id)}
                       >
-                        <HiTrash size={14} />
-                        Cancel
+                        {isDeletingThis ? (
+                          <>
+                            <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-1" />
+                            ກຳລັງຍົກເລິກ...
+                          </>
+                        ) : (
+                          <>
+                            <HiTrash size={14} />
+                            ຍົກເລິກ
+                          </>
+                        )}
                       </ActionButton>
                     </div>
                   </td>
@@ -321,4 +426,4 @@ const UserDayOffRequests: React.FC<Props> = ({
   )
 }
 
-export default UserDayOffRequests
+export default UserDayOffRequest
