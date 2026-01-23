@@ -5,6 +5,9 @@ import type { UserData } from '../../services/Create_user/api'
 import { getAllDayOffRequests, type DayOffRequest } from '../../services/Day_off_api/api'
 import { getAllDepartments, type DepartmentData } from '../../services/departments/api'
 import { useExportAttendanceToPDF } from './ExportToPDF'
+import {
+    Download,
+} from "lucide-react"
 
 interface UserAttendanceStats {
     userId: string
@@ -232,15 +235,10 @@ const Attendance: React.FC = () => {
                     <button
                         onClick={handleExportToPDF}
                         disabled={loading || getFilteredUsers().length === 0}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                        <FaFilePdf /> Export to PDF
-                    </button>
-                    <button
-                        onClick={fetchData}
-                        className="px-4 py-2 bg-[#45CC67] hover:bg-[#1fd371] text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                        ໂຫຼດຂໍ້ມູນໃໝ່
+                        <Download className="w-4 h-4" />
+                        Export to PDF
                     </button>
                 </div>
             </div>

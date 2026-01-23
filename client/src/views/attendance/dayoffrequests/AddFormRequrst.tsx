@@ -258,7 +258,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
               placeholder="e.g., Family Vacation"
             />
           </div>
@@ -274,7 +274,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                   setEndDate(null)
                 }
               }}
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
             >
               <option value="FULL_DAY">FULL_DAY</option>
               <option value="HALF_DAY">HALF_DAY</option>

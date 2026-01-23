@@ -16,6 +16,9 @@ import { useExportToPDF } from './ExportToPDF'
 import AddFormRequest from './dayoffrequests/AddFormRequrst'
 import EditFormRequest from './dayoffrequests/EditFormRequest'
 import Swal from 'sweetalert2'
+import {
+  Download,
+} from "lucide-react"
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
 type RequestStatus = 'Pending' | 'Accepted' | 'Rejected'
@@ -527,14 +530,15 @@ const DayoffRequests: React.FC = () => {
             <button
               onClick={handleExportToPDF}
               disabled={loading || filteredRequests.length === 0}
-              className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <FaFilePdf /> Export to PDF
+              <Download className="w-4 h-4" />
+              Export to PDF
             </button>
             <button
               onClick={() => setShowAddModal(true)}
               disabled={loading}
-              className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 text-sm"
+              className="flex items-center gap-2 bg-[#45CC67] hover:bg-[#1fd371] text-white px-5 py-2.5 rounded-lg transition disabled:opacity-50 text-sm"
             >
               <FaPlus /> ຂໍລາພັກວຽກ
             </button>
@@ -637,7 +641,6 @@ const DayoffRequests: React.FC = () => {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ພະນັກງານ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຫົວໜ້າ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ປະເພດ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ວັນທິ່ເລີ່ມ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຮອດວັນທີ່</th>
@@ -659,7 +662,6 @@ const DayoffRequests: React.FC = () => {
                   return (
                     <tr key={request._id} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{getUserName(request.employee_id || request.user_id)}</td>
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{getUserName(request.supervisor_id)}</td>
                       <td className="px-4 py-3.5 text-gray-900 font-medium text-sm whitespace-nowrap">{request.day_off_type}</td>
                       <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{formatDate(request.start_date_time)}</td>
                       <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{formatDate(request.end_date_time)}</td>
@@ -677,7 +679,7 @@ const DayoffRequests: React.FC = () => {
                               setSelectedRequest(request)
                               setShowDetailModal(true)
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 text-white hover:bg-gray-700"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 hover:bg-gray-700 text-white"
                           >
                             <FaEye className="text-xs" /> ລາຍລະອຽດ
                           </button>
@@ -686,7 +688,7 @@ const DayoffRequests: React.FC = () => {
                             disabled={loading || isDisabled}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${isDisabled
                               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-[#45CC67] hover:bg-[#1fd371] text-white'
                               }`}
                           >
                             <FaEdit className="text-xs" /> ແກ້ໄຂ

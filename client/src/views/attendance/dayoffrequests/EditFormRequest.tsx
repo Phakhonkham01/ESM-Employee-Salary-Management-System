@@ -38,7 +38,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
   const [halfDayPeriod, setHalfDayPeriod] = useState<'MORNING' | 'AFTERNOON'>('MORNING')
   const [departments, setDepartments] = useState<DepartmentData[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     employee_id: '',
     supervisor_id: '',
@@ -65,10 +65,10 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
   // Filter employees by selected department
   const filteredEmployees = formData.department_id
     ? users.filter(
-        user =>
-          user.role === 'Employee' &&
-          user.department_id?._id === formData.department_id
-      )
+      user =>
+        user.role === 'Employee' &&
+        user.department_id?._id === formData.department_id
+    )
     : []
 
   // Fetch departments on component mount
@@ -93,10 +93,10 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
   // Load selected request data
   useEffect(() => {
     if (selectedRequest && showModal) {
-      const employeeId = typeof selectedRequest.employee_id === 'object' 
-        ? selectedRequest.employee_id._id 
+      const employeeId = typeof selectedRequest.employee_id === 'object'
+        ? selectedRequest.employee_id._id
         : selectedRequest.employee_id || (typeof selectedRequest.user_id === 'object' ? selectedRequest.user_id._id : selectedRequest.user_id)
-      
+
       const supervisorId = typeof selectedRequest.supervisor_id === 'object'
         ? selectedRequest.supervisor_id._id
         : selectedRequest.supervisor_id
@@ -176,10 +176,10 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
   // Calculate days off correctly
   const calculatedDaysOff = (() => {
     if (!formData.start_date_time || !formData.end_date_time) return 0
-    
+
     const start = new Date(formData.start_date_time)
     const end = new Date(formData.end_date_time)
-    
+
     if (formData.day_off_type === 'HALF_DAY') {
       return 0.5
     } else {
@@ -204,7 +204,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
     <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-8 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-3xl font-bold text-gray-900">Edit Day Off Request</h2>
+          <h2 className="text-3xl font-bold text-gray-900">ແກ້ໄຂຄຳຂໍລາພັກ</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <FaTimes className="text-2xl" />
           </button>
@@ -212,13 +212,16 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Department *</label>
+              <label className="block text-sm font-medium text-slate-600 mb-2">
+                ພະແນກ
+                <span className="ml-1 text-rose-400 font-semibold">*</span>
+              </label>
               <select
                 value={formData.department_id}
                 onChange={(e) => {
                   const newDeptId = e.target.value
-                  setFormData({ 
-                    ...formData, 
+                  setFormData({
+                    ...formData,
                     department_id: newDeptId,
                     employee_id: ''
                   })
@@ -237,7 +240,9 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Employee *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ພະນັກງານ
+                <span className="ml-1 text-rose-400 font-semibold">*</span>
+              </label>
               <select
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
@@ -258,13 +263,15 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               )}
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Supervisor *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ຫົວໜ້າ
+                <span className="ml-1 text-rose-400 font-semibold">*</span>
+              </label>
               <select
                 value={formData.supervisor_id}
                 onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="">Select Supervisor</option>
+                <option value="">ເລືອກຫົວໜ້າ</option>
                 {supervisors.map(user => (
                   <option key={user._id} value={user._id}>
                     {user.first_name_en} {user.last_name_en}
@@ -278,7 +285,9 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Reason *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">ເລື່ອງ
+              <span className="ml-1 text-rose-400 font-semibold">*</span>
+            </label>
             <input
               type="text"
               value={formData.title}
@@ -289,7 +298,10 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Day Off Type *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              ປະເພດລາພັກ
+              <span className="ml-1 text-rose-400 font-semibold">*</span>
+            </label>
             <select
               value={formData.day_off_type}
               onChange={(e) => {
@@ -301,21 +313,23 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               }}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="FULL_DAY">FULL_DAY</option>
-              <option value="HALF_DAY">HALF_DAY</option>
+              <option value="FULL_DAY">ໝົດມື້</option>
+              <option value="HALF_DAY">ເຄີ່ງມື້</option>
             </select>
           </div>
 
           {formData.day_off_type === 'HALF_DAY' && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Period *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ຊ່ວງເວລາ
+                <span className="ml-1 text-rose-400 font-semibold">*</span>
+              </label>
               <select
                 value={halfDayPeriod}
                 onChange={(e) => setHalfDayPeriod(e.target.value as 'MORNING' | 'AFTERNOON')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="MORNING">Morning (08:30 - 12:00)</option>
-                <option value="AFTERNOON">Afternoon (13:30 - 17:00)</option>
+                <option value="MORNING">ຊ່ວງເຊົ້າ (08:30 - 12:00)</option>
+                <option value="AFTERNOON">ຊ່ວງບາຍ (13:30 - 17:00)</option>
               </select>
             </div>
           )}
@@ -323,7 +337,10 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
           {formData.day_off_type === 'FULL_DAY' ? (
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  ວັນທີ່ເລີ່ມ
+                  <span className="ml-1 text-rose-400 font-semibold">*</span>
+                </label>
                 <DatePicker
                   selected={startDate}
                   onChange={(date: Date | null) => {
@@ -340,7 +357,9 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">End Date *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">ຮອດ
+                  <span className="ml-1 text-rose-400 font-semibold">*</span>
+                </label>
                 <DatePicker
                   selected={endDate}
                   onChange={(date: Date | null) => setEndDate(date)}
@@ -355,7 +374,9 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
           ) : (
             <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Date *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">ວັນທີ່
+                  <span className="ml-1 text-rose-400 font-semibold">*</span>
+                </label>
                 <DatePicker
                   selected={startDate}
                   onChange={(date: Date | null) => setStartDate(date)}
@@ -367,7 +388,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                 />
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Time Period</p>
+                <p className="text-sm font-semibold text-gray-700 mb-2">ຊ່ວງເວລາ</p>
                 <p className="text-lg font-bold text-blue-600">
                   {getHalfDayTimes(halfDayPeriod).start} - {getHalfDayTimes(halfDayPeriod).end}
                 </p>
@@ -379,13 +400,13 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Total Days Off</p>
+                  <p className="text-sm text-gray-600 mb-1">ວັນພັກທັງໝົດ</p>
                   <p className="text-4xl font-bold text-blue-600">{calculatedDaysOff}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">From</p>
+                  <p className="text-sm text-gray-600">ຈາກ</p>
                   <p className="font-semibold text-gray-900">{startDate?.toLocaleDateString('en-GB')}</p>
-                  <p className="text-sm text-gray-600 mt-2">To</p>
+                  <p className="text-sm text-gray-600 mt-2">ຫາ</p>
                   <p className="font-semibold text-gray-900">{endDate?.toLocaleDateString('en-GB')}</p>
                 </div>
               </div>
@@ -398,14 +419,14 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               disabled={loading}
               className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
             >
-              Cancel
+              ຍົກເລິກ
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
               className="px-8 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition disabled:opacity-50"
             >
-              {loading ? 'Updating...' : 'Update Request'}
+              {loading ? 'Updating...' : 'ອັບເດດ'}
             </button>
           </div>
         </div>

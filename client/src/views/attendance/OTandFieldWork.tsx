@@ -9,6 +9,10 @@ import {
   deleteRequest,
   type RequestData
 } from '../../services/requests/api'
+import {
+  Download,
+
+} from "lucide-react"
 import { useExportOTToPDF } from './ExportToPDF'
 import Swal from 'sweetalert2'
 
@@ -328,9 +332,10 @@ const OTandFieldWork: React.FC = () => {
             <button
               onClick={handleExportToPDF}
               disabled={loading || otDataForExport.length === 0}
-              className="flex items-center gap-2 bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <FaFilePdf /> Export to PDF
+              <Download className="w-4 h-4" />
+              Export to PDF
             </button>
           </div>
         </div>
@@ -491,7 +496,7 @@ const OTandFieldWork: React.FC = () => {
                               setSelectedRequest(request)
                               setShowDetailModal(true)
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 text-white hover:bg-gray-700"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 hover:bg-gray-700 text-white"
                           >
                             <FaEye className="text-xs" /> ລາຍລະອຽດ
                           </button>

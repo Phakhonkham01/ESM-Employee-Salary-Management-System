@@ -70,7 +70,16 @@ const RequestModule = ({ open, type, onClose }: Props) => {
         const day = String(date.getDate()).padStart(2, '0')
         return `${year}-${month}-${day}`
     }
-
+    const resetForm = () => {
+        setStartDate(null)
+        setStartHour('08')
+        setStartMinute('00')
+        setEndHour('17')
+        setEndMinute('00')
+        setReason('')
+        setFuel('')
+        setSupervisorId('')
+    }
     /* =====================
        Submit
     ===================== */
@@ -79,7 +88,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'User not logged in',
+                text: 'ຜູ້ໃຊ້ບໍ່ໄດ້ເຂົ້າສູ່ລະບົບ',
             })
             return
         }
@@ -88,7 +97,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             Swal.fire({
                 icon: 'warning',
                 title: 'Missing Information',
-                text: 'Please select a supervisor',
+                text: 'ກະລຸນາເລືອກຫົວໜ້າ',
             })
             return
         }
@@ -97,7 +106,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             Swal.fire({
                 icon: 'warning',
                 title: 'Missing Information',
-                text: 'Please select a date',
+                text: 'ກະລຸນາເລືອກວັນທີ',
             })
             return
         }
@@ -116,7 +125,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             Swal.fire({
                 icon: 'error',
                 title: 'Invalid Input',
-                text: 'Invalid time input',
+                text: 'ການປ້ອນຂໍ້ມູນເວລາບໍ່ຖືກຕ້ອງ',
             })
             return
         }
@@ -128,7 +137,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             Swal.fire({
                 icon: 'error',
                 title: 'Invalid Time Range',
-                text: 'End time must be later than start time',
+                text: 'ເວລາສິ້ນສຸດຕ້ອງຊ້າກວ່າເວລາເລີ່ມຕົ້ນ',
             })
             return
         }
@@ -140,7 +149,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Missing Information',
-                    text: 'Please enter a valid fuel price',
+                    text: 'ກະລຸນາໃສ່ລາຄານໍ້າມັນທີ່ຖືກຕ້ອງ',
                 })
                 return
             }
@@ -161,18 +170,18 @@ const RequestModule = ({ open, type, onClose }: Props) => {
             Swal.fire({
                 icon: 'success',
                 title: 'Success!',
-                text: 'Request submitted successfully',
+                text: 'ສົ່ງຄຳຂໍສຳເລັດແລ້ວ',
                 timer: 2000,
                 showConfirmButton: false,
             })
-
+            resetForm()
             onClose()
         } catch (error) {
             console.error(error)
             Swal.fire({
                 icon: 'error',
                 title: 'Submission Failed',
-                text: 'Failed to submit request. Please try again.',
+                text: 'ສົ່ງຄຳຂໍບໍ່ສຳເລັດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.',
             })
         }
     }
@@ -190,7 +199,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                 {/* Header */}
                 <div className="mb-4">
                     <span className="text-xl font-semibold text-slate-900">
-                        {type === 'OT' ? 'Overtime' : 'Field Work'}
+                        ຄຳຂໍ{type === 'OT' ? 'ວຽກລ່ວງເວລາ​ OT' : 'ວຽກນອກສະຖານທີ'}
                     </span>
                 </div>
 
@@ -198,7 +207,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                     {/* Date */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Date
+                            ວັນທີ່
                         </label>
                         <DatePicker
                             selected={startDate}
@@ -214,7 +223,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                     {/* Start Time */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Start Time
+                            ເວລາເລີ່ມ
                         </label>
                         <div className="flex gap-2 items-center">
                             <input
@@ -242,7 +251,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                     {/* End Time */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            End Time
+                            ຮອດ
                         </label>
                         <div className="flex gap-2 items-center">
                             <input
@@ -271,14 +280,14 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                     {type === 'FIELD_WORK' && (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Fuel Price
+                                ເງີນຄ່ານ້ຳມັນ
                             </label>
                             <input
                                 type="number"
                                 min={0}
                                 value={fuel}
                                 onChange={(e) => setFuel(e.target.value)}
-                                className="w-full border rounded-lg px-3 py-2 text-sm"
+                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                 placeholder="Enter fuel price"
                             />
                         </div>
@@ -292,7 +301,7 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                         <select
                             value={supervisorId}
                             onChange={(e) => setSupervisorId(e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         >
                             <option value="">Select Supervisor</option>
                             {supervisors.map((s) => (
@@ -306,13 +315,13 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                     {/* Reason */}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Reason
+                            ເລື່ອງ
                         </label>
                         <textarea
                             rows={3}
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
-                            className="w-full border rounded-lg px-3 py-2 text-sm"
+                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         />
                     </div>
                 </div>
@@ -323,13 +332,13 @@ const RequestModule = ({ open, type, onClose }: Props) => {
                         onClick={onClose}
                         className="px-4 py-2 bg-slate-100 rounded-lg"
                     >
-                        Cancel
+                        ຍົກເລິກ
                     </button>
                     <button
                         onClick={handleSubmit}
                         className="px-5 py-2 bg-blue-600 text-white rounded-lg"
                     >
-                        Submit
+                        ຍືນຍັນ
                     </button>
                 </div>
             </div>

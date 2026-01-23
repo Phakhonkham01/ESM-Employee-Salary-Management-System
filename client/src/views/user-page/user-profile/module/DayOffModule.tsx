@@ -112,6 +112,16 @@ const DayOffModule = ({ open, onClose }: Props) => {
 
   const totalDays = calculateTotalDays()
 
+  const resetForm = () => {
+    setEmployeeId('')
+    setSupervisorId('')
+    setDayOffType('FULL_DAY')
+    setStartDate(null)
+    setEndDate(null)
+    setTitle('')
+  }
+
+
   /* =====================
      Submit
   ===================== */
@@ -120,7 +130,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'User not logged in',
+        text: 'ຜູ້ໃຊ້ບໍ່ໄດ້ເຂົ້າສູ່ລະບົບ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -130,7 +140,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'warning',
         title: 'Missing Information',
-        text: 'Please select a supervisor',
+        text: 'ກະລຸນາເລືອກຫົວຫນ້າ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -140,7 +150,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'warning',
         title: 'Missing Information',
-        text: 'Please select start date',
+        text: 'ກະລຸນາເລືອກວັນທີເລີ່ມຕົ້ນ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -150,7 +160,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'warning',
         title: 'Missing Information',
-        text: 'Please select end date',
+        text: 'ກະລຸນາເລືອກວັນທີສິ້ນສຸດ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -160,7 +170,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'warning',
         title: 'Missing Information',
-        text: 'Please enter a reason',
+        text: 'ກະລຸນາໃສ່ເຫດຜົນ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -174,7 +184,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'warning',
         title: 'Missing Information',
-        text: 'Please select an employee',
+        text: 'ກະລຸນາເລືອກພະນັກງານ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -188,17 +198,17 @@ const DayOffModule = ({ open, onClose }: Props) => {
         Swal.fire({
           icon: 'warning',
           title: 'Missing Information',
-          text: 'Please select end date',
+          text: 'ກະລຸນາເລືອກວັນທີສິ້ນສຸດ',
           confirmButtonColor: '#2563eb',
         })
         return
       }
-      
+
       if (endDate < startDate) {
         Swal.fire({
           icon: 'error',
           title: 'Invalid Date Range',
-          text: 'End date must be later than or equal to start date',
+          text: 'ວັນທີສິ້ນສຸດຕ້ອງຊ້າກວ່າ ຫຼື ເທົ່າກັບວັນທີເລີ່ມຕົ້ນ',
           confirmButtonColor: '#2563eb',
         })
         return
@@ -227,18 +237,20 @@ const DayOffModule = ({ open, onClose }: Props) => {
       Swal.fire({
         icon: 'success',
         title: 'Success',
-        text: 'Day off request submitted successfully',
+        text: 'ສົ່ງຄຳຂໍມື້ພັກສຳເລັດ',
         confirmButtonColor: '#2563eb',
         timer: 2000,
       })
 
+      resetForm()
       onClose()
+
     } catch (error) {
       console.error(error)
       Swal.fire({
         icon: 'error',
         title: 'Failed',
-        text: 'Failed to submit day off request',
+        text: 'ສົ່ງຄຳຂໍມື້ພັກບໍ່ສຳເລັດ',
         confirmButtonColor: '#2563eb',
       })
     }
@@ -264,7 +276,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
           {/* Day Off Type */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Day Off Type
+              ປະເພດການພັກ
             </label>
             <select
               value={dayOffType}
@@ -275,10 +287,10 @@ const DayOffModule = ({ open, onClose }: Props) => {
                   setEndDate(null)
                 }
               }}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
             >
-              <option value="FULL_DAY">Full Day</option>
-              <option value="HALF_DAY">Half Day</option>
+              <option value="FULL_DAY">ໝົດມື້</option>
+              <option value="HALF_DAY">ເຄີ່ງມື້</option>
             </select>
           </div>
 
@@ -287,7 +299,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Start Date
+                  ວັນທີ່ເລີ່ມ
                 </label>
                 <DatePicker
                   selected={startDate}
@@ -302,7 +314,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  End Date
+                  ຮອດ
                 </label>
                 <DatePicker
                   selected={endDate}
@@ -322,7 +334,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
             <>
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Date
+                  ວັນທີ່
                 </label>
                 <DatePicker
                   selected={startDate}
@@ -337,42 +349,25 @@ const DayOffModule = ({ open, onClose }: Props) => {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Period
+                  ຊ່ວງເວລາ
                 </label>
                 <select
                   value={halfDayPeriod}
                   onChange={(e) =>
                     setHalfDayPeriod(e.target.value as 'MORNING' | 'AFTERNOON')
-                  }
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  }className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                 >
-                  <option value="MORNING">Morning (8:30 AM - 12:00 PM)</option>
-                  <option value="AFTERNOON">Afternoon (1:30 PM - 5:00 PM)</option>
+                  <option value="MORNING">ຊ່ວງເຊົ້າ (8:30 AM - 12:00 PM)</option>
+                  <option value="AFTERNOON">ຊ່ວງບາຍ (1:30 PM - 5:00 PM)</option>
                 </select>
               </div>
             </>
           )}
 
-          {/* Employee (Admin only) */}
-          {role === 'Admin' && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Employee
-              </label>
-              <input
-                type="text"
-                placeholder="Employee ID"
-                value={employeeId}
-                onChange={(e) => setEmployeeId(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-              />
-            </div>
-          )}
-
           {/* Supervisor */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Supervisor
+              ຫົວໜ້າ
             </label>
             <select
               value={supervisorId}
@@ -391,13 +386,13 @@ const DayOffModule = ({ open, onClose }: Props) => {
           {/* Reason */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Reason
+              ເລື່ອງ
             </label>
             <textarea
               rows={3}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
             />
           </div>
 
@@ -405,7 +400,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-slate-700">
-                Total Days Off:
+                ວັນພັກທັງໝົດ:
               </span>
               <span className="text-lg font-bold text-blue-600">
                 {totalDays > 0 ? `${totalDays} ${totalDays === 1 ? 'day' : 'days'}` : '-'}
@@ -420,13 +415,13 @@ const DayOffModule = ({ open, onClose }: Props) => {
             onClick={onClose}
             className="px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition"
           >
-            Cancel
+            ຍົກເລີກ
           </button>
           <button
             onClick={handleSubmit}
             className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Submit
+            ຍືນຍັນ
           </button>
         </div>
       </div>
