@@ -12,8 +12,10 @@ import {
   tr,
   RequestStatus,
 } from "./HelperComponents"
+import {
+  HiRefresh,
+} from 'react-icons/hi'
 import Swal from 'sweetalert2';
-import axios from "axios";
 
 /* ================= TYPES ================= */
 
@@ -89,8 +91,7 @@ const filterContainerStyle: React.CSSProperties = {
   display: "flex",
   gap: "16px",
   marginBottom: "20px",
-  padding: "16px",
-  backgroundColor: "#f9fafb",
+  padding: "16px 0px",
   borderRadius: "8px",
   flexWrap: "wrap",
   alignItems: "center",
@@ -100,25 +101,6 @@ const filterGroupStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: "6px",
-}
-
-const filterLabelStyle: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: "600",
-  color: "#374151",
-  textTransform: "uppercase",
-  letterSpacing: "0.05em",
-}
-
-const selectStyle: React.CSSProperties = {
-  padding: "8px 12px",
-  border: "1px solid #d1d5db",
-  borderRadius: "6px",
-  fontSize: "14px",
-  backgroundColor: "white",
-  cursor: "pointer",
-  minWidth: "150px",
-  outline: "none",
 }
 
 /* ================= COMPONENT ================= */
@@ -216,20 +198,9 @@ const UserDayOffRequest: React.FC<Props> = ({
 
       } catch (error: any) {
         console.error('Delete error:', error);
-        
+
         // Close loading state
         Swal.close();
-        
-        // Show error message
-        const errorMessage = error.response?.data?.message || error.message || 'ເກີດຂໍ້ຜິດພາດ';
-        
-        await Swal.fire({
-          icon: 'error',
-          title: 'ຍົກເລິກລົ້ມເຫຼວ',
-          text: errorMessage,
-          confirmButtonText: 'ຕົກລົງ',
-          confirmButtonColor: '#dc2626'
-        });
       } finally {
         setIsDeleting(null); // Reset deleting state
       }
@@ -238,83 +209,64 @@ const UserDayOffRequest: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-      <Section title="🏖 Day Off Requests">
+      <Section title="🏖 ຂໍ້ມູນ ຄຳຂໍລາພັກ">
         {/* Filter Section */}
-        <div style={filterContainerStyle}>
-          <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>ສະຖານະ</label>
-            <select
-              style={selectStyle}
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              <option value="all">ສະຖານະທັງໝົດ</option>
-              <option value="Pending">Pending</option>
-              <option value="Accepted">Accepted</option>
-              <option value="Rejected">Rejected</option>
-            </select>
+        <div style={{ display: "flex", justifyContent: "space-between", width: "100%"}}>
+          <div style={filterContainerStyle}>
+            <div style={filterGroupStyle}>
+              <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ສະຖານະ</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              >
+                <option value="all">ສະຖານະທັງໝົດ</option>
+                <option value="Pending">Pending</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+
+            <div style={filterGroupStyle}>
+              <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ປະເພດ</label>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              >
+                <option value="all">ປະເພດທັງໝົດ</option>
+                <option value="FULL_DAY">ໝົດມື້</option>
+                <option value="HALF_DAY">ເຄີ່ງມື້</option>
+              </select>
+            </div>
+
+            <div style={filterGroupStyle}>
+              <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ເດືອນ</label>
+              <select
+                className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                <option value="">ເດືອນ</option>
+                {availableMonths.map((month) => (
+                  <option key={month} value={month}>
+                    {new Date(month + "-01").toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>ປະເພດ</label>
-            <select
-              style={selectStyle}
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-            >
-              <option value="all">ປະເພດທັງໝົດ</option>
-              <option value="FULL_DAY">ໝົດມື້</option>
-              <option value="HALF_DAY">ເຄີ່ງມື້</option>
-            </select>
+          {/* Results Count */}
+          <div style={{ marginTop: "70px", fontSize: "14px", color: "#6b7280" }}>
+            Showing {filteredDayOffs.length} of {dayOffs.length} requests
           </div>
-
-          <div style={filterGroupStyle}>
-            <label style={filterLabelStyle}>ເດືອນ</label>
-            <select
-              style={selectStyle}
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            >
-              <option value="">ເດືອນ</option>
-              {availableMonths.map((month) => (
-                <option key={month} value={month}>
-                  {new Date(month + "-01").toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                  })}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Clear Filters Button */}
-          {(selectedStatus !== "all" || selectedType !== "all" || selectedMonth !== "") && (
-            <button
-              onClick={() => {
-                setSelectedStatus("all");
-                setSelectedType("all");
-                setSelectedMonth("");
-              }}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#f3f4f6",
-                color: "#374151",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                marginTop: "20px",
-              }}
-            >
-              ລ້າງຕົວກອງ
-            </button>
-          )}
         </div>
 
-        {/* Results Count */}
-        <div style={{ marginBottom: "12px", fontSize: "14px", color: "#6b7280" }}>
-          Showing {filteredDayOffs.length} of {dayOffs.length} requests
-        </div>
+
 
         <table
           style={{
@@ -383,8 +335,8 @@ const UserDayOffRequest: React.FC<Props> = ({
                   <td style={td}>
                     <div style={{ display: "flex", gap: 8 }}>
                       <ActionButton
-                        color="#3b82f6"
-                        hoverColor="#2563eb"
+                        color="#45CC67"
+                        hoverColor="#1fd371"
                         disabled={!isPending || isDeletingThis}
                         onClick={() => onEdit(d)}
                       >

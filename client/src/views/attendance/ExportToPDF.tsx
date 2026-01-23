@@ -38,21 +38,6 @@ export const useExportToPDF = ({ requests, users }: UseExportToPDFProps) => {
   }
 
   const exportToPDF = async () => {
-    // Show confirmation dialog
-    const confirmed = await Swal.fire({
-      title: 'Confirm Export',
-      html: `Do you want to export Day Off Requests to PDF?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Export',
-      cancelButtonText: 'Cancel',
-
-      reverseButtons: true,
-    })
-    if (!confirmed.isConfirmed) {
-      return
-    }
-
     // Create new PDF document
     const doc = new jsPDF('l', 'mm', 'a4') // landscape orientation for better table fit
 
@@ -207,21 +192,6 @@ export const useExportAttendanceToPDF = ({
   }
 
   const exportToPDF = async () => {
-    // Show confirmation dialog
-    const confirmed = await Swal.fire({
-      title: 'Confirm Export',
-      html: `Do you want to export Attendance Report to PDF?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Export',
-      cancelButtonText: 'Cancel',
-
-      reverseButtons: true,
-    })
-    if (!confirmed.isConfirmed) {
-      return
-    }
-
     // Create new PDF document
     const doc = new jsPDF('l', 'mm', 'a4') // landscape orientation
 
@@ -426,21 +396,6 @@ export const useExportOTToPDF = ({
   }
 
   const exportToPDF = async () => {
-    // Show confirmation dialog
-    const confirmed = await Swal.fire({
-      title: 'Confirm Export',
-      html: `Do you want to export OT and Field Work to PDF?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, Export',
-      cancelButtonText: 'Cancel',
-
-      reverseButtons: true,
-    })
-    if (!confirmed.isConfirmed) {
-      return
-    }
-
     // Create new PDF document
     const doc = new jsPDF('l', 'mm', 'a4') // landscape orientation
 

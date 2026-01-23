@@ -46,8 +46,6 @@ router.post('/send-email', async (req: Request, res: Response): Promise<void> =>
             fileName
         }: SalaryEmailRequest = req.body
 
-        console.log('📧 Received email request for:', to)
-
         // Validate
         if (!to) {
             const response: EmailResponse = {
@@ -80,7 +78,6 @@ router.post('/send-email', async (req: Request, res: Response): Promise<void> =>
 
         // Verify transporter
         await transporter.verify()
-        console.log('✅ Email transporter verified')
 
         // Prepare email
         const mailOptions = {
@@ -106,9 +103,6 @@ router.post('/send-email', async (req: Request, res: Response): Promise<void> =>
 
         // Send email
         const info = await transporter.sendMail(mailOptions)
-
-        console.log(`✅ Email sent successfully to ${to}`)
-        console.log(`📨 Message ID: ${info.messageId}`)
 
         const response: EmailResponse = {
             success: true,

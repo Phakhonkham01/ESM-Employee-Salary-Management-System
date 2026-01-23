@@ -4,6 +4,7 @@ import { RequestItem } from './UserOtFieldWorkRequests'
 import DatePicker from 'react-datepicker'
 import Swal from 'sweetalert2'
 import 'react-datepicker/dist/react-datepicker.css'
+import { X, Clock, Calendar, FileText, Fuel, Edit } from 'lucide-react'
 
 type Props = {
   open: boolean
@@ -28,6 +29,7 @@ const EditRequestModule = ({
   const [endMinute, setEndMinute] = useState('00')
   const [reason, setReason] = useState('')
   const [fuel, setFuel] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   /* =====================
      Init data
@@ -58,10 +60,10 @@ const EditRequestModule = ({
     const now = new Date()
     const year = now.getFullYear()
     const month = now.getMonth()
-    
+
     const minDate = new Date(year, month, 1)
     const maxDate = new Date(year, month + 1, 0)
-    
+
     return { minDate, maxDate }
   }
 
@@ -81,6 +83,19 @@ const EditRequestModule = ({
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
+  }
+
+  const calculateDuration = () => {
+    const start = toMinutes(startHour, startMinute)
+    const end = toMinutes(endHour, endMinute)
+    const duration = end - start
+    return duration > 0 ? duration : 0
+  }
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}h ${mins}m`
   }
 
   /* =====================
@@ -115,6 +130,7 @@ const EditRequestModule = ({
       }
     }
 
+    setIsSubmitting(true)
     try {
       await updateRequest(item._id, {
         date: formatDateToString(selectedDate),
@@ -142,6 +158,8 @@ const EditRequestModule = ({
         text: 'ບໍ່ສາມາດອັບເດດຂໍ້ມູນໄດ້',
         confirmButtonColor: '#2563eb',
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -150,131 +168,228 @@ const EditRequestModule = ({
   ===================== */
   if (!open || !item) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+  const duration = calculateDuration()
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 animate-in fade-in duration-200">
+      <div
+        className="absolute inset-0 bg-black/40 bg-opacity-50"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
         {/* Header */}
-        <div className="mb-4">
-          <span className="text-xl font-semibold text-slate-900">
-            ແກ້ໄຂ {item.title === 'OT' ? 'Overtime' : 'ວຽກນອກສະຖານທີ່'}
-          </span>
+        <div className="bg-white p-6 text-black border-b border-gray-200">
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <h2 className="text-2xl font-bold">
+                <Edit className="inline mr-2" size={24} />
+                ແກ້ໄຂຄຳຂໍ
+              </h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X size={26} />
+            </button>
+          </div>
+          <p className="text-black text-sm">
+            ກະລຸນາແກ້ໄຂຂໍ້ມູນການຂໍຕາມທີ່ຕ້ອງການ
+          </p>
         </div>
 
-        <div className="space-y-5">
-          {/* Date */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ວັນທີ
-            </label>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date: Date | null) => setSelectedDate(date)}
-              minDate={minDate}
-              maxDate={maxDate}
-              dateFormat="dd/MM/yyyy"
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-              placeholderText="ເລືອກວັນທີ"
-            />
-          </div>
-
-          {/* Start Time */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ເວລາເລີ່ມ
-            </label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="number"
-                min={0}
-                max={23}
-                value={startHour}
-                onChange={(e) => setStartHour(e.target.value)}
-                className="w-20 border rounded-lg px-2 py-2"
-              />
-              :
-              <input
-                type="number"
-                min={0}
-                max={59}
-                value={startMinute}
-                onChange={(e) => setStartMinute(e.target.value)}
-                className="w-20 border rounded-lg px-2 py-2"
-              />
-            </div>
-          </div>
-
-          {/* End Time */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ເວລາສິ້ນສຸດ
-            </label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="number"
-                min={0}
-                max={23}
-                value={endHour}
-                onChange={(e) => setEndHour(e.target.value)}
-                className="w-20 border rounded-lg px-2 py-2"
-              />
-              :
-              <input
-                type="number"
-                min={0}
-                max={59}
-                value={endMinute}
-                onChange={(e) => setEndMinute(e.target.value)}
-                className="w-20 border rounded-lg px-2 py-2"
-              />
-            </div>
-          </div>
-
-          {/* Fuel */}
-          {item.title === 'FIELD_WORK' && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                ເງີນຄ່ານ້ຳມັນ
+        {/* Form */}
+        <div className="p-8 space-y-8 max-h-[calc(100vh-200px)] overflow-y-auto no-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Date */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <Calendar size={18} className="text-blue-600" />
+                ວັນທີ
               </label>
-              <input
-                type="number"
-                min={0}
-                value={fuel}
-                onChange={(e) => setFuel(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm"
+              <DatePicker
+                selected={selectedDate}
+                onChange={(date: Date | null) => setSelectedDate(date)}
+                minDate={minDate}
+                maxDate={maxDate}
+                dateFormat="dd/MM/yyyy"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholderText="ເລືອກວັນທີ"
               />
+              <p className="text-xs text-gray-500">
+                ສາມາດເລືອກວັນທີພາຍໃນເດືອນນີ້ເທົ່ານັ້ນ
+              </p>
             </div>
-          )}
+
+            {/* Fuel Price (FIELD_WORK only) */}
+            {item.title === 'FIELD_WORK' && (
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <Fuel size={18} className="text-blue-600" />
+                  ເງີນຄ່ານ້ຳມັນ (LAK)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={0}
+                    value={fuel}
+                    onChange={(e) => setFuel(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
+                    placeholder="ປ້ອນຈຳນວນເງິນ"
+                  />
+                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    LAK
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  ກະລຸນາປ້ອນຈຳນວນເງິນຄ່ານ້ຳມັນ
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Time Selection Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Start Time */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <Clock size={18} className="text-blue-600" />
+                ເວລາເລີ່ມຕົ້ນ
+              </label>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={startHour}
+                    onChange={(e) => setStartHour(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-center text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ຊົ່ວໂມງ"
+                  />
+                  <p className="text-xs text-gray-500 text-center mt-1">ໂມງ (0-23)</p>
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-2xl text-gray-400">:</span>
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={startMinute}
+                    onChange={(e) => setStartMinute(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-center text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ນາທີ"
+                  />
+                  <p className="text-xs text-gray-500 text-center mt-1">ນາທີ (0-59)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* End Time */}
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <Clock size={18} className="text-blue-600" />
+                ເວລາສິ້ນສຸດ
+              </label>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={endHour}
+                    onChange={(e) => setEndHour(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-center text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ຊົ່ວໂມງ"
+                  />
+                  <p className="text-xs text-gray-500 text-center mt-1">ໂມງ (0-23)</p>
+                </div>
+                <div className="flex items-center justify-center">
+                  <span className="text-2xl text-gray-400">:</span>
+                </div>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={endMinute}
+                    onChange={(e) => setEndMinute(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-center text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="ນາທີ"
+                  />
+                  <p className="text-xs text-gray-500 text-center mt-1">ນາທີ (0-59)</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Duration Display */}
+          <div className={`rounded-xl p-4 border ${duration <= 0
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-green-50 border-green-200 text-green-800'
+            }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock size={18} />
+                <span className="font-semibold">
+                  {duration <= 0 ? 'ໄລຍະເວລາບໍ່ຖືກຕ້ອງ' : 'ໄລຍະເວລາທັງໝົດ'}
+                </span>
+              </div>
+              <div className="text-lg font-bold">
+                {formatDuration(duration)}
+              </div>
+            </div>
+            {duration <= 0 && (
+              <p className="text-sm mt-2">
+                ກະລຸນາໃຫ້ແນ່ໃຈວ່າເວລາສິ້ນສຸດຕ້ອງຫຼັງຈາກເວລາເລີ່ມ
+              </p>
+            )}
+          </div>
 
           {/* Reason */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              ເຫດຜົນ
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <FileText size={18} className="text-blue-600" />
+              ເຫດຜົນ ແລະ ລາຍລະອຽດ
             </label>
             <textarea
-              rows={3}
+              rows={4}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              placeholder="ອະທິບາຍເຫດຜົນການແກ້ໄຂ..."
             />
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 mt-8">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-          >
-            ຍົກເລິກ
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            ບັນທຶກ
-          </button>
+        <div className="border-t border-gray-200 p-8 bg-gray-50">
+          <div className="flex justify-end gap-4">
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-8 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base"
+            >
+              ຍົກເລິກ
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting || duration <= 0}
+              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base shadow-md"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ກຳລັງບັນທຶກ...
+                </span>
+              ) : (
+                'ບັນທຶກການແກ້ໄຂ'
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

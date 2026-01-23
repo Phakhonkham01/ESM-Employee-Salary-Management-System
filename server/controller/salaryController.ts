@@ -480,9 +480,6 @@ let autoOTCalculation: {
       return;
     }
 
-    // 🆕 CREATE ใหม่
-    console.log('Creating new salary for month:', currentMonth, 'year:', currentYear);
-
     const newSalary = await Salary.create({
       user_id,
       month: currentMonth,

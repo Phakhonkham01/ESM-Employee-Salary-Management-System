@@ -35,7 +35,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   const [halfDayPeriod, setHalfDayPeriod] = useState<'MORNING' | 'AFTERNOON'>('MORNING')
   const [departments, setDepartments] = useState<DepartmentData[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     employee_id: '',
     supervisor_id: '',
@@ -62,10 +62,10 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   // Filter employees by selected department
   const filteredEmployees = formData.department_id
     ? users.filter(
-        user =>
-          user.role === 'Employee' &&
-          user.department_id?._id === formData.department_id
-      )
+      user =>
+        user.role === 'Employee' &&
+        user.department_id?._id === formData.department_id
+    )
     : []
 
   // Fetch departments on component mount
@@ -135,10 +135,10 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   // Calculate days off correctly
   const calculatedDaysOff = (() => {
     if (!formData.start_date_time || !formData.end_date_time) return 0
-    
+
     const start = new Date(formData.start_date_time)
     const end = new Date(formData.end_date_time)
-    
+
     if (formData.day_off_type === 'HALF_DAY') {
       return 0.5
     } else {
@@ -179,7 +179,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
     <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-8 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-3xl font-bold text-gray-900">New Day Off Request</h2>
+          <h2 className="text-3xl font-bold text-gray-900">ສ້າງຄຳຂໍລາພັກ</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <FaTimes className="text-2xl" />
           </button>
@@ -187,18 +187,18 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Department *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">ພະແໜກ *</label>
               <select
                 value={formData.department_id}
                 onChange={(e) => {
                   const newDeptId = e.target.value
-                  setFormData({ 
-                    ...formData, 
+                  setFormData({
+                    ...formData,
                     department_id: newDeptId,
                     employee_id: ''
                   })
                 }}
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                 disabled={loadingDepartments}
               >
                 <option value="">
@@ -216,7 +216,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
               <select
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                 disabled={!formData.department_id}
               >
                 <option value="">
@@ -237,7 +237,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
               <select
                 value={formData.supervisor_id}
                 onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
               >
                 <option value="">Select Supervisor</option>
                 {supervisors.map(user => (

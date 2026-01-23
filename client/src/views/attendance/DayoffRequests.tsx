@@ -547,19 +547,19 @@ const DayoffRequests: React.FC = () => {
 
         {/* Stats Cards */}
         <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
+          <div className="bg-blue-50 p-4 rounded-lg">
             <div className="text-sm text-gray-500 font-medium mb-1">ຈຳນວນຄຳຂໍທັງໝົດ</div>
             <div className="text-2xl font-bold text-gray-900">{stats.totalRequests}</div>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg shadow-sm">
+          <div className="bg-yellow-50 p-4 rounded-lg">
             <div className="text-sm text-yellow-600 font-medium mb-1">ກຳລັງດຳເນີນການ</div>
             <div className="text-2xl font-bold text-yellow-700">{stats.pendingRequests}</div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg shadow-sm">
+          <div className="bg-green-50 p-4 rounded-lg">
             <div className="text-sm text-green-600 font-medium mb-1">ອະນຸມັດແລ້ວ</div>
             <div className="text-2xl font-bold text-green-700">{stats.acceptedRequests}</div>
           </div>
-          <div className="bg-red-50 p-4 rounded-lg shadow-sm">
+          <div className="bg-red-50 p-4 rounded-lg">
             <div className="text-sm text-red-600 font-medium mb-1">ປະຕິເສດ</div>
             <div className="text-2xl font-bold text-red-700">{stats.rejectedRequests}</div>
           </div>
@@ -572,7 +572,7 @@ const DayoffRequests: React.FC = () => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
             >
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -584,7 +584,7 @@ const DayoffRequests: React.FC = () => {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                 <option key={month} value={month}>{getMonthName(month)}</option>
@@ -596,7 +596,7 @@ const DayoffRequests: React.FC = () => {
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
+              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] min-w-[180px]"
               disabled={loading}
             >
               <option value="">ພະແໜກທັງໝົດ</option>
@@ -611,7 +611,7 @@ const DayoffRequests: React.FC = () => {
             <select
               value={filterDayOffType}
               onChange={(e) => setFilterDayOffType(e.target.value as DayOffType | 'ALL')}
-              className="px-3 py-2 border rounded-lg text-sm"
+              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
             >
               <option value="ALL">ປະເພດທັງໝົດ</option>
               <option value="FULL_DAY">ໝົດມື້</option>
@@ -624,7 +624,7 @@ const DayoffRequests: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as RequestStatus | 'ALL')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
             >
               <option value="ALL">ສະຖານະທັງໝົດ</option>
               <option value="Pending">ກຳລັງດຳເນີນການ</option>
@@ -642,8 +642,6 @@ const DayoffRequests: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ພະນັກງານ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ປະເພດ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ວັນທິ່ເລີ່ມ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຮອດວັນທີ່</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ມື້</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ເລືອງ</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ສະຖານະ</th>
@@ -663,8 +661,6 @@ const DayoffRequests: React.FC = () => {
                     <tr key={request._id} className="hover:bg-gray-50 transition">
                       <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{getUserName(request.employee_id || request.user_id)}</td>
                       <td className="px-4 py-3.5 text-gray-900 font-medium text-sm whitespace-nowrap">{request.day_off_type}</td>
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{formatDate(request.start_date_time)}</td>
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{formatDate(request.end_date_time)}</td>
                       <td className="px-4 py-3.5 text-gray-900 font-semibold text-sm whitespace-nowrap">{request.date_off_number}</td>
                       <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{request.title}</td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
@@ -742,7 +738,7 @@ const DayoffRequests: React.FC = () => {
       {showDetailModal && selectedRequest && (
         <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center px-[60px] py-[40px]">
               <h2 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດຄຳຂໍ</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
@@ -751,42 +747,42 @@ const DayoffRequests: React.FC = () => {
                 <FaTimes className="text-xl" />
               </button>
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 px-[60px] py-[40px]">
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-semibold text-gray-500">ພະນັກງານ</label>
-                  <p className="text-gray-900 mt-1">{getUserName(selectedRequest.employee_id || selectedRequest.user_id)}</p>
+                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{getUserName(selectedRequest.employee_id || selectedRequest.user_id)}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-500">ຫົວໜ້າ</label>
-                  <p className="text-gray-900 mt-1">{getUserName(selectedRequest.supervisor_id)}</p>
+                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{getUserName(selectedRequest.supervisor_id)}</p>
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-semibold text-gray-500">ເລືອງ</label>
-                <p className="text-lg font-semibold text-gray-900 mt-1">{selectedRequest.title}</p>
+                <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.title}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-semibold text-gray-500">ປະເພດມື້ພັກ</label>
-                  <p className="text-gray-900 mt-1">{selectedRequest.day_off_type}</p>
+                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.day_off_type}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-500">ຈຳນວນມື້</label>
-                  <p className="text-gray-900 font-semibold mt-1">{selectedRequest.date_off_number} ມື້</p>
+                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.date_off_number} ມື້</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="text-sm font-semibold text-gray-500">ວັນທິ່ເລີ່ມ</label>
-                  <p className="text-gray-900 mt-1">{formatDateTime(selectedRequest.start_date_time)}</p>
+                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{formatDateTime(selectedRequest.start_date_time)}</p>
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-gray-500">ຮອດວັນທີ່</label>
-                  <p className="text-gray-900 mt-1">{formatDateTime(selectedRequest.end_date_time)}</p>
+                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{formatDateTime(selectedRequest.end_date_time)}</p>
                 </div>
               </div>
 
