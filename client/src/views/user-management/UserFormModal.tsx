@@ -19,13 +19,12 @@ import {
     HiCheckCircle,
     HiXCircle,
     HiOutlinePencil,
-    HiOutlineTrash,
 } from 'react-icons/hi'
 import DatePicker from './DatePicker'
 import Swal from 'sweetalert2'
 import DepartmentModal from './Department_Position/DepartmentModal'
 import PositionModal from './Department_Position/PositionModal'
-import clsx from 'clsx'
+
 interface UserFormModalProps {
     isOpen: boolean
     onClose: () => void
@@ -55,7 +54,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         vacation_days: number
         gender: 'Male' | 'Female' | 'Other'
         position_id: string
-        department_id: string
+        department_id: string | string[] // เปลี่ยนเป็น string หรือ array
         status: 'Active' | 'Inactive' | 'On Leave'
         base_salary: number
     }>({
@@ -73,7 +72,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         vacation_days: 0,
         gender: 'Male',
         position_id: '',
-        department_id: '',
+        department_id: '', // เริ่มต้นเป็น string
         status: 'Active',
         base_salary: 0,
     })
@@ -103,15 +102,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         null,
     )
 
-    // ตรวจสอบว่าเป็น Supervisor หรือไม่
     const isSupervisor = formData.role === 'Supervisor'
 
-    // ตรวจสอบว่าควรแสดง Position, Base Salary, Vacation Days หรือไม่
     const shouldShowPositionSalaryVacationFields = () => {
-        // ถ้าไม่ใช่ Supervisor: แสดงทั้งหมด
-        if (!isSupervisor) return true
-        // ถ้าเป็น Supervisor: ไม่ต้องแสดง
-        return false
+        return !isSupervisor
     }
 
     useEffect(() => {
@@ -128,6 +122,37 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                           ? baseSalary
                           : 0
 
+                // แปลง department_id
+                let deptId: string | string[] = ''
+                if (editingUser.role === 'Supervisor') {
+                    // Supervisor อาจมีหลาย department
+                    if (Array.isArray(editingUser.department_id)) {
+                        deptId = editingUser.department_id.map((dept) =>
+                            typeof dept === 'string' ? dept : dept._id,
+                        )
+                    } else if (editingUser.department_id) {
+                        const singleDept =
+                            typeof editingUser.department_id === 'string'
+                                ? editingUser.department_id
+                                : editingUser.department_id._id
+                        deptId = [singleDept]
+                    }
+                } else {
+                    // Employee/Admin มี department เดียว
+                    if (Array.isArray(editingUser.department_id)) {
+                        const firstDept = editingUser.department_id[0]
+                        deptId =
+                            typeof firstDept === 'string'
+                                ? firstDept
+                                : firstDept?._id || ''
+                    } else if (editingUser.department_id) {
+                        deptId =
+                            typeof editingUser.department_id === 'string'
+                                ? editingUser.department_id
+                                : editingUser.department_id._id
+                    }
+                }
+
                 setFormData({
                     email: editingUser.email,
                     password: '',
@@ -143,13 +168,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     vacation_days: editingUser.vacation_days,
                     gender: editingUser.gender,
                     position_id:
-                        typeof editingUser.position_id === 'string'
+                        (typeof editingUser.position_id === 'string'
                             ? editingUser.position_id
-                            : editingUser.position_id?._id,
-                    department_id:
-                        typeof editingUser.department_id === 'string'
-                            ? editingUser.department_id
-                            : editingUser.department_id?._id,
+                            : editingUser.position_id?._id) || '',
+                    department_id: deptId,
                     status: editingUser.status,
                     base_salary: salaryValue,
                 })
@@ -159,35 +181,28 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }, [isOpen, editingUser])
 
+    // ตรวจจับการเปลี่ยน Role
     useEffect(() => {
-        if (formData.department_id) {
-            fetchPositionsByDepartment(formData.department_id)
-
-            if (editingUser && formData.position_id) {
-                const positionExists = positions.some(
-                    (pos) =>
-                        pos._id === formData.position_id &&
-                        pos.department_id === formData.department_id,
-                )
-                if (!positionExists) {
-                    setFormData((prev) => ({ ...prev, position_id: '' }))
-                }
-            }
-        } else {
-            setFilteredPositions([])
-            setFormData((prev) => ({ ...prev, position_id: '' }))
-        }
-    }, [formData.department_id, editingUser])
-
-    // ตรวจจับการเปลี่ยน Role เป็น Supervisor
-    useEffect(() => {
-        // ถ้าเลือกเป็น Supervisor ให้เคลียร์ค่าที่ไม่ต้องการ
         if (formData.role === 'Supervisor') {
             setFormData((prev) => ({
                 ...prev,
                 position_id: '',
                 base_salary: 0,
                 vacation_days: 0,
+                // เปลี่ยนเป็น array ถ้ายังเป็น string
+                department_id: Array.isArray(prev.department_id)
+                    ? prev.department_id
+                    : prev.department_id
+                      ? [prev.department_id]
+                      : [],
+            }))
+        } else {
+            // เปลี่ยนเป็น string ถ้าเป็น array
+            setFormData((prev) => ({
+                ...prev,
+                department_id: Array.isArray(prev.department_id)
+                    ? prev.department_id[0] || ''
+                    : prev.department_id,
             }))
         }
     }, [formData.role])
@@ -234,6 +249,25 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
+    // Handle department selection change
+    const handleDepartmentChange = (selectedIds: string[]) => {
+        if (isSupervisor) {
+            setFormData((prev) => ({
+                ...prev,
+                department_id: selectedIds,
+            }))
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                department_id: selectedIds[0] || '',
+                position_id: '',
+            }))
+            if (selectedIds[0]) {
+                fetchPositionsByDepartment(selectedIds[0])
+            }
+        }
+    }
+
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     ) => {
@@ -241,48 +275,19 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
         if (name === 'role') {
             const roleValue = value as 'Supervisor' | 'Admin' | 'Employee'
-
-            setFormData((prev) => {
-                const updatedData = {
-                    ...prev,
-                    role: roleValue,
-                }
-
-                // ถ้าเลือกเป็น Supervisor ให้เคลียร์ค่าที่ไม่ต้องการ
-                if (roleValue === 'Supervisor') {
-                    updatedData.position_id = ''
-                    updatedData.base_salary = 0
-                    updatedData.vacation_days = 0
-                }
-
-                return updatedData
-            })
+            setFormData((prev) => ({
+                ...prev,
+                role: roleValue,
+            }))
         } else if (name === 'vacation_days' || name === 'base_salary') {
-            // ถ้าเป็น Supervisor: ไม่ต้องเปลี่ยนค่า
-            if (formData.role === 'Supervisor') {
-                return
-            }
-
+            if (formData.role === 'Supervisor') return
             const numericValue = Number.parseFloat(value) || 0
             setFormData((prev) => ({
                 ...prev,
                 [name]: numericValue,
             }))
-        } else if (name === 'department_id') {
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-                position_id: '',
-            }))
-            if (value) {
-                fetchPositionsByDepartment(value)
-            }
         } else if (name === 'position_id') {
-            // ถ้าเป็น Supervisor: ไม่ต้องเปลี่ยนค่า
-            if (formData.role === 'Supervisor') {
-                return
-            }
-
+            if (formData.role === 'Supervisor') return
             setFormData((prev) => ({
                 ...prev,
                 [name]: value,
@@ -296,11 +301,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     const handleSalaryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // ถ้าเป็น Supervisor: ไม่ต้องเปลี่ยนค่า
-        if (formData.role === 'Supervisor') {
-            return
-        }
-
+        if (formData.role === 'Supervisor') return
         const value = e.target.value.replace(/[^0-9.]/g, '')
         const numericValue = Number.parseFloat(value) || 0
         setFormData((prev) => ({
@@ -310,9 +311,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     const getSalaryDisplayValue = () => {
-        if (formData.base_salary === 0) {
-            return ''
-        }
+        if (formData.base_salary === 0) return ''
         return formData.base_salary.toString()
     }
 
@@ -321,7 +320,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         setLoading(true)
 
         try {
-            // สร้างข้อมูลที่จะส่ง
             const submitData: CreateUserData = {
                 email: formData.email,
                 password: formData.password || undefined,
@@ -339,14 +337,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                 department_id: formData.department_id || undefined,
             }
 
-            // เพิ่มฟิลด์เพิ่มเติมเฉพาะเมื่อไม่ใช่ Supervisor
             if (formData.role !== 'Supervisor') {
                 submitData.vacation_days = formData.vacation_days
                 submitData.position_id = formData.position_id || undefined
                 submitData.base_salary = formData.base_salary
             }
 
-            // ถ้าเป็นการแก้ไข User และไม่ได้กรอกรหัสผ่านใหม่
             if (editingUser && !formData.password) {
                 delete submitData.password
             }
@@ -424,8 +420,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
     const handlePositionSuccess = () => {
         fetchAllPositions()
-        if (formData.department_id) {
-            fetchPositionsByDepartment(formData.department_id)
+        const deptId = Array.isArray(formData.department_id)
+            ? formData.department_id[0]
+            : formData.department_id
+        if (deptId) {
+            fetchPositionsByDepartment(deptId)
         }
     }
 
@@ -436,7 +435,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }).format(value)
     }
 
-    // ฟังก์ชันเพิ่มแผนก
     const handleAddDepartment = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -444,7 +442,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         setIsDepartmentModalOpen(true)
     }
 
-    // ฟังก์ชันแก้ไขแผนก
+    const handleAddPosition = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsPositionCreateModalOpen(true)
+    }
     const handleEditDepartment = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -460,20 +462,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         }
     }
 
-    // ฟังก์ชันเพิ่มตำแหน่ง
-    const handleAddPosition = (e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        setIsPositionCreateModalOpen(true)
-    }
-
-    // ฟังก์ชันแก้ไขตำแหน่ง
     const handleEditPositionClick = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-
         if (!formData.position_id) return
-
         const position = filteredPositions.find(
             (p) => p._id === formData.position_id,
         )
@@ -484,6 +476,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     if (!isOpen) return null
+
+    const selectedDepartmentIds = Array.isArray(formData.department_id)
+        ? formData.department_id
+        : formData.department_id
+          ? [formData.department_id]
+          : []
 
     return (
         <>
@@ -570,7 +568,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="Enter email address"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -588,7 +586,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required={!editingUser}
                                             placeholder="Enter password"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -604,7 +602,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             value={formData.role}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="Employee">
                                                 Employee
@@ -642,7 +640,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="First name"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -660,7 +658,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="Last name"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -678,7 +676,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="Nickname"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
                                 </div>
@@ -706,7 +704,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="ຊື່"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -724,7 +722,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="ນາມສະກຸນ"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
 
@@ -742,7 +740,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             onChange={handleInputChange}
                                             required
                                             placeholder="ຊື່ຫຍໍ້"
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         />
                                     </div>
                                 </div>
@@ -768,7 +766,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             value={formData.gender}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="Male">Male</option>
                                             <option value="Female">
@@ -820,7 +818,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                     {/* แสดงข้อมูลสำหรับ Supervisor */}
                                     {isSupervisor && (
                                         <div className="col-span-2">
-                                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-sm">
+                                            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                                 <div className="flex items-start">
                                                     <svg
                                                         className="w-5 h-5 text-blue-500 mr-2 mt-0.5"
@@ -856,59 +854,128 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                     )}
 
                                     {/* Department Field - แสดงเสมอ */}
-                                    <div>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <label className="block text-sm font-normal text-gray-700">
-                                                Department{' '}
+                                    {/* สำหรับ Supervisor - แสดง Checkbox แบบหลายตัวเลือก */}
+                                    {isSupervisor ? (
+                                        <div>
+                                            <label className="block text-sm font-normal text-gray-700 mb-1">
+                                                Departments{' '}
                                                 <span className="text-red-600">
                                                     *
                                                 </span>
                                             </label>
-                                            <button
-                                                type="button"
-                                                onClick={handleAddDepartment}
-                                                className="flex items-center justify-center gap-1 w-[60px] h-[45px] rounded-[10px] bg-[#F2F2F2] text-xs text-[#1F3A5F] hover:text-[#1F3A5F]/80 transition-colors"
-                                                title="Add new department"
-                                            >
-                                                <HiPlus className="w-3 h-3" />
-                                                Add
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <select
-                                                name="department_id"
-                                                value={formData.department_id}
-                                                onChange={handleInputChange}
-                                                required
-                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
-                                            >
-                                                <option value="">
-                                                    Select Department
-                                                </option>
+                                            <div className="border border-gray-300 rounded-lg bg-[#F2F2F2] p-3 max-h-40 overflow-y-auto">
                                                 {departments.map((dept) => (
-                                                    <option
+                                                    <label
                                                         key={dept._id}
-                                                        value={dept._id}
+                                                        className="flex items-center gap-2 mb-2 cursor-pointer"
                                                     >
-                                                        {dept.department_name}
-                                                    </option>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedDepartmentIds.includes(
+                                                                dept._id,
+                                                            )}
+                                                            onChange={(e) => {
+                                                                const newIds = e
+                                                                    .target
+                                                                    .checked
+                                                                    ? [
+                                                                          ...selectedDepartmentIds,
+                                                                          dept._id,
+                                                                      ]
+                                                                    : selectedDepartmentIds.filter(
+                                                                          (
+                                                                              id,
+                                                                          ) =>
+                                                                              id !==
+                                                                              dept._id,
+                                                                      )
+                                                                handleDepartmentChange(
+                                                                    newIds,
+                                                                )
+                                                            }}
+                                                            className="w-4 h-4"
+                                                        />
+                                                        <span className="text-sm">
+                                                            {
+                                                                dept.department_name
+                                                            }
+                                                        </span>
+                                                    </label>
                                                 ))}
-                                            </select>
-                                            {formData.department_id && (
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* สำหรับ Employee/Admin - Select ธรรมดา */
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="block text-sm font-normal text-gray-700">
+                                                    Department{' '}
+                                                    <span className="text-red-600">
+                                                        *
+                                                    </span>
+                                                </label>
                                                 <button
                                                     type="button"
                                                     onClick={
-                                                        handleEditDepartment
+                                                        handleAddDepartment
                                                     }
-                                                    className="w-[45px] h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
-                                                    title="Edit department"
+                                                    className="flex items-center justify-center gap-1 w-[60px] h-[45px] rounded-[10px] bg-[#F2F2F2] text-xs text-[#1F3A5F] hover:text-[#1F3A5F]/80 transition-colors"
+                                                    title="Add new department"
                                                 >
-                                                    <HiOutlinePencil className="w-4 h-4" />
+                                                    <HiPlus className="w-3 h-3" />
+                                                    Add
                                                 </button>
-                                            )}
-                                        </div>
-                                    </div>
+                                            </div>
 
+                                            {/* เพิ่ม className "flex gap-2" ที่ div ตัวนี้ */}
+                                            <div className="flex gap-2 items-center">
+                                                <select
+                                                    name="department_id"
+                                                    value={
+                                                        Array.isArray(
+                                                            formData.department_id,
+                                                        )
+                                                            ? ''
+                                                            : formData.department_id
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleDepartmentChange([
+                                                            e.target.value,
+                                                        ])
+                                                    }
+                                                    required
+                                                    className="flex-1 h-[50px] px-3 py-2 rounded-lg bg-[#F2F2F2]" // เพิ่ม flex-1 เพื่อให้ select ขยายเต็มพื้นที่ที่เหลือ
+                                                >
+                                                    <option value="">
+                                                        Select Department
+                                                    </option>
+                                                    {departments.map((dept) => (
+                                                        <option
+                                                            key={dept._id}
+                                                            value={dept._id}
+                                                        >
+                                                            {
+                                                                dept.department_name
+                                                            }
+                                                        </option>
+                                                    ))}
+                                                </select>
+
+                                                {formData.department_id && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            handleEditDepartment
+                                                        }
+                                                        className="w-[45px] h-[50px] flex items-center justify-center rounded-lg bg-[#F2F2F2] hover:bg-gray-200 transition-colors"
+                                                        title="Edit department"
+                                                    >
+                                                        <HiOutlinePencil className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* Position Field - แสดงเฉพาะที่ไม่ใช่ Supervisor */}
                                     {shouldShowPositionSalaryVacationFields() ? (
                                         <div>
@@ -938,7 +1005,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                     disabled={
                                                         !formData.department_id
                                                     }
-                                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                                 >
                                                     <option value="">
                                                         {formData.department_id
@@ -964,7 +1031,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                         onClick={
                                                             handleEditPositionClick
                                                         }
-                                                        className="w-[45px] h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                        className="w-[45px] h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                                         title="Edit position"
                                                     >
                                                         <HiOutlinePencil className="w-4 h-4" />
@@ -982,7 +1049,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 value="Not required for Supervisor"
                                                 readOnly
                                                 disabled
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm bg-gray-100 text-gray-500"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500"
                                             />
                                         </div>
                                     )}
@@ -1006,7 +1073,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                     }
                                                     required={!isSupervisor}
                                                     placeholder="0"
-                                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                    className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                                 />
                                                 {formData.base_salary >= 0 && (
                                                     <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">
@@ -1027,7 +1094,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 value="Not required for Supervisor"
                                                 readOnly
                                                 disabled
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm bg-gray-100 text-gray-500"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500"
                                             />
                                         </div>
                                     )}
@@ -1046,7 +1113,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 min="-365"
                                                 max="365"
                                                 placeholder="0"
-                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                             />
                                         </div>
                                     ) : (
@@ -1059,7 +1126,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                                 value="Not required for Supervisor"
                                                 readOnly
                                                 disabled
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm bg-gray-100 text-gray-500"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-100 text-gray-500"
                                             />
                                         </div>
                                     )}
@@ -1077,7 +1144,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                             value={formData.status}
                                             onChange={handleInputChange}
                                             required
-                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="Active">
                                                 Active
@@ -1105,14 +1172,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                                     <button
                                         type="button"
                                         onClick={handleClose}
-                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 transition-colors"
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="px-4 py-2 text-sm font-medium text-white bg-[#45CC67] border border-[#45CC67] rounded-sm hover:bg-[#45CC67] disabled:bg-gray-400 disabled:border-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-[#45CC67] border border-[#45CC67] rounded-lg hover:bg-[#45CC67] disabled:bg-gray-400 disabled:border-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                                     >
                                         {loading ? (
                                             <>
@@ -1176,7 +1243,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     setIsPositionCreateModalOpen(false)
                 }}
                 editingPosition={null}
-                selectedDepartmentId={formData.department_id}
+                selectedDepartmentId={
+                    Array.isArray(formData.department_id)
+                        ? formData.department_id[0]
+                        : formData.department_id
+                } // ✅ แก้ไขตรงนี้ - ส่งเฉพาะ department แรก
             />
 
             {/* Position Edit Modal */}
@@ -1192,7 +1263,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                     setEditingPosition(null)
                 }}
                 editingPosition={editingPosition}
-                selectedDepartmentId={formData.department_id}
+                selectedDepartmentId={
+                    Array.isArray(formData.department_id)
+                        ? formData.department_id[0]
+                        : formData.department_id
+                } // ✅ แก้ไขตรงนี้ - ส่งเฉพาะ department แรก
             />
         </>
     )

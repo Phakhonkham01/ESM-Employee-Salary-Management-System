@@ -29,7 +29,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       base_salary,
       gender,
       position_id,
-      department_id,
+      department_id, // อาจจะเป็น string หรือ array
       status,
     } = req.body;
 
@@ -41,7 +41,6 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 对 Supervisor 进行特殊处理
     const userData: any = {
       email,
       password: hashedPassword,
@@ -55,22 +54,27 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       date_of_birth,
       start_work,
       gender,
-      status: status || "Active", // 默认 Active
+      status: status || "Active",
       created_at: new Date(),
     };
 
-    // 只有非 Supervisor 才需要这些字段
     if (role !== 'Supervisor') {
       userData.vacation_days = vacation_days || 0;
       userData.base_salary = base_salary || 0;
       
       if (position_id) userData.position_id = position_id;
-      if (department_id) userData.department_id = department_id;
+      // Employee/Admin ใช้ department_id แบบเดียว
+      if (department_id) {
+        userData.department_id = Array.isArray(department_id) ? department_id[0] : department_id;
+      }
     } else {
-      // Supervisor 设置默认值
+      // Supervisor
       userData.vacation_days = 0;
       userData.base_salary = 0;
-      // position_id 和 department_id 留空
+      // รับ department_id เป็น Array
+      if (department_id) {
+        userData.department_id = Array.isArray(department_id) ? department_id : [department_id];
+      }
     }
 
     const newUser: IUser = new User(userData);
@@ -232,26 +236,31 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
   try {
     const { id } = req.params;
     const updateData = req.body;
-    const { role } = updateData;
+    const { role, department_id } = updateData;
 
-    // 首先获取现有用户
     const existingUser = await User.findById(id);
     if (!existingUser) {
       res.status(404).json({ message: "User not found" });
       return;
     }
 
-    // 处理密码更新
     if (updateData.password) {
       updateData.password = await bcrypt.hash(updateData.password, 10);
     }
 
-    // 如果角色变为 Supervisor，清理相关字段
     if (role === 'Supervisor') {
       updateData.position_id = null;
-      
       updateData.base_salary = 0;
       updateData.vacation_days = 0;
+      // รับ department_id เป็น Array
+      if (department_id) {
+        updateData.department_id = Array.isArray(department_id) ? department_id : [department_id];
+      }
+    } else {
+      // Employee/Admin ใช้ department_id แบบเดียว
+      if (department_id) {
+        updateData.department_id = Array.isArray(department_id) ? department_id[0] : department_id;
+      }
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -273,7 +282,6 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({ message: "Error updating user", error: error.message });
   }
 };
-
 // Delete user
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
