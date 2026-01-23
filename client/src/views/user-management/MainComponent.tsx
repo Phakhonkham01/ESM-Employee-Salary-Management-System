@@ -33,7 +33,7 @@ const MainComponent: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
+        <div className="min-h-screen bg-[#FFFFFF] font-sans">
             {/* Top Navigation Bar */}
             {/* <div className="bg-white border-b border-gray-300 px-6 py-3">
                 <div className="flex justify-between items-center">
@@ -137,7 +137,7 @@ const MainComponent: React.FC = () => {
                 {/* Main Content */}
                 <div className="">
                     {/* User List Component */}
-                    <div className="bg-white border border-gray-300 rounded-sm">
+                    <div className="bg-[#ffffff] border border-none rounded-sm">
                         <UserList
                             onEdit={handleEditUser}
                             key={refreshTrigger}

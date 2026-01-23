@@ -5,7 +5,7 @@ const API_URL = "http://localhost:8000/api";
 export interface UserData {
   _id: string;
   email: string;
-  role: "Supervisor" | "Admin" | "Employee";
+  role: 'Supervisor' | 'Admin' | 'Employee';
   first_name_en: string;
   last_name_en: string;
   nickname_en: string;
@@ -14,39 +14,33 @@ export interface UserData {
   nickname_la: string;
   date_of_birth: string;
   start_work: string;
-  base_salary: string | number;
   vacation_days: number;
-  gender: "Male" | "Female" | "Other";
-  position_id: {
-    _id: string
-    position_name: string
-  }
-  department_id: {
-    _id: string
-    department_name: string
-  }
-  status: "Active" | "Inactive" | "On Leave";
-  created_at: string;
+  gender: 'Male' | 'Female' | 'Other';
+  position_id?: string | { _id: string; position_name: string };
+  department_id?: string | string[] | { _id: string; department_name: string } | Array<{ _id: string; department_name: string }>; // ✅ เปลี่ยนตรงนี้
+  status: 'Active' | 'Inactive' | 'On Leave';
+  base_salary: string | number;
+  created_at?: string;
 }
 
 export interface CreateUserData {
-  email: string
-  password?: string
-  role: "Supervisor" | "Admin" | "Employee"
-  first_name_en: string
-  last_name_en: string
-  nickname_en: string
-  first_name_la: string
-  last_name_la: string
-  nickname_la: string
-  date_of_birth: string
-  start_work: string
-  vacation_days?: number  // 改为可选
-  gender: "Male" | "Female" | "Other"
-  position_id?: string    // 改为可选
-  department_id?: string  // 改为可选
-  base_salary?: number    // 改为可选
-  status?: "Active" | "Inactive" | "On Leave"
+  email: string;
+  password?: string;
+  role: 'Supervisor' | 'Admin' | 'Employee';
+  first_name_en: string;
+  last_name_en: string;
+  nickname_en: string;
+  first_name_la: string;
+  last_name_la: string;
+  nickname_la: string;
+  date_of_birth: string;
+  start_work: string;
+  vacation_days?: number;
+  gender: 'Male' | 'Female' | 'Other';
+  position_id?: string;
+  department_id?: string | string[]; // ✅ เปลี่ยนตรงนี้
+  status: 'Active' | 'Inactive' | 'On Leave';
+  base_salary?: number;
 }
 
 // ... rest of your API code remains the same

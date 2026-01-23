@@ -9,14 +9,14 @@
   }
 
   .side-nav-light {
-    @apply bg-white border-r border-gray-200;
+    @apply bg-white border-r border-none;
   }
 
   .side-nav-dark {
-    @apply bg-gray-800 border-r border-gray-600;
+    @apply bg-gray-800 border-r border-none;
   }
 
   .side-nav-bg {
-    @apply border-r bg-white  border-gray-200 dark:bg-gray-800 dark:border-gray-700;
+    @apply border-r bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700;
   }
 }

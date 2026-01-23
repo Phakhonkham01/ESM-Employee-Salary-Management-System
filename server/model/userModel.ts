@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-// 1. สร้าง Schema สําหรับบันทึกประวัติการอัพเดทวันลา
+
 const vacationDayUpdateSchema: Schema = new Schema({
   old_vacation_days: { 
     type: Number, 
@@ -37,8 +37,9 @@ export interface IUser extends Document {
   start_work: Date;
   vacation_days: number;
   gender: "Male" | "Female" | "Other";
-  position_id?: mongoose.Types.ObjectId;  // 改为可选
-  department_id?: mongoose.Types.ObjectId; // 改为可选
+  position_id?: mongoose.Types.ObjectId;  
+  // เปลี่ยนจาก ObjectId เดียว เป็น Array ของ ObjectId
+  department_id: mongoose.Types.ObjectId[];
   status: "Active" | "Inactive" | "On Leave";
   base_salary: number;
   created_at: Date;
@@ -55,6 +56,7 @@ export interface IUser extends Document {
     last_calculation_date: Date;
   };
 }
+
 
 const userSchema: Schema = new Schema({
   email: {
@@ -98,13 +100,13 @@ const userSchema: Schema = new Schema({
   position_id: {
     type: Schema.Types.ObjectId,
     ref: "Position",
-    required: false, // 改为 false
+    required: false,
   },
-  department_id: {
+department_id: [{  // ✅ เปลี่ยนเป็น Array ของ Object อย่างชัดเจน
     type: Schema.Types.ObjectId,
     ref: "Department",
-    required: false, // 改为 false
-  },
+    required: false,
+  }],
   status: {
     type: String,
     enum: ["Active", "Inactive", "On Leave"],
@@ -129,17 +131,22 @@ const userSchema: Schema = new Schema({
   timestamps: true
 });
 
+
 // 添加中间件来处理 Supervisor 的特殊情况
 userSchema.pre('validate', function(next) {
+  // ถ้าข้อมูลส่งมาเป็นค่าเดียว (ไม่ใช่ Array) ให้ครอบด้วย []
+  if (this.department_id && !Array.isArray(this.department_id)) {
+    this.department_id = [this.department_id as any];
+  }
+  
   if (this.role === 'Supervisor') {
-    // Supervisor 不需要 position_id 和 department_id
     if (!this.position_id) {
       this.position_id = undefined;
     }
-
   }
+  // สำหรับ Employee/Admin เราก็เก็บเป็น Array ที่มีสมาชิก 1 ตัว [ID] 
+  // เพื่อให้ Logic การดึงข้อมูล (Populate) ทำงานเหมือนกันทัังระบบ
   next();
 });
-
 const User = mongoose.model<IUser>("User", userSchema);
 export default User;

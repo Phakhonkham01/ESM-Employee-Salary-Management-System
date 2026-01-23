@@ -12,8 +12,8 @@ interface PositionModalProps {
     isOpen: boolean
     onClose: () => void
     onSuccess: () => void
-    editingPosition?: PositionData | null
-    selectedDepartmentId?: string
+    editingPosition: PositionData | null
+    selectedDepartmentId?: string | string[]
 }
 
 const PositionModal: React.FC<PositionModalProps> = ({
@@ -36,15 +36,18 @@ const PositionModal: React.FC<PositionModalProps> = ({
         if (isOpen) {
             fetchDepartments()
 
-            // 如果是编辑模式，预填充数据
+            // If editing mode, pre-fill data
             if (editingPosition) {
                 setPositionName(editingPosition.position_name)
                 setSelectedDepartment(editingPosition.department_id)
             } else if (selectedDepartmentId) {
-                // 如果是创建模式且有传入的部门ID，自动选中
-                setSelectedDepartment(selectedDepartmentId)
+                // ✅ แปลง selectedDepartmentId ให้เป็น string เสมอ
+                const deptId = Array.isArray(selectedDepartmentId)
+                    ? selectedDepartmentId[0] || ''
+                    : selectedDepartmentId
+                setSelectedDepartment(deptId)
             } else {
-                // 重置表单
+                // Reset form
                 setPositionName('')
                 setSelectedDepartment('')
             }
@@ -81,7 +84,6 @@ const PositionModal: React.FC<PositionModalProps> = ({
 
         try {
             if (editingPosition) {
-                // 编辑模式：更新职位
                 await updatePosition(editingPosition._id, {
                     position_name: positionName,
                     department_id: selectedDepartment,
@@ -91,7 +93,6 @@ const PositionModal: React.FC<PositionModalProps> = ({
                     text: 'Position updated successfully!',
                 })
             } else {
-                // 创建模式：新建职位
                 await createPosition({
                     department_id: selectedDepartment,
                     position_name: positionName,
@@ -190,7 +191,6 @@ const PositionModal: React.FC<PositionModalProps> = ({
                         padding: '20px 30px',
                         borderBottom: '1px solid #e5e7eb',
                         display: 'flex',
-
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         backgroundColor: editingPosition
@@ -275,8 +275,14 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                 onChange={(e) =>
                                     setSelectedDepartment(e.target.value)
                                 }
-                                disabled
-                                className="w-full h-[50px] px-3 py-2 rounded-sm bg-gray-200 text-sm cursor-not-allowed opacity-70"
+                                disabled={!!editingPosition}
+                                className="w-full h-[50px] px-3 py-2 rounded-sm bg-[#F2F2F2] text-sm"
+                                style={{
+                                    cursor: editingPosition
+                                        ? 'not-allowed'
+                                        : 'pointer',
+                                    opacity: editingPosition ? 0.7 : 1,
+                                }}
                             >
                                 <option value="">Select Department</option>
                                 {departments.map((dept) => (
@@ -323,8 +329,6 @@ const PositionModal: React.FC<PositionModalProps> = ({
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
-
-                        {/* 编辑模式下显示职位信息 */}
 
                         {/* Modal Footer */}
                         <div

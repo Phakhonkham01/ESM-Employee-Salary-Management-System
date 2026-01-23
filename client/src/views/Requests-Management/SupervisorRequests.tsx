@@ -1,7 +1,7 @@
 'use client'
 
 import type { FC, ReactElement } from 'react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
     HiCheck,
     HiX,
@@ -10,6 +10,8 @@ import {
     HiFilter,
     HiRefresh,
     HiOutlineUser,
+    HiChevronLeft,
+    HiChevronRight,
 } from 'react-icons/hi'
 import {
     getRequestsBySupervisor,
@@ -124,6 +126,10 @@ const SupervisorRequests: FC = () => {
     } | null>(null)
     const [actionLoading, setActionLoading] = useState(false)
 
+    // 1. เพิ่ม State สำหรับ Pagination
+    const [currentPage, setCurrentPage] = useState<number>(1)
+    const itemsPerPage = 8 // กำหนดให้แสดงหน้าละ 10 รายการ
+
     useEffect(() => {
         const authData = localStorage.getItem('auth')
 
@@ -171,6 +177,11 @@ const SupervisorRequests: FC = () => {
             fetchRequests()
         }
     }, [supervisorId])
+
+    // 2. Reset หน้าเป็น 1 เมื่อ filter เปลี่ยน
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [selectedMonth, selectedStatus])
 
     const fetchRequests = async (): Promise<void> => {
         try {
@@ -246,21 +257,73 @@ const SupervisorRequests: FC = () => {
         }
     }
 
-    const filteredRequests = requests.filter((request) => {
-        if (selectedStatus !== 'all' && request.status !== selectedStatus)
-            return false
-        if (selectedMonth) {
-            try {
-                const requestMonth = new Date(request.date)
-                    .toISOString()
-                    .slice(0, 7)
-                if (requestMonth !== selectedMonth) return false
-            } catch {
+    const filteredRequests = useMemo(() => {
+        return requests.filter((request) => {
+            if (selectedStatus !== 'all' && request.status !== selectedStatus)
                 return false
+            if (selectedMonth) {
+                try {
+                    const requestMonth = new Date(request.date)
+                        .toISOString()
+                        .slice(0, 7)
+                    if (requestMonth !== selectedMonth) return false
+                } catch {
+                    return false
+                }
+            }
+            return true
+        })
+    }, [requests, selectedStatus, selectedMonth])
+
+    // 3. คำนวณข้อมูลสำหรับ Pagination
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentItems = filteredRequests.slice(
+        indexOfFirstItem,
+        indexOfLastItem,
+    )
+    const totalPages = Math.ceil(filteredRequests.length / itemsPerPage)
+
+    // ฟังก์ชันสำหรับสร้าง array ของ page numbers
+    const getPageNumbers = () => {
+        const pageNumbers = []
+        const maxVisiblePages = 5
+
+        if (totalPages <= maxVisiblePages) {
+            // ถ้ามีหน้าทั้งหมดน้อยกว่าหรือเท่ากับ 5 แสดงทุกหน้า
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i)
+            }
+        } else {
+            // ถ้ามีหน้ามากกว่า 5 แสดงแบบมี ellipsis
+            if (currentPage <= 3) {
+                // หน้า 1-3: แสดงหน้า 1-5
+                for (let i = 1; i <= 5; i++) {
+                    pageNumbers.push(i)
+                }
+                pageNumbers.push('...')
+                pageNumbers.push(totalPages)
+            } else if (currentPage >= totalPages - 2) {
+                // หน้าสุดท้าย: แสดงหน้าแรก, ..., และ 5 หน้าสุดท้าย
+                pageNumbers.push(1)
+                pageNumbers.push('...')
+                for (let i = totalPages - 4; i <= totalPages; i++) {
+                    pageNumbers.push(i)
+                }
+            } else {
+                // ตรงกลาง: แสดงหน้าแรก, ..., หน้าปัจจุบัน±1, ..., หน้าสุดท้าย
+                pageNumbers.push(1)
+                pageNumbers.push('...')
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    pageNumbers.push(i)
+                }
+                pageNumbers.push('...')
+                pageNumbers.push(totalPages)
             }
         }
-        return true
-    })
+
+        return pageNumbers
+    }
 
     const availableMonths = Array.from(
         new Set(
@@ -284,8 +347,8 @@ const SupervisorRequests: FC = () => {
     const rejectedCount = requests.filter((r) => r.status === 'Reject').length
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB]">
-            <div className="p-6">
+        <div className="min-h-screen bg-[#ffffff] [&>*]:font-semibold">
+            <div className="p-2">
                 {/* Error Message */}
                 {error && (
                     <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
@@ -324,73 +387,102 @@ const SupervisorRequests: FC = () => {
                 {supervisorId && (
                     <>
                         {/* Supervisor Info */}
-{supervisorName && (
-  <div className="mb-6 bg-white border border-gray-300 px-4 py-3 rounded">
-    <div className="flex items-center justify-between">
-      {/* Left: Supervisor Info */}
-      <div>
-        <p className="text-sm font-medium text-gray-900">
-          Supervisor: {supervisorName}
-        </p>
-        <p className="text-xs text-gray-600 mt-0.5">
-          ID: {supervisorId.substring(0, 8)}...
-        </p>
-      </div>
+                        {supervisorName && (
+                            <div className="mb-6 bg-white border border-gray-300 px-4 py-3 rounded">
+                                <div className="flex items-center justify-between">
+                                    {/* Left: Supervisor Info */}
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            Supervisor: {supervisorName}
+                                        </p>
+                                        <p className="text-xs text-gray-600 mt-0.5">
+                                            ID: {supervisorId.substring(0, 8)}
+                                            ...
+                                        </p>
+                                    </div>
 
-      {/* Right: Filters */}
-      <div className="flex items-center gap-4">
-        {/* Status Filter */}
-        <div>
-          
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 border border-[#E5E7EB] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
-          >
-            <option value="all">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Accept">Accepted</option>
-            <option value="Reject">Rejected</option>
-          </select>
-        </div>
+                                    {/* Right: Filters */}
+                                    <div className="flex items-center gap-4">
+                                        {/* Status Filter */}
+                                        <div>
+                                            <select
+                                                value={selectedStatus}
+                                                onChange={(e) =>
+                                                    setSelectedStatus(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            >
+                                                <option value="all">
+                                                    All Status
+                                                </option>
+                                                <option value="Pending">
+                                                    Pending
+                                                </option>
+                                                <option value="Accept">
+                                                    Accepted
+                                                </option>
+                                                <option value="Reject">
+                                                    Rejected
+                                                </option>
+                                            </select>
+                                        </div>
 
-        {/* Month Filter */}
-        <div className="flex items-center gap-2">
-            
-          <HiCalendar className="text-[#6B7280]" size={16} />
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3 py-2 border border-[#E5E7EB] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
-          >
-            <option value="">All Months</option>
-            {availableMonths.map((month) => (
-              <option key={month} value={month}>
-                {new Date(month + '-01').toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                })}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
+                                        {/* Month Filter */}
+                                        <div className="flex items-center gap-2">
+                                            <HiCalendar
+                                                className="text-[#6B7280]"
+                                                size={16}
+                                            />
+                                            <select
+                                                value={selectedMonth}
+                                                onChange={(e) =>
+                                                    setSelectedMonth(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                                className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+                                            >
+                                                <option value="">
+                                                    All Months
+                                                </option>
+                                                {availableMonths.map(
+                                                    (month) => (
+                                                        <option
+                                                            key={month}
+                                                            value={month}
+                                                        >
+                                                            {new Date(
+                                                                month + '-01',
+                                                            ).toLocaleDateString(
+                                                                'en-US',
+                                                                {
+                                                                    year: 'numeric',
+                                                                    month: 'long',
+                                                                },
+                                                            )}
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Stats Cards */}
                         <div className="grid grid-cols-4 gap-4 mb-6">
-                            <div className="bg-[#FFFFFF]/10 border border-[#FFFFFF]/30 rounded p-4 shadow-sm">
+                            <div className="bg-[#FFFFFF]/10 border border-none rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Total Requests
                                 </div>
                                 <div className="text-2xl font-semibold text-[#1F3A5F] mt-1">
-                                    {requests.length}
+                                    {filteredRequests.length}
                                 </div>
                             </div>
-                            <div className="bg-[#76FF70]/10 border border-[#76FF70]/30 rounded p-4 shadow-sm">
+                            <div className="bg-[#76FF70]/10 border border-none rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Pending
                                 </div>
@@ -398,7 +490,7 @@ const SupervisorRequests: FC = () => {
                                     {pendingCount}
                                 </div>
                             </div>
-                            <div className="bg-[#FEF3C7]/50 border border-[#FDE68A] rounded p-4 shadow-sm">
+                            <div className="bg-[#FEF3C7]/50 border border-none rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Accepted
                                 </div>
@@ -406,7 +498,7 @@ const SupervisorRequests: FC = () => {
                                     {acceptedCount}
                                 </div>
                             </div>
-                            <div className="bg-[#FDE8E8] border border-[#FECACA] rounded p-4 shadow-sm">
+                            <div className="bg-[#FDE8E8] border border-none rounded p-4 shadow-sm">
                                 <div className="text-xs text-[#6B7280] uppercase tracking-wide">
                                     Rejected
                                 </div>
@@ -417,7 +509,7 @@ const SupervisorRequests: FC = () => {
                         </div>
 
                         {/* Filters */}
-                        <div className="bg-white border border-[#E5E7EB] rounded mb-6">
+                        <div className="bg-white border border-none rounded mb-6">
                             {/* <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
                                 <HiFilter
                                     className="text-[#6B7280]"
@@ -427,7 +519,6 @@ const SupervisorRequests: FC = () => {
                                     Filters
                                 </span>
                             </div> */}
-        
                         </div>
 
                         {/* Content */}
@@ -442,10 +533,152 @@ const SupervisorRequests: FC = () => {
                                 totalRequests={requests.length}
                             />
                         ) : (
-                            <RequestsTable
-                                requests={filteredRequests}
-                                onStatusUpdate={openConfirmDialog}
-                            />
+                            <>
+                                <RequestsTable
+                                    requests={currentItems}
+                                    onStatusUpdate={openConfirmDialog}
+                                />
+
+                                {/* 4. เพิ่ม Pagination UI */}
+                                {filteredRequests.length > itemsPerPage && (
+                                    <div className="mt-6 bg-white border border-[#E5E7EB] rounded-lg px-6 py-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-sm text-gray-600">
+                                                Showing{' '}
+                                                <span className="font-semibold">
+                                                    {Math.min(
+                                                        indexOfFirstItem + 1,
+                                                        filteredRequests.length,
+                                                    )}
+                                                </span>{' '}
+                                                to{' '}
+                                                <span className="font-semibold">
+                                                    {Math.min(
+                                                        indexOfLastItem,
+                                                        filteredRequests.length,
+                                                    )}
+                                                </span>{' '}
+                                                of{' '}
+                                                <span className="font-semibold">
+                                                    {filteredRequests.length}
+                                                </span>{' '}
+                                                requests
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                {/* Previous Button */}
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage((prev) =>
+                                                            Math.max(
+                                                                prev - 1,
+                                                                1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    disabled={currentPage === 1}
+                                                    className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium ${
+                                                        currentPage === 1
+                                                            ? 'text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 hover:text-[#1F3A5F]'
+                                                    }`}
+                                                >
+                                                    <HiChevronLeft size={16} />
+                                                    Previous
+                                                </button>
+
+                                                {/* Page Numbers */}
+                                                <div className="flex items-center gap-1">
+                                                    {getPageNumbers().map(
+                                                        (pageNum, index) => (
+                                                            <div key={index}>
+                                                                {pageNum ===
+                                                                '...' ? (
+                                                                    <span className="px-2 py-1 text-gray-400">
+                                                                        ...
+                                                                    </span>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setCurrentPage(
+                                                                                Number(
+                                                                                    pageNum,
+                                                                                ),
+                                                                            )
+                                                                        }
+                                                                        className={`w-8 h-8 flex items-center justify-center rounded text-sm font-medium ${
+                                                                            currentPage ===
+                                                                            pageNum
+                                                                                ? 'bg-[#45cc67] text-white'
+                                                                                : 'text-gray-700 hover:bg-gray-50'
+                                                                        }`}
+                                                                    >
+                                                                        {
+                                                                            pageNum
+                                                                        }
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+
+                                                {/* Next Button */}
+                                                <button
+                                                    onClick={() =>
+                                                        setCurrentPage((prev) =>
+                                                            Math.min(
+                                                                prev + 1,
+                                                                totalPages,
+                                                            ),
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        currentPage ===
+                                                        totalPages
+                                                    }
+                                                    className={`flex items-center gap-1 px-3 py-2 rounded text-sm font-medium ${
+                                                        currentPage ===
+                                                        totalPages
+                                                            ? 'text-gray-400 cursor-not-allowed'
+                                                            : 'text-gray-700 hover:bg-gray-50 hover:text-[#1F3A5F]'
+                                                    }`}
+                                                >
+                                                    Next
+                                                    <HiChevronRight size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Page Size Selector (Optional) */}
+                                        <div className="mt-4 pt-4 border-t border-gray-100">
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <span>Rows per page:</span>
+                                                <select
+                                                    value={itemsPerPage}
+                                                    onChange={(e) => {
+                                                        // เปลี่ยน itemsPerPage แล้ว reset กลับไปหน้า 1
+                                                        // itemsPerPage ควรเป็น state ถ้าต้องการให้เปลี่ยนได้
+                                                        // แต่ถ้าต้องการคงที่ที่ 10 ก็ไม่ต้องมี select นี้
+                                                    }}
+                                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                                >
+                                                    <option value={5}>5</option>
+                                                    <option value={10}>
+                                                        10
+                                                    </option>
+                                                    <option value={20}>
+                                                        20
+                                                    </option>
+                                                    <option value={50}>
+                                                        50
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </>
                 )}
@@ -474,7 +707,7 @@ const SupervisorRequests: FC = () => {
                                 </strong>{' '}
                                 this request?
                             </p>
-                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded p-3 text-sm">
+                            <div className="bg-[#ffffff] border border-[#E5E7EB] rounded p-3 text-sm">
                                 <div className="flex justify-between mb-2">
                                     <span className="text-[#6B7280]">
                                         Employee:
@@ -497,7 +730,7 @@ const SupervisorRequests: FC = () => {
                             <button
                                 onClick={closeConfirmDialog}
                                 disabled={actionLoading}
-                                className="px-4 py-2 border border-[#E5E7EB] rounded text-sm text-[#374151] hover:bg-[#F9FAFB] transition-colors"
+                                className="px-4 py-2 border border-[#E5E7EB] rounded text-sm text-[#374151] hover:bg-[#ffffff] transition-colors"
                             >
                                 Cancel
                             </button>
@@ -582,7 +815,7 @@ const RequestsTable: FC<RequestsTableProps> = ({
         <div className="overflow-x-auto">
             <table className="w-full border-collapse">
                 <thead>
-                    <tr className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                    <tr className="bg-[#ffffff] border-b border-[#E5E7EB]">
                         <th className="px-4 py-3 text-left text-xs font-semibold text-[#374151] uppercase tracking-wide">
                             Employee
                         </th>
@@ -733,7 +966,7 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
     }
 
     return (
-        <tr className="border-b border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors">
+        <tr className="border-b border-[#E5E7EB] hover:bg-[#ffffff] transition-colors">
             <td className="px-4 py-3 text-sm">
                 <div className="flex items-center gap-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
@@ -775,43 +1008,42 @@ const RequestRow: FC<RequestRowProps> = ({ request, onStatusUpdate }) => {
             <td className="px-4 py-3 text-sm">
                 {getStatusBadge(request.status)}
             </td>
- <td className="px-1 py-1 text-sm text-center">
-  {request.status === 'Pending' ? (
-    <div className="flex justify-center gap-4">
-      <button
-        onClick={() =>
-          onStatusUpdate(
-            request._id,
-            'Accept',
-            employeeInfo.name,
-            request.title
-          )
-        }
-        className="px-1 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
-      >
-        <HiCheck size={14} />
-        Accept
-      </button>
-      <button
-        onClick={() =>
-          onStatusUpdate(
-            request._id,
-            'Reject',
-            employeeInfo.name,
-            request.title
-          )
-        }
-        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-md text-xs font-semibold transition-all flex items-center gap-1 shadow-sm"
-      >
-        <HiX size={14} />
-        Reject
-      </button>
-    </div>
-  ) : (
-    <span className="text-xs text-gray-400">-</span>
-  )}
-</td>
-
+            <td className="px-1 py-1 text-sm text-center">
+                {request.status === 'Pending' ? (
+                    <div className="flex justify-center gap-2">
+                        <button
+                            onClick={() =>
+                                onStatusUpdate(
+                                    request._id,
+                                    'Accept',
+                                    employeeInfo.name,
+                                    request.title,
+                                )
+                            }
+                            className="inline-flex items-center justify-center px-3 py-2 bg-[#1BC570] hover:bg-[#0BB8B0] text-white text-sm font-semibold rounded transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <HiCheck className="mr-2" size={14} />
+                            Accept
+                        </button>
+                        <button
+                            onClick={() =>
+                                onStatusUpdate(
+                                    request._id,
+                                    'Reject',
+                                    employeeInfo.name,
+                                    request.title,
+                                )
+                            }
+                            className="inline-flex items-center justify-center px-3 py-2 bg-[#F64E60] hover:bg-[#EE2D41] text-white text-sm font-semibold rounded transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <HiX className="mr-2" size={14} />
+                            Reject
+                        </button>
+                    </div>
+                ) : (
+                    <span className="text-xs text-gray-400">-</span>
+                )}
+            </td>
         </tr>
     )
 }
