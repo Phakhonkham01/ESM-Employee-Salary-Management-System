@@ -418,7 +418,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-2 font-sans [&>*]:font-semibold">
+        <div className="min-h-screen bg-white p-2 font-sans [&>*]:font-semibold">
             {/* Page Header */}
             <div className="mb-8">
                 <div className="flex justify-between items-start">
@@ -443,7 +443,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                         onChange={(e) =>
                                             setSelectedStatus(e.target.value)
                                         }
-                                        className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                                        className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                     >
                                         <option value="all">All Status</option>
                                         <option value="Pending">Pending</option>
@@ -461,7 +461,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                     onChange={(e) =>
                                         setSelectedMonth(e.target.value)
                                     }
-                                    className="px-3 py-1.5 border border-gray-300 rounded-md text-sm"
+                                    className="w-[130px] h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                 >
                                     <option value="">All Periods</option>
                                     {availableMonths.map((month) => (
