@@ -578,7 +578,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                     {/* Main Content */}
                     <div className="bg-white border border-gray-300 rounded-sm">
                         {/* Table Content */}
-                        <div className="p-6">
+                        <div className="p-2">
                             {currentItems.length === 0 ? (
                                 <div className="text-center py-16 px-5">
                                     <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
@@ -752,8 +752,8 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                                     {d.status}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex gap-2">
+                                                            <td className="px-[-5] py-4">
+                                                                <div className="flex gap-4">
                                                                     {/* Approve Button */}
                                                                     <button
                                                                         onClick={() =>

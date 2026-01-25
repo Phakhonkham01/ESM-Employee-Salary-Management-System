@@ -404,7 +404,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                 : 'All salary records'}
                         </p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
+                    {/* <div className="flex flex-wrap gap-2">
                         <button
                             onClick={exportToCSV}
                             className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0"
@@ -433,7 +433,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                 <ChevronDown className="w-3.5 h-3.5" />
                             )}
                         </button>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 
@@ -465,7 +465,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                 onChange={(e) =>
                                     setSelectedYear(parseInt(e.target.value))
                                 }
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             >
                                 {getYears().map((year) => (
                                     <option key={year} value={year}>
@@ -489,7 +489,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                             : parseInt(e.target.value),
                                     )
                                 }
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             >
                                 <option value="all">All Months</option>
                                 {Array.from(
@@ -513,7 +513,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                 onChange={(e) =>
                                     setSelectedStatus(e.target.value)
                                 }
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             >
                                 <option value="all">All Status</option>
                                 <option value="pending">Pending</option>
@@ -533,7 +533,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                 onChange={(e) =>
                                     setSelectedDepartment(e.target.value)
                                 }
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             >
                                 <option value="all">All Depts</option>
                                 {getUniqueDepartments().map(
@@ -559,7 +559,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                 onChange={(e) =>
                                     setSelectedPosition(e.target.value)
                                 }
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             >
                                 <option value="all">All Positions</option>
                                 {getUniquePositions().map(
@@ -589,7 +589,7 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
                                     onChange={(e) =>
                                         setSearchTerm(e.target.value)
                                     }
-                                    className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                 />
                             </div>
                         </div>
