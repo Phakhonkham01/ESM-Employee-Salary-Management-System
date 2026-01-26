@@ -204,7 +204,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <div className="p-8 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-3xl font-bold text-gray-900">ແກ້ໄຂຄຳຂໍລາພັກ</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
@@ -228,7 +228,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                     employee_id: ''
                   })
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                 disabled={loadingDepartments}
               >
                 <option value="">
@@ -248,7 +248,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                 disabled={!formData.department_id}
               >
                 <option value="">
@@ -271,7 +271,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={formData.supervisor_id}
                 onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
               >
                 <option value="">ເລືອກຫົວໜ້າ</option>
                 {supervisors.map(user => (
@@ -294,7 +294,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
               placeholder="e.g., Family Vacation"
             />
           </div>
@@ -313,7 +313,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                   setEndDate(null)
                 }
               }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
             >
               <option value="FULL_DAY">ໝົດມື້</option>
               <option value="HALF_DAY">ເຄີ່ງມື້</option>
@@ -392,8 +392,8 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <p className="text-sm font-semibold text-gray-700 mb-2">ຊ່ວງເວລາ</p>
                 <p className="text-lg font-bold text-blue-600">
-                  {getHalfDayTimes(halfDayPeriod).start} - {getHalfDayTimes(halfDayPeriod).end}
-                </p>
+                    {getHalfDayTimes(halfDayPeriod).start} - {getHalfDayTimes(halfDayPeriod).end}
+                  </p>
               </div>
             </>
           )}

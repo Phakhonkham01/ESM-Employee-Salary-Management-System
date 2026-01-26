@@ -379,7 +379,7 @@ const OTandFieldWork: React.FC = () => {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
             >
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -391,7 +391,7 @@ const OTandFieldWork: React.FC = () => {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                 <option key={month} value={month}>{getMonthName(month)}</option>
@@ -403,7 +403,7 @@ const OTandFieldWork: React.FC = () => {
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
               disabled={loading}
             >
               <option value="">ພະແໜກທັງໝົດ</option>
@@ -484,20 +484,20 @@ const OTandFieldWork: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex gap-2">
+                        <div className="flex gap-4">
                           <button
                             onClick={() => {
                               setSelectedRequest(request)
                               setShowDetailModal(true)
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 hover:bg-gray-700 text-white"
+                            className="flex items-center justify-center h-[40px] w-[90px] rounded-sm text-xs transition bg-gray-600 hover:bg-gray-700 text-white"
                           >
                             <FaEye className="text-xs" /> ລາຍລະອຽດ
                           </button>
                           <button
                             onClick={() => handleDelete(request._id)}
                             disabled={loading || isDisabled}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${isDisabled
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-medium transition ${isDisabled
                               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                               : 'bg-red-600 text-white hover:bg-red-700'
                               }`}
