@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-
 import UserOtFieldWorkRequests, { RequestItem } from './UserOtFieldWorkRequests'
-import EditRequestModule from './EdiRequest'
+import RequestForm, { RequestFormData } from '@/views/user-page/user-profile/module/RequestModule'
 import { loadingStyle } from './HelperComponents'
 
 const MainComponent: React.FC = () => {
     const [requests, setRequests] = useState<RequestItem[]>([])
     const [loading, setLoading] = useState<boolean>(true)
-    const [editing, setEditing] = useState<RequestItem | null>(null)
+    const [editingRequest, setEditingRequest] = useState<RequestItem | null>(null)
+    const [isFormOpen, setIsFormOpen] = useState(false)
+    const [requestType, setRequestType] = useState<'OT' | 'FIELD_WORK'>('OT')
 
     /* ================= FETCH DATA ================= */
 
@@ -35,7 +36,9 @@ const MainComponent: React.FC = () => {
     /* ================= ACTION HANDLERS ================= */
 
     const handleEdit = (item: RequestItem) => {
-        setEditing(item)
+        setEditingRequest(item)
+        setRequestType(item.title as 'OT' | 'FIELD_WORK')
+        setIsFormOpen(true)
     }
 
     const handleDelete = async (id: string) => {
@@ -50,6 +53,33 @@ const MainComponent: React.FC = () => {
         }
     }
 
+    const handleFormSuccess = () => {
+        fetchRequests() // Refresh the list after successful submit
+        setEditingRequest(null)
+    }
+
+    const handleFormClose = () => {
+        setIsFormOpen(false)
+        setEditingRequest(null)
+    }
+
+    /* ================= Transform RequestItem to RequestFormData ================= */
+
+    const transformToFormData = (item: RequestItem): RequestFormData => {
+        return {
+            _id: item._id,
+            user_id: item._id,
+            supervisor_id: item._id,
+            date: item.date,
+            title: item.title as 'OT' | 'FIELD_WORK',
+            start_hour: item.start_hour,
+            end_hour: item.end_hour,
+            fuel: item.fuel || 0,
+            reason: item.reason || '',
+            status: item.status as 'Pending' | 'Approved' | 'Rejected'
+        }
+    }
+
     /* ================= LOADING ================= */
 
     if (loading) {
@@ -59,20 +89,23 @@ const MainComponent: React.FC = () => {
     /* ================= UI ================= */
 
     return (
-        <>
+        <div className="space-y-6">
+            {/* Requests List */}
             <UserOtFieldWorkRequests
                 requests={requests}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
             />
 
-            <EditRequestModule
-                open={!!editing}
-                item={editing}
-                onClose={() => setEditing(null)}
-                onSaved={fetchRequests}
+            {/* Request Form Modal */}
+            <RequestForm
+                open={isFormOpen}
+                type={requestType}
+                onClose={handleFormClose}
+                requestData={editingRequest ? transformToFormData(editingRequest) : undefined}
+                onSuccess={handleFormSuccess}
             />
-        </>
+        </div>
     )
 }
 

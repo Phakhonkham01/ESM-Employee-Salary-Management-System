@@ -56,7 +56,7 @@ export const statusBadge = (status: RequestStatus) => {
 
 export const containerStyle = {
   backgroundColor: "white",
-  padding: "30px",
+  padding: "10px",
   borderRadius: "12px",
   boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
 }

@@ -263,9 +263,6 @@ const UserDashboard = ({ user }: Props) => {
         }
     }
 
-    console.log(user.department_id)
-
-
     // Calculate total
     const calculateTotal = (field: keyof Salary) => {
         return filteredSalaries.reduce(
@@ -331,9 +328,9 @@ const UserDashboard = ({ user }: Props) => {
     }
 
     return (
-        <div className="max-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
+        <div className="max-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-2">
             {/* Main Dashboard Container */}
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-full mx-auto space-y-6">
 
                 {/* Header with User Info */}
                 <div className="bg-white rounded-2xl shadow-lg p-6">

@@ -1,5 +1,5 @@
-import React, { useState } from "react"
-import { HiPencil, HiTrash } from "react-icons/hi"
+import React, { useState, useEffect } from "react"
+import { HiPencil, HiTrash, HiChevronLeft, HiChevronRight } from "react-icons/hi"
 import {
   Section,
   EmptyRow,
@@ -12,10 +12,7 @@ import {
   tr,
   RequestStatus,
 } from "./HelperComponents"
-import {
-  HiRefresh,
-} from 'react-icons/hi'
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'
 
 /* ================= TYPES ================= */
 
@@ -37,11 +34,15 @@ export interface DayOffItem {
 interface Props {
   dayOffs: DayOffItem[]
   onEdit: (item: DayOffItem) => void
-  onDelete: (id: string) => Promise<void> // Changed to async function
-  refreshRequests: () => void // Added this prop to refresh list
+  onDelete: (id: string) => Promise<void>
+  refreshRequests: () => void
 }
 
-/* ================= BUTTON ================= */
+/* ================= CONSTANTS ================= */
+
+const ITEMS_PER_PAGE = 9
+
+/* ================= REUSABLE BUTTONS ================= */
 
 const ActionButton = ({
   color,
@@ -85,6 +86,133 @@ const ActionButton = ({
   </button>
 )
 
+/* ================= PAGINATION COMPONENT ================= */
+
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+}) => {
+  if (totalPages <= 1) return null
+
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "flex-end",
+      alignItems: "center",
+      gap: "8px",
+      marginTop: "20px",
+      paddingTop: "20px",
+      borderTop: "1px solid #e5e7eb"
+    }}>
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        style={{
+          padding: "6px 12px",
+          backgroundColor: currentPage === 1 ? "#f3f4f6" : "#ffffff",
+          color: currentPage === 1 ? "#9ca3af" : "#4b5563",
+          border: "1px solid #d1d5db",
+          borderRadius: "6px",
+          cursor: currentPage === 1 ? "not-allowed" : "pointer",
+          fontSize: "14px",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          transition: "all 0.2s ease"
+        }}
+        onMouseEnter={(e) => {
+          if (currentPage > 1) {
+            e.currentTarget.style.backgroundColor = "#f9fafb"
+            e.currentTarget.style.borderColor = "#45cc67"
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (currentPage > 1) {
+            e.currentTarget.style.backgroundColor = "#ffffff"
+            e.currentTarget.style.borderColor = "#d1d5db"
+          }
+        }}
+      >
+        <HiChevronLeft size={16} />
+        ກັບຄືນ
+      </button>
+
+      <div style={{ display: "flex", gap: "4px" }}>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            onClick={() => onPageChange(page)}
+            style={{
+              padding: "6px 12px",
+              backgroundColor: currentPage === page ? "#45cc67" : "#ffffff",
+              color: currentPage === page ? "#ffffff" : "#4b5563",
+              border: "1px solid #d1d5db",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: currentPage === page ? "600" : "400",
+              minWidth: "40px",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={(e) => {
+              if (currentPage !== page) {
+                e.currentTarget.style.backgroundColor = "#f9fafb"
+                e.currentTarget.style.borderColor = "#9ca3af"
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentPage !== page) {
+                e.currentTarget.style.backgroundColor = "#ffffff"
+                e.currentTarget.style.borderColor = "#d1d5db"
+              }
+            }}
+          >
+            {page}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        style={{
+          padding: "6px 12px",
+          backgroundColor: currentPage === totalPages ? "#f3f4f6" : "#ffffff",
+          color: currentPage === totalPages ? "#9ca3af" : "#4b5563",
+          border: "1px solid #d1d5db",
+          borderRadius: "6px",
+          cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+          fontSize: "14px",
+          display: "flex",
+          alignItems: "center",
+          gap: "4px",
+          transition: "all 0.2s ease"
+        }}
+        onMouseEnter={(e) => {
+          if (currentPage < totalPages) {
+            e.currentTarget.style.backgroundColor = "#f9fafb"
+            e.currentTarget.style.borderColor = "#9ca3af"
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (currentPage < totalPages) {
+            e.currentTarget.style.backgroundColor = "#ffffff"
+            e.currentTarget.style.borderColor = "#d1d5db"
+          }
+        }}
+      >
+        ຕໍ່ໄປ
+        <HiChevronRight size={16} />
+      </button>
+    </div>
+  )
+}
+
 /* ================= FILTER STYLES ================= */
 
 const filterContainerStyle: React.CSSProperties = {
@@ -109,7 +237,7 @@ const UserDayOffRequest: React.FC<Props> = ({
   dayOffs,
   onEdit,
   onDelete,
-  refreshRequests, // Use this instead of calling loadDayOffRequests directly
+  refreshRequests,
 }) => {
   const auth = JSON.parse(localStorage.getItem("auth") || "null")
   const role = auth?.user?.role
@@ -117,7 +245,10 @@ const UserDayOffRequest: React.FC<Props> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
   const [selectedMonth, setSelectedMonth] = useState<string>("")
   const [selectedType, setSelectedType] = useState<string>("all")
-  const [isDeleting, setIsDeleting] = useState<string | null>(null) // Track deleting state
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+
+  /* ================= FILTER LOGIC ================= */
 
   const filteredDayOffs = dayOffs.filter((d) => {
     if (selectedStatus !== "all" && d.status !== selectedStatus)
@@ -136,6 +267,8 @@ const UserDayOffRequest: React.FC<Props> = ({
     return true
   })
 
+  /* ================= MONTH OPTIONS ================= */
+
   const availableMonths = Array.from(
     new Set(
       dayOffs.map((d) =>
@@ -144,16 +277,30 @@ const UserDayOffRequest: React.FC<Props> = ({
     )
   ).sort().reverse()
 
-  // Delete handler with proper error handling
+  /* ================= PAGINATION LOGIC ================= */
+
+  const totalPages = Math.ceil(filteredDayOffs.length / ITEMS_PER_PAGE)
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedStatus, selectedType, selectedMonth])
+
+  // Calculate paginated data
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+  const endIndex = startIndex + ITEMS_PER_PAGE
+  const paginatedDayOffs = filteredDayOffs.slice(startIndex, endIndex)
+
+  /* ================= DELETE HANDLER ================= */
+
   const handleDelete = async (id: string) => {
-    // Show confirmation dialog
     const result = await Swal.fire({
-      title: 'ຕ້ອງການທີ່ຈະຍົກເລິກ?',
+      title: 'ຕ້ອງການຍົກເລິກຄຳຂໍລາພັກ?',
       text: "ການຍົກເລິກນີ້ບໍ່ສາມາດກັບຄືນໄດ້",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'ດຳເນີນການ',
-      cancelButtonText: 'ຍົກເລີກ',
+      confirmButtonText: 'ແມ່ນແລ້ວ, ຍົກເລິກ',
+      cancelButtonText: 'ບໍ່, ຍົກເລີກ',
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#6b7280',
       reverseButtons: true,
@@ -163,12 +310,10 @@ const UserDayOffRequest: React.FC<Props> = ({
       }
     });
 
-    // If user confirms deletion
     if (result.isConfirmed) {
-      setIsDeleting(id); // Set deleting state
+      setIsDeleting(id);
 
       try {
-        // Show loading state
         Swal.fire({
           title: 'ກຳລັງຍົກເລິກ...',
           allowOutsideClick: false,
@@ -177,13 +322,10 @@ const UserDayOffRequest: React.FC<Props> = ({
           }
         });
 
-        // Call the delete function from props
         await onDelete(id);
 
-        // Close loading state
         Swal.close();
 
-        // Show success message
         await Swal.fire({
           icon: 'success',
           title: 'ຍົກເລິກສຳເລັດ!',
@@ -193,19 +335,25 @@ const UserDayOffRequest: React.FC<Props> = ({
           timerProgressBar: true
         });
 
-        // Refresh the list
         refreshRequests();
 
       } catch (error: any) {
         console.error('Delete error:', error);
-
-        // Close loading state
         Swal.close();
+        
+        await Swal.fire({
+          icon: 'error',
+          title: 'ເກີດຂໍ້ຜິດພາດ',
+          text: 'ບໍ່ສາມາດຍົກເລິກຄຳຂໍໄດ້',
+          confirmButtonColor: '#ef4444',
+        });
       } finally {
-        setIsDeleting(null); // Reset deleting state
+        setIsDeleting(null);
       }
     }
   };
+
+  /* ================= RENDER ================= */
 
   return (
     <div style={containerStyle}>
@@ -247,7 +395,7 @@ const UserDayOffRequest: React.FC<Props> = ({
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
               >
-                <option value="">ເດືອນ</option>
+                <option value="">ເດືອນທັງໝົດ</option>
                 {availableMonths.map((month) => (
                   <option key={month} value={month}>
                     {new Date(month + "-01").toLocaleDateString("en-US", {
@@ -262,12 +410,11 @@ const UserDayOffRequest: React.FC<Props> = ({
 
           {/* Results Count */}
           <div style={{ marginTop: "70px", fontSize: "14px", color: "#6b7280" }}>
-            Showing {filteredDayOffs.length} of {dayOffs.length} requests
+            ສະແດງ {startIndex + 1}-{Math.min(endIndex, filteredDayOffs.length)} ຈາກ {filteredDayOffs.length} ຄຳຂໍ
           </div>
         </div>
 
-
-
+        {/* Table */}
         <table
           style={{
             ...tableStyle,
@@ -299,12 +446,12 @@ const UserDayOffRequest: React.FC<Props> = ({
               <th style={th}>ມື້</th>
               <th style={th}>ເລື່ອງ</th>
               <th style={th}>ສະຖານະ</th>
-              <th style={th}>Actions</th>
+              <th style={th}>ການກະທຳ</th>
             </tr>
           </thead>
 
           <tbody>
-            {filteredDayOffs.map((d) => {
+            {paginatedDayOffs.map((d) => {
               const isPending = d.status === "Pending"
               const isDeletingThis = isDeleting === d._id
 
@@ -314,19 +461,22 @@ const UserDayOffRequest: React.FC<Props> = ({
                     <td style={td}>{d.employee_id}</td>
                   ) : null}
 
-                  <td style={td}>{d.day_off_type}</td>
+                  <td style={td}>
+                    {d.day_off_type === "FULL_DAY" ? "ໝົດມື້" : "ເຄີ່ງມື້"}
+                  </td>
                   <td style={td}>
                     {formatDate(d.start_date_time)}
                   </td>
                   <td style={td}>
                     {formatDate(d.end_date_time)}
                   </td>
-                  <td style={td}>{d.date_off_number}</td>
+                  <td style={td}>{d.date_off_number} ມື້</td>
                   <td
                     style={{
                       ...td,
                       whiteSpace: "normal",
                       wordBreak: "break-word",
+                      lineHeight: "1.4",
                     }}
                   >
                     {d.title}
@@ -368,11 +518,20 @@ const UserDayOffRequest: React.FC<Props> = ({
               )
             })}
 
-            {filteredDayOffs.length === 0 && (
+            {paginatedDayOffs.length === 0 && (
               <EmptyRow colSpan={role === "Admin" ? 8 : 7} />
             )}
           </tbody>
         </table>
+
+        {/* Pagination */}
+        {filteredDayOffs.length > ITEMS_PER_PAGE && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </Section>
     </div>
   )
