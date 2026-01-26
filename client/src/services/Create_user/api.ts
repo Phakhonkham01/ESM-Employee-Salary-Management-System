@@ -2,6 +2,17 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8000/api";
 
+
+export interface Department {
+  _id: string;
+  department_name: string;
+}
+
+export interface Position {
+  _id: string;
+  position_name: string;
+}
+
 export interface UserData {
   _id: string;
   email: string;
@@ -16,8 +27,8 @@ export interface UserData {
   start_work: string;
   vacation_days: number;
   gender: 'Male' | 'Female' | 'Other';
-  position_id?: string | { _id: string; position_name: string };
-  department_id?: string | string[] | { _id: string; department_name: string } | Array<{ _id: string; department_name: string }>; // ✅ เปลี่ยนตรงนี้
+  position_id?: Position;
+  department_id?: Department[];
   status: 'Active' | 'Inactive' | 'On Leave';
   base_salary: string | number;
   created_at?: string;

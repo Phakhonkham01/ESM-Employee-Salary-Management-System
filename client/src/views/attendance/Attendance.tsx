@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { FaRegEye, FaCalendarCheck, FaFilePdf } from "react-icons/fa"
+import { FaRegEye, FaCalendarCheck, FaFilePdf, FaTimes } from "react-icons/fa"
 import { getAllUsers } from '../../services/Create_user/api'
 import type { UserData } from '../../services/Create_user/api'
 import { getAllDayOffRequests, type DayOffRequest } from '../../services/Day_off_api/api'
 import { getAllDepartments, type DepartmentData } from '../../services/departments/api'
 import { useExportAttendanceToPDF } from './ExportToPDF'
+import {
+    Download,
+} from "lucide-react"
+import { FaEye } from "react-icons/fa"
 
 interface UserAttendanceStats {
     userId: string
@@ -210,20 +214,6 @@ const Attendance: React.FC = () => {
             .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
 
-    // Update your getStatusColor function to return specific class names
-    // const getStatusColor = (status) => {
-    //     switch (status) {
-    //         case 'Accepted':
-    //             return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-    //         case 'Pending':
-    //             return 'bg-amber-50 text-amber-700 border border-amber-200';
-    //         case 'Rejected':
-    //             return 'bg-red-50 text-red-700 border border-red-200';
-    //         default:
-    //             return 'bg-gray-50 text-gray-700 border border-gray-200';
-    //     }
-    // };
-
     return (
         <div className="bg-white rounded-xl p-8 shadow-sm">
             <div className="flex justify-between items-center mb-8">
@@ -232,15 +222,10 @@ const Attendance: React.FC = () => {
                     <button
                         onClick={handleExportToPDF}
                         disabled={loading || getFilteredUsers().length === 0}
-                        className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                        <FaFilePdf /> Export to PDF
-                    </button>
-                    <button
-                        onClick={fetchData}
-                        className="px-4 py-2 bg-[#45CC67] hover:bg-[#1fd371] text-white text-sm font-medium rounded-lg transition-colors"
-                    >
-                        ໂຫຼດຂໍ້ມູນໃໝ່
+                        <Download className="w-4 h-4" />
+                        Export to PDF
                     </button>
                 </div>
             </div>
@@ -264,11 +249,11 @@ const Attendance: React.FC = () => {
             {/* Filters */}
             <div className="flex items-center gap-4 mb-4 bg-gray-50 p-4 rounded-lg">
                 <div>
-                    <label className="text-xs text-gray-600 font-medium mb-1 block">ປີ</label>
+                    <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ປີ</label>
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
                     >
                         {[2023, 2024, 2025, 2026].map(year => (
                             <option key={year} value={year}>{year}</option>
@@ -276,11 +261,11 @@ const Attendance: React.FC = () => {
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs text-gray-600 font-medium mb-1 block">ເດືອນ</label>
+                    <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ເດືອນ</label>
                     <select
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
                     >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                             <option key={month} value={month}>{getMonthName(month)}</option>
@@ -288,11 +273,11 @@ const Attendance: React.FC = () => {
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs text-gray-600 font-medium mb-1 block">ພະແໜກ</label>
+                    <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ພະແໜກ</label>
                     <select
                         value={selectedDepartment}
                         onChange={(e) => setSelectedDepartment(e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
+                        className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
                         disabled={loading}
                     >
                         <option value="">ພະແໜກທັງໝົດ</option>
@@ -316,7 +301,6 @@ const Attendance: React.FC = () => {
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-gray-100 border-b-2 border-gray-200">
-                            <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ຊື່ (EN)</th>
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ຊື່ (LA)</th>
                             <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">ອີເມວ</th>
                             <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">ປີ</th>
@@ -347,11 +331,6 @@ const Attendance: React.FC = () => {
                                     className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
                                 >
                                     <td className="px-4 py-4 text-sm text-gray-700">
-                                        <div className="font-medium">
-                                            {user.first_name_en} {user.last_name_en}
-                                        </div>
-                                    </td>
-                                    <td className="px-4 py-4 text-sm text-gray-700">
                                         <div>
                                             {user.first_name_la} {user.last_name_la}
                                         </div>
@@ -379,10 +358,9 @@ const Attendance: React.FC = () => {
                                     <td className="px-4 py-4 text-center">
                                         <button
                                             onClick={() => handleViewDetail(user)}
-                                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#45CC67] hover:bg-[#1fd371] text-white text-xs font-medium rounded-lg transition-colors"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 hover:bg-gray-700 text-white"
                                         >
-                                            <FaRegEye size={14} />
-                                            ລາຍລະອຽດ
+                                            <FaEye className="text-xs" /> ລາຍລະອຽດ
                                         </button>
                                     </td>
                                 </tr>
@@ -400,39 +378,37 @@ const Attendance: React.FC = () => {
             </div>
 
             {showModal && selectedUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed bg-black/40 bg-opacity-50 inset-0 z-50 flex items-center justify-center p-10">
                     {/* Backdrop with blur effect */}
                     <div
-                        className="absolute inset-0 bg-black/40 bg-opacity-50 transition-opacity"
+                        className="absolute inset-0 transition-opacity"
                         onClick={closeModal}
                     />
 
                     {/* Modal Container */}
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden transform transition-all">
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden">
                         {/* Header */}
-                        <div className="sticky top-0 z-10 bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
-                            <div className="flex items-center justify-between">
+                        <div className="sticky top-0 z-10 from-emerald-500 to-teal-600 px-6 py-5 border-b border-gray-200">
+                            <div className="flex items-center justify-between px-[30px] py-[20px]">
                                 <div>
-                                    <h3 className="text-xl font-bold text-white">
+                                    <h3 className="font-bold text-gray-900">
                                         ປະຫວັດການຂໍລາພັກ
                                     </h3>
-                                    <p className="text-emerald-100 text-sm mt-1">
+                                    <p className="ext-gray mt-2">
                                         {getMonthName(selectedMonth)} {selectedYear} • {selectedUser.first_name_la} {selectedUser.last_name_la}
                                     </p>
                                 </div>
                                 <button
                                     onClick={closeModal}
-                                    className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-colors"
+                                    className="text-gray-400 hover:text-gray-600"
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <FaTimes className="text-xl" />
                                 </button>
                             </div>
                         </div>
 
                         {/* Content */}
-                        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-120px)]">
+                        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-120px)] no-scrollbar  px-[60px] py-[20px]">
                             {/* Employee Info Card */}
                             <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-5 shadow-sm">
                                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">

@@ -131,8 +131,6 @@ export const getDayOffRequestsAllUser = async (
       })
       .sort({ created_at: -1 });
 
-    console.log("🔍 Raw populated requests:", JSON.stringify(requests[0], null, 2));
-
     // Format the response
     const formattedRequests = requests.map((request) => {
       const reqObj = request.toObject();

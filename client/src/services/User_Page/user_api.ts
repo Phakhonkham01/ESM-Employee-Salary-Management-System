@@ -3,7 +3,7 @@ import axios from "axios";
 const API_URL = "http://localhost:8000/api";
 
 
-  //  Related Models
+//  Related Models
 
 
 export interface Department {
@@ -17,15 +17,15 @@ export interface Position {
 }
 
 export interface Supervisor {
+  department_id: any;
   _id: string;
+  status: string;
   first_name_en: string;
   last_name_en: string;
   first_name_la?: string;
   last_name_la?: string;
 }
-  //  User Model (POPULATED)
-
-
+//  User Model (POPULATED)
 export interface UserData {
   _id: string;
   email: string;
@@ -54,7 +54,7 @@ export interface UserData {
 }
 
 
-  //  API FUNCTIONS
+//  API FUNCTIONS
 
 
 // ✅ Get user by ID
