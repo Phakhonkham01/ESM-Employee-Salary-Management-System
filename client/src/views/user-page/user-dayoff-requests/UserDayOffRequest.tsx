@@ -299,7 +299,7 @@ const UserDayOffRequest: React.FC<Props> = ({
       text: "ການຍົກເລິກນີ້ບໍ່ສາມາດກັບຄືນໄດ້",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'ແມ່ນແລ້ວ, ຍົກເລິກ',
+      confirmButtonText: 'ດຳເນີນການຕໍ່',
       cancelButtonText: 'ບໍ່, ຍົກເລີກ',
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#6b7280',

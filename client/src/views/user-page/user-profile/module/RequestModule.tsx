@@ -75,17 +75,17 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
                 )
                 setStartDate(date)
             }
-            
+
             // Parse start time
             const [startH, startM] = requestData.start_hour.split(':')
             setStartHour(startH)
             setStartMinute(startM)
-            
+
             // Parse end time
             const [endH, endM] = requestData.end_hour.split(':')
             setEndHour(endH)
             setEndMinute(endM)
-            
+
             // Set other fields
             setReason(requestData.reason || '')
             setFuel(requestData.fuel?.toString() || '')
@@ -100,16 +100,16 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
     ===================== */
     useEffect(() => {
         if (!open) return
-        
+
         const loadSupervisors = async () => {
             try {
                 const response = await getAllUsers()
-                
+
                 // Filter users with role 'Supervisor' and active status
-                const supervisorUsers = response.users.filter((user: UserData) => 
+                const supervisorUsers = response.users.filter((user: UserData) =>
                     user.role === 'Supervisor' && user.status === 'Active'
                 )
-                
+
                 // Transform to Supervisor type
                 const transformedSupervisors: Supervisor[] = supervisorUsers.map((user: UserData) => ({
                     _id: user._id,
@@ -119,7 +119,7 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
                     department_id: user.department_id,
                     status: user.status as 'Active' | 'Inactive' | 'On Leave'
                 }))
-                
+
                 console.log('Active Supervisors found:', transformedSupervisors.length)
                 setSupervisors(transformedSupervisors)
             } catch (error) {
@@ -127,7 +127,7 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
                 setSupervisors([])
             }
         }
-        
+
         loadSupervisors()
     }, [open])
 
@@ -180,20 +180,16 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
         return matchingSupervisor || null
     }, [loggedUser?.department_id, supervisors])
 
-    const fallbackSupervisor = useMemo(() => {
-        if (userSupervisor) return null
-        // Try to find any active supervisor
-        return supervisors.find(s => s.status === 'Active') || null
-    }, [supervisors, userSupervisor])
-
     const selectedSupervisor = useMemo(() => {
-        // In edit mode, use the original supervisor if available
+        // In edit mode keep original supervisor if still exists
         if (isEditMode && requestData?.supervisor_id) {
             const originalSupervisor = supervisors.find(s => s._id === requestData.supervisor_id)
-            return originalSupervisor || userSupervisor || fallbackSupervisor
+            return originalSupervisor || null
         }
-        return userSupervisor || fallbackSupervisor
-    }, [isEditMode, requestData?.supervisor_id, supervisors, userSupervisor, fallbackSupervisor])
+
+        // Only allow supervisor from same department
+        return userSupervisor || null
+    }, [isEditMode, requestData?.supervisor_id, supervisors, userSupervisor])
 
     /* =====================
        Current Month Range
@@ -248,7 +244,7 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
         if (!selectedSupervisor) {
             return {
                 valid: false,
-                message: 'ບໍ່ມີຫົວໜ້າໃນລະບົບ. ກະລຸນາຕິດຕໍ່ຜູ້ເບິ່ງແຍງລະບົບ.'
+                message: 'ບໍ່ມີຫົວໜ້າໃນລະບົບ.'
             }
         }
 
@@ -299,7 +295,7 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
         if (!validation.valid) {
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
+                title: 'ຂໍ້ຜິດພາດ',
                 text: validation.message,
             })
             return
@@ -350,7 +346,7 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
             Swal.fire({
                 icon: 'error',
                 title: isEditMode ? 'ແກ້ໄຂບໍ່ສຳເລັດ' : 'ສົ່ງຄຳຂໍບໍ່ສຳເລັດ',
-                text: isEditMode 
+                text: isEditMode
                     ? 'ການແກ້ໄຂຄຳຂໍບໍ່ສຳເລັດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.'
                     : 'ສົ່ງຄຳຂໍບໍ່ສຳເລັດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.',
             })
@@ -418,24 +414,16 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
                                 </p>
                                 {userDepartments.length > 0 && (
                                     <p className="text-xs text-green-600 mt-1">
-                                        ແຜນງານ: {userDepartments.map(dept => dept.department_name).join(', ')}
+                                        ພະແນກ: {userDepartments.map(dept => dept.department_name).join(', ')}
                                     </p>
                                 )}
-                                {!userSupervisor && !isEditMode && (
-                                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                                        <AlertTriangle size={12} />
-                                        ກຳລັງໃຊ້ຫົວໜ້າອື່ນເນື່ອງຈາກບໍ່ພົບຫົວໜ້າໃນແຜນງານຂອງທ່ານ
-                                    </p>
-                                )}
+
                             </>
                         ) : (
                             <div>
                                 <p className="text-sm text-amber-800 flex items-center gap-1">
                                     <AlertTriangle size={14} />
                                     <span>ບໍ່ພົບຫົວໜ້າໃນລະບົບ</span>
-                                </p>
-                                <p className="text-xs text-amber-600 mt-1">
-                                    ກະລຸນາຕິດຕໍ່ຜູ້ເບິ່ງແຍງລະບົບເພື່ອເພີ່ມຫົວໜ້າ
                                 </p>
                             </div>
                         )}
