@@ -14,7 +14,7 @@ import {
     Clock,
     CheckCircle,
     XCircle,
-    DollarSign,
+    X,
 } from 'lucide-react'
 import moment from 'moment'
 import SalaryDetails from './SalaryDetails'
@@ -87,6 +87,7 @@ const SalaryHistoryTable: React.FC<SalaryHistoryTableProps> = ({
     setDeleteConfirm,
 }) => {
     const [expandedRows, setExpandedRows] = useState<string[]>([])
+    const [selectedSalary, setSelectedSalary] = useState<Salary | null>(null) // เปลี่ยนมาใช้ state สำหรับเก็บ salary ที่เลือก
 
     // Get status color and icon
     const getStatusInfo = (status: string) => {
@@ -131,6 +132,20 @@ const SalaryHistoryTable: React.FC<SalaryHistoryTableProps> = ({
         } else {
             setExpandedRows([...expandedRows, id])
         }
+    }
+
+    // Function to open salary details in popup
+    const openSalaryPopup = (salary: Salary) => {
+        setSelectedSalary(salary)
+        // Call the original onSelectSalary if provided
+        if (onSelectSalary) {
+            onSelectSalary(salary)
+        }
+    }
+
+    // Function to close the popup
+    const closeSalaryPopup = () => {
+        setSelectedSalary(null)
     }
 
     return (
@@ -290,11 +305,11 @@ const SalaryHistoryTable: React.FC<SalaryHistoryTableProps> = ({
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-lg font-bold text-gray-900">
-                                                    $
+                                                    
                                                     {salary.net_salary.toLocaleString()}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    Base: $
+                                                    Base: 
                                                     {salary.base_salary.toLocaleString()}
                                                 </div>
                                             </td>
@@ -334,8 +349,7 @@ const SalaryHistoryTable: React.FC<SalaryHistoryTableProps> = ({
                                                     </button>
                                                     <button
                                                         onClick={() =>
-                                                            onSelectSalary &&
-                                                            onSelectSalary(
+                                                            openSalaryPopup(
                                                                 salary,
                                                             )
                                                         }
@@ -362,22 +376,8 @@ const SalaryHistoryTable: React.FC<SalaryHistoryTableProps> = ({
                                             </td>
                                         </tr>
 
-                                        {/* Expanded Details */}
-                                        {isExpanded && (
-                                            <tr className="bg-blue-50">
-                                                <td
-                                                    colSpan={9}
-                                                    className="px-6 py-4"
-                                                >
-                                                    <SalaryDetails
-                                                        salary={salary}
-                                                        getMonthName={
-                                                            getMonthName
-                                                        }
-                                                    />
-                                                </td>
-                                            </tr>
-                                        )}
+                                        
+                                
                                     </React.Fragment>
                                 )
                             })
@@ -385,6 +385,50 @@ const SalaryHistoryTable: React.FC<SalaryHistoryTableProps> = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* Salary Details Popup Modal */}
+{selectedSalary && (
+    <div className="fixed inset-0 bg-gray-700/40 flex items-center justify-center z-50 p-4 overflow-y-auto scrollbar-hide">
+        <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="px-2 py-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-900">
+                        Salary Details - {getMonthName(selectedSalary.month)} {selectedSalary.year}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {selectedSalary.user_id.first_name_en} {selectedSalary.user_id.last_name_en} • {selectedSalary.user_id.email}
+                    </p>
+                </div>
+                <button
+                    onClick={closeSalaryPopup}
+                    className="text-gray-400 hover:text-gray-600 p-1"
+                    title="Close"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
+            
+            {/* Modal Content - Scrollable with Hidden Scrollbar */}
+            <div className="flex-1 overflow-y-auto p-6 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+                <SalaryDetails
+                    salary={selectedSalary}
+                    getMonthName={getMonthName}
+                />
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <button
+                    onClick={closeSalaryPopup}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+)}
 
             {/* Delete Confirmation Modal */}
             {deleteConfirm && (

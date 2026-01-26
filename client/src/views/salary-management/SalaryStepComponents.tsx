@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { Download, Mail, Loader2 } from 'lucide-react'
-import { useSendSalaryEmail } from './email/send-salary-email/useSendSalaryEmail'
 // SalaryStepComponents.tsx
 import type React from 'react'
 import {
@@ -1376,7 +1375,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
     const [svgRef, setSvgRef] = useState<HTMLDivElement | null>(null)
     const [isExporting, setIsExporting] = useState(false)
     const [isSendingEmail, setIsSendingEmail] = useState(false)
-    const [isCapturing, setIsCapturing] = useState(false) // ✅ เพิ่ม
+    const [isCapturing, setIsCapturing] = useState(false)
     const [emailStatus, setEmailStatus] = useState<{
         success: boolean
         message: string
@@ -1417,11 +1416,11 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
         commission: formData.commission,
     }
 
-    // Calculate deductions - ✅ แก้ไข: คำนวณยอดรวมที่ถูกต้อง
+    // Calculate deductions
     const cutOffTotal = formData.cut_off_pay_days * formData.cut_off_pay_amount
 
     const deductions = {
-        absence: cutOffTotal, // ✅ ใช้ยอดรวมที่คำนวณแล้ว
+        absence: cutOffTotal,
         socialSecurity: formData.social_security,
     }
 
@@ -1455,7 +1454,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
 
         try {
             setIsExporting(true)
-            setIsCapturing(true) // ✅ เพิ่ม
+            setIsCapturing(true)
 
             // รอให้ DOM update
             await new Promise((resolve) => setTimeout(resolve, 100))
@@ -1481,19 +1480,19 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
             console.error('Failed to export PNG:', error)
             alert('Failed to export PNG. Please try again.')
         } finally {
-            setIsCapturing(false) // ✅ เพิ่ม
+            setIsCapturing(false)
             setIsExporting(false)
         }
     }
 
-    // ✅ แก้ไข Function to send email
+    // Function to send email with PNG
     const sendEmailWithPNG = async () => {
         if (!svgRef) return
 
         try {
             setIsSendingEmail(true)
             setEmailStatus(null)
-            setIsCapturing(true) // ✅ เปิด capturing mode
+            setIsCapturing(true)
 
             // รอให้ DOM update
             await new Promise((resolve) => setTimeout(resolve, 100))
@@ -1511,7 +1510,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                 },
             })
 
-            setIsCapturing(false) // ✅ ปิด capturing mode
+            setIsCapturing(false)
 
             // Convert to JPEG
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
@@ -1573,7 +1572,7 @@ export const Step5Summary: React.FC<StepComponentsProps> = ({
                 message: `❌ ${error.message || 'Failed to send email'}`,
             })
         } finally {
-            setIsCapturing(false) // ✅ ตรวจสอบให้แน่ใจว่าปิด
+            setIsCapturing(false)
             setIsSendingEmail(false)
         }
     }

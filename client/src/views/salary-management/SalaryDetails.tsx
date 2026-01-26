@@ -12,9 +12,10 @@ import {
     Download,
     DollarSign,
     FileText,
+    Calculator,
 } from 'lucide-react'
 import moment from 'moment'
-import { formatCurrency } from './constants'
+import { formatCurrency, getMonthName } from './constants'
 
 // Interface for salary data (redefined for independence)
 interface Salary {
@@ -64,6 +65,8 @@ interface Salary {
     payment_date: string
     created_at: string
     updated_at: string
+    cut_off_pay_days?: number
+    cut_off_pay_amount?: number
 }
 
 interface SalaryDetailsProps {
@@ -77,6 +80,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
 }) => {
     const [isSendingEmail, setIsSendingEmail] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
+    const [isCapturing, setIsCapturing] = useState(false)
     const [emailStatus, setEmailStatus] = useState<{
         success: boolean
         message: string
@@ -92,7 +96,9 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
         salary.fuel_costs +
         salary.money_not_spent_on_holidays +
         salary.other_income
-    const totalDeductions = salary.office_expenses + salary.social_security
+    
+    const cutOffTotal = (salary.cut_off_pay_days || 0) * (salary.cut_off_pay_amount || 0)
+    const totalDeductions = salary.office_expenses + salary.social_security + cutOffTotal
     const userName = `${salary.user_id.first_name_en} ${salary.user_id.last_name_en}`
     const userEmail = salary.user_id.email
 
@@ -102,6 +108,11 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
 
         try {
             setIsExporting(true)
+            setIsCapturing(true)
+
+            // รอให้ DOM update
+            await new Promise((resolve) => setTimeout(resolve, 100))
+
             const html2canvas = (await import('html2canvas')).default
 
             const canvas = await html2canvas(payslipRef.current, {
@@ -109,24 +120,6 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
-                // Fix for oklch color function not supported
-                onclone: (clonedDoc) => {
-                    const element = clonedDoc.querySelector('[data-payslip]')
-                    if (element) {
-                        // Apply computed styles to avoid oklch parsing issues
-                        const allElements = element.querySelectorAll('*')
-                        allElements.forEach((el) => {
-                            const computed = window.getComputedStyle(
-                                el as Element,
-                            )
-                            const htmlEl = el as HTMLElement
-                            htmlEl.style.color = computed.color
-                            htmlEl.style.backgroundColor =
-                                computed.backgroundColor
-                            htmlEl.style.borderColor = computed.borderColor
-                        })
-                    }
-                },
             })
 
             const link = document.createElement('a')
@@ -141,6 +134,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
             console.error('Failed to export PNG:', error)
             alert('Failed to export PNG. Please try again.')
         } finally {
+            setIsCapturing(false)
             setIsExporting(false)
         }
     }
@@ -152,6 +146,10 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
         try {
             setIsSendingEmail(true)
             setEmailStatus(null)
+            setIsCapturing(true)
+
+            // รอให้ DOM update
+            await new Promise((resolve) => setTimeout(resolve, 100))
 
             // Convert to image
             const html2canvas = (await import('html2canvas')).default
@@ -160,25 +158,13 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false,
-                // Fix for oklch color function not supported
-                onclone: (clonedDoc) => {
-                    const element = clonedDoc.querySelector('[data-payslip]')
-                    if (element) {
-                        // Apply computed styles to avoid oklch parsing issues
-                        const allElements = element.querySelectorAll('*')
-                        allElements.forEach((el) => {
-                            const computed = window.getComputedStyle(
-                                el as Element,
-                            )
-                            const htmlEl = el as HTMLElement
-                            htmlEl.style.color = computed.color
-                            htmlEl.style.backgroundColor =
-                                computed.backgroundColor
-                            htmlEl.style.borderColor = computed.borderColor
-                        })
-                    }
+                ignoreElements: (element) => {
+                    // Ignore elements that might cause issues
+                    return element.classList?.contains('no-export')
                 },
             })
+
+            setIsCapturing(false)
 
             // Convert to JPEG
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7)
@@ -228,20 +214,26 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
             if (result.success) {
                 setEmailStatus({
                     success: true,
-                    message: `Salary slip sent to ${userEmail}`,
+                    message: `✅ Salary slip sent to ${userEmail}`,
                 })
             } else {
                 throw new Error(result.message || 'Failed to send email')
             }
-        } catch (error: unknown) {
+        } catch (error: any) {
             console.error('Failed to send email:', error)
             setEmailStatus({
                 success: false,
-                message: `${error instanceof Error ? error.message : 'Failed to send email'}`,
+                message: `❌ ${error.message || 'Failed to send email'}`,
             })
         } finally {
+            setIsCapturing(false)
             setIsSendingEmail(false)
         }
+    }
+
+    // Format date for display
+    const formatDate = (dateString: string) => {
+        return moment(dateString).format('DD/MM/YYYY')
     }
 
     return (
@@ -305,460 +297,312 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                 </div>
             )}
 
-            {/* Payslip Table (Step 5 Style) */}
+            {/* Email Info */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                <div className="text-sm text-blue-800">
+                    <div className="font-medium mb-1">
+                        Email will be sent to:
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        <span>{userEmail}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* ✅ เพิ่ม style tag สำหรับ override oklch colors */}
+            <style jsx>{`
+                .export-mode,
+                .export-mode * {
+                    color: rgb(17, 24, 39) !important;
+                }
+
+                .export-mode .text-white {
+                    color: rgb(255, 255, 255) !important;
+                }
+
+                .export-mode .text-red-600 {
+                    color: rgb(220, 38, 38) !important;
+                }
+
+                .export-mode .text-red-700 {
+                    color: rgb(185, 28, 28) !important;
+                }
+
+                .export-mode .text-green-600 {
+                    color: rgb(22, 163, 74) !important;
+                }
+
+                .export-mode .text-gray-600 {
+                    color: rgb(75, 85, 99) !important;
+                }
+
+                .export-mode .text-gray-700 {
+                    color: rgb(55, 65, 81) !important;
+                }
+
+                .export-mode .text-gray-800 {
+                    color: rgb(31, 41, 55) !important;
+                }
+
+                .export-mode .bg-white {
+                    background-color: rgb(255, 255, 255) !important;
+                }
+
+                .export-mode .bg-gray-50 {
+                    background-color: rgb(249, 250, 251) !important;
+                }
+
+                .export-mode .bg-gray-100 {
+                    background-color: rgb(243, 244, 246) !important;
+                }
+
+                .export-mode .bg-blue-50 {
+                    background-color: rgb(239, 246, 255) !important;
+                }
+
+                .export-mode .bg-green-50 {
+                    background-color: rgb(240, 253, 244) !important;
+                }
+
+                .export-mode [class*='bg-[#45cc67]'] {
+                    background-color: rgb(69, 204, 103) !important;
+                }
+
+                .export-mode [class*='bg-[#1F3A5F]'] {
+                    background-color: rgb(31, 58, 95) !important;
+                }
+
+                .export-mode [class*='text-[#1F3A5F]'] {
+                    color: rgb(31, 58, 95) !important;
+                }
+
+                .export-mode .border-gray-200 {
+                    border-color: rgb(229, 231, 235) !important;
+                }
+
+                .export-mode .border-gray-300 {
+                    border-color: rgb(209, 213, 219) !important;
+                }
+            `}</style>
+
+            {/* Payslip Table (Step 5 Style) - อัปเดตเป็นแบบใหม่ */}
             <div
                 ref={payslipRef}
                 data-payslip
-                className="bg-white rounded-lg p-6 shadow-sm"
-                style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e5e7eb',
-                }}
+                className={`bg-white rounded-lg p-6 shadow-sm border border-gray-300 ${isCapturing ? 'export-mode' : ''}`}
             >
                 {/* Header */}
-                <div
-                    className="text-center mb-6 pb-4"
-                    style={{ borderBottom: '1px solid #e5e7eb' }}
-                >
-                    <h1
-                        className="text-2xl font-bold"
-                        style={{ color: '#2563eb' }}
-                    >
+                <div className="text-center mb-8 border-b pb-4">
+                    <h1 className="text-2xl font-bold text-[#1F3A5F]">
                         Salary Slip
                     </h1>
-                    <p className="mt-1" style={{ color: '#6b7280' }}>
+                    <p className="text-gray-600 mt-1">
                         {getMonthName(salary.month)} {salary.year}
                     </p>
                 </div>
 
                 {/* Employee Information */}
-                <div
-                    className="mb-6 p-4 rounded-lg"
-                    style={{
-                        backgroundColor: '#f9fafb',
-                        border: '1px solid #e5e7eb',
-                    }}
-                >
-                    <h3 className="font-bold mb-3" style={{ color: '#2563eb' }}>
-                        Employee Information
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="font-bold text-[#1F3A5F] mb-3">
+                        ຂໍ້ມູນພື້ນພະນັກງານ
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <span style={{ color: '#6b7280' }}>Name:</span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
+                            <span className="text-gray-600">Name:</span>
+                            <span className="ml-2 font-medium">
                                 {userName}
                             </span>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>Email:</span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
+                            <span className="text-gray-600">Email:</span>
+                            <span className="ml-2 font-medium">
                                 {userEmail}
                             </span>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>
-                                Base Salary:
+                            <span className="text-gray-600">
+                                ເງິນເດືອນພື້ນຖານ:
                             </span>
-                            <span
-                                className="ml-2 font-bold"
-                                style={{ color: '#2563eb' }}
-                            >
-                                ${formatCurrency(salary.base_salary)}
+                            <span className="ml-2 font-bold text-[#1F3A5F]">
+                                {formatCurrency(salary.base_salary)}
                             </span>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>
-                                Working Days:
+                            <span className="text-gray-600">
+                                ມື້ເຮັດວຽກ:
                             </span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
-                                {salary.working_days || 0} days
+                            <span className="ml-2 font-medium">
+                                {salary.working_days || 0} ມື້
                             </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Salary Table */}
-                <div className="overflow-x-auto mb-6">
-                    <table
-                        className="min-w-full text-sm"
-                        style={{ border: '1px solid #e5e7eb' }}
-                    >
+                {/* Salary Table - อัปเดตตาม Step5 */}
+                <div className="overflow-x-auto mb-8">
+                    <table className="min-w-full border text-sm text-gray-900">
                         <thead>
-                            <tr
-                                style={{
-                                    backgroundColor: '#2563eb',
-                                    color: '#ffffff',
-                                }}
-                            >
-                                <th
-                                    className="p-3 text-left font-medium"
-                                    style={{ border: '1px solid #d1d5db' }}
-                                >
-                                    Income
+                            <tr className="bg-[#45cc67] text-white">
+                                <th className="p-3 border text-left font-bold">
+                                    ລາຍຮັບ
                                 </th>
-                                <th
-                                    className="p-3 text-left font-medium"
-                                    style={{ border: '1px solid #d1d5db' }}
-                                >
-                                    Additional Income
+                                <th className="p-3 border text-left font-bold">
+                                    ລາຍຮັບເພີ່ມເຕີມ
                                 </th>
-                                <th
-                                    className="p-3 text-left font-medium"
-                                    style={{ border: '1px solid #d1d5db' }}
-                                >
-                                    Amount
+                                <th className="p-3 border text-left font-bold">
+                                    ຈຳນວນເງິນ
                                 </th>
-                                <th
-                                    className="p-3 text-left font-medium"
-                                    style={{ border: '1px solid #d1d5db' }}
-                                >
-                                    Deductions
+                                <th className="p-3 border text-left font-bold">
+                                    ລາຍການຫັກ
                                 </th>
-                                <th
-                                    className="p-3 text-left font-medium"
-                                    style={{ border: '1px solid #d1d5db' }}
-                                >
-                                    Amount
+                                <th className="p-3 border text-left font-bold">
+                                    ຈຳນວນເງິນ
                                 </th>
-                                <th
-                                    className="p-3 text-left font-medium"
-                                    style={{ border: '1px solid #d1d5db' }}
-                                >
-                                    Payment Date
+                                <th className="p-3 border text-left font-bold">
+                                    ວັນທີຈ່າຍ
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* Base Salary Row */}
-                            <tr style={{ backgroundColor: '#ffffff' }}>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Base Salary
+                            <tr className="bg-white text-gray-800">
+                                <td className="p-3 border font-medium">
+                                    ເງິນເດືອນພື້ນຖານ
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
+                                <td className="p-3 border text-center text-gray-400">
                                     -
                                 </td>
-                                <td
-                                    className="p-3 font-bold"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.base_salary)}
+                                <td className="p-3 border font-bold">
+                                    {formatCurrency(salary.base_salary)}
+                                </td>
+                                <td className="p-3 border">
+                                    ມື້ຂາດວຽກ{' '}
+                                    {(salary.cut_off_pay_days || 0) > 0 && (
+                                        <>
+                                            ({salary.cut_off_pay_days} ມື້
+                                            {' × '}
+                                            {(salary.cut_off_pay_amount || 0).toLocaleString()}
+                                            /ມື້)
+                                        </>
+                                    )}
+                                </td>
+                                <td className="p-3 border text-red-600">
+                                    {formatCurrency(cutOffTotal)}
                                 </td>
                                 <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Office Expenses
-                                </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.office_expenses)}
-                                </td>
-                                <td
-                                    className="p-3 font-bold text-center"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
+                                    className="p-3 border font-bold text-center"
                                     rowSpan={7}
                                 >
-                                    {moment(salary.payment_date).format(
-                                        'DD/MM/YYYY',
-                                    )}
+                                    {formatDate(salary.payment_date)}
                                 </td>
                             </tr>
 
                             {/* Additional Income Rows */}
-                            <tr style={{ backgroundColor: '#ffffff' }}>
+                            <tr>
                                 <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                    rowSpan={6}
+                                    className="p-3 border bg-gray-50 font-medium"
+                                    rowSpan={7}
                                 >
-                                    Additional Income
+                                    ລາຍໄດ້ອື່ນໆ
+                                </td>
+                                <td className="p-3 border">ຄ່ານ້ຳມັນ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.fuel_costs)}
+                                </td>
+                                <td className="p-3 border" rowSpan={2}>
+                                    ປະກັນສັງຄົມ
                                 </td>
                                 <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Fuel Costs
-                                </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.fuel_costs)}
-                                </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
+                                    className="p-3 border text-red-600"
                                     rowSpan={2}
                                 >
-                                    Social Security
-                                </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                    rowSpan={2}
-                                >
-                                    ${formatCurrency(salary.social_security)}
+                                    {formatCurrency(salary.social_security)}
                                 </td>
                             </tr>
-                            <tr style={{ backgroundColor: '#ffffff' }}>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Commission
-                                </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.commission)}
+                            <tr>
+                                <td className="p-3 border">ຄ່າຄອມມິດຊັນ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.commission)}
                                 </td>
                             </tr>
-                            <tr style={{ backgroundColor: '#ffffff' }}>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Overtime (OT)
+                            <tr>
+                                <td className="p-3 border">
+                                    ຄ່າລ່ວງເວລາ (OT)
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.ot_amount)}
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.ot_amount)}
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        backgroundColor: '#ffffff',
-                                    }}
-                                    colSpan={2}
-                                ></td>
+                                <td className="p-3 border" colSpan={2}></td>
                             </tr>
-                            <tr style={{ backgroundColor: '#ffffff' }}>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Bonus
+                            <tr>
+                                <td className="p-3 border">ເງິນໂບນັດ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.bonus)}
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.bonus)}
-                                </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        backgroundColor: '#ffffff',
-                                    }}
-                                    colSpan={2}
-                                ></td>
+                                <td className="p-3 border" colSpan={2}></td>
                             </tr>
-                            <tr style={{ backgroundColor: '#ffffff' }}>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Holiday Allowance
+                            <tr>
+                                <td className="p-3 border">
+                                    ຄ່າເຮັດວຽກມື້ພັກ
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    $
+                                <td className="p-3 border">
                                     {formatCurrency(
                                         salary.money_not_spent_on_holidays,
                                     )}
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        backgroundColor: '#ffffff',
-                                    }}
-                                    colSpan={2}
-                                ></td>
+                                <td className="p-3 border" colSpan={2}></td>
                             </tr>
-                            <tr style={{ backgroundColor: '#ffffff' }}>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    Other
+                            <tr>
+                                <td className="p-3 border">
+                                    ຄ່າໃຊ້ຈ່າຍຫ້ອງການ
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(salary.other_income)}
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.office_expenses)}
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        backgroundColor: '#ffffff',
-                                    }}
-                                    colSpan={2}
-                                ></td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">ອື່ນໆ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.other_income)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
                             </tr>
 
                             {/* Totals Row */}
-                            <tr
-                                className="font-bold"
-                                style={{ backgroundColor: '#f3f4f6' }}
-                            >
+                            <tr className="bg-gray-100 font-bold text-[#1F3A5F]">
                                 <td
-                                    className="p-3 text-right"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
+                                    className="p-3 border text-right"
                                     colSpan={2}
                                 >
-                                    Total Income:
+                                    ລວມລາຍຮັບທັງໝົດ:
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(totalIncome)}
+                                <td className="p-3 border">
+                                    {formatCurrency(totalIncome)}
                                 </td>
-                                <td
-                                    className="p-3 text-right"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                    colSpan={1}
-                                >
-                                    Total Deductions:
+                                <td className="p-3 border text-right">
+                                    ລວມລາຍການຫັກ:
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        color: '#111827',
-                                    }}
-                                >
-                                    ${formatCurrency(totalDeductions)}
+                                <td className="p-3 border text-red-600">
+                                    {formatCurrency(totalDeductions)}
                                 </td>
-                                <td
-                                    className="p-3"
-                                    style={{
-                                        border: '1px solid #e5e7eb',
-                                        backgroundColor: '#f3f4f6',
-                                    }}
-                                ></td>
+                                <td className="p-3 border"></td>
                             </tr>
 
                             {/* Net Salary Row */}
-                            <tr
-                                className="font-bold"
-                                style={{
-                                    backgroundColor: '#2563eb',
-                                    color: '#ffffff',
-                                }}
-                            >
+                            <tr className="bg-[#45cc67] text-white font-bold">
                                 <td
-                                    className="p-4 text-center text-lg"
-                                    style={{ border: '1px solid #d1d5db' }}
+                                    className="p-4 border text-center text-lg"
                                     colSpan={4}
                                 >
-                                    NET SALARY:
+                                    ເງິນເດືອນສຸດທິ (NET SALARY)
                                 </td>
                                 <td
-                                    className="p-4 text-center text-xl"
-                                    style={{ border: '1px solid #d1d5db' }}
+                                    className="p-4 border text-center text-xl"
                                     colSpan={2}
                                 >
-                                    ${formatCurrency(salary.net_salary)}
+                                    {formatCurrency(salary.net_salary)} ກີບ
                                 </td>
                             </tr>
                         </tbody>
@@ -766,75 +610,46 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                 </div>
 
                 {/* Additional Information */}
-                <div
-                    className="p-4 rounded-lg"
-                    style={{
-                        backgroundColor: '#f9fafb',
-                        border: '1px solid #e5e7eb',
-                    }}
-                >
-                    <h3 className="font-bold mb-3" style={{ color: '#2563eb' }}>
-                        Additional Information
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="font-bold text-[#1F3A5F] mb-3">
+                        ຂໍ້ມູນເພີ່ມເຕີມ
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <span style={{ color: '#6b7280' }}>
-                                Working Days:
+                            <span className="text-gray-600">
+                                ມື້ເຮັດວຽກ:
                             </span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
-                                {salary.working_days || 0} days
+                            <span className="ml-2 font-medium">
+                                {salary.working_days || 0} ມື້
                             </span>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>
-                                Vacation Days Left:
+                            <span className="text-gray-600">
+                                ວັນພັກທີ່ເຫຼືອ:
                             </span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
-                                {salary.remaining_vacation_days || 0} days
+                            <span className="ml-2 font-medium">
+                                {salary.remaining_vacation_days || 0} ມື້
                             </span>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>OT Hours:</span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
-                                {salary.ot_hours || 0} hours
+                            <span className="text-gray-600">OT Hours:</span>
+                            <span className="ml-2 font-medium">
+                                {salary.ot_hours || 0} ຊົ່ວໂມງ
                             </span>
                         </div>
                         <div>
-                            <span style={{ color: '#6b7280' }}>
-                                Day Off Days:
-                            </span>
-                            <span
-                                className="ml-2 font-medium"
-                                style={{ color: '#111827' }}
-                            >
-                                {salary.day_off_days || 0} days
+                            <span className="text-gray-600">ມື້ພັກ:</span>
+                            <span className="ml-2 font-medium">
+                                {salary.day_off_days || 0} ມື້
                             </span>
                         </div>
                     </div>
                     {salary.notes && (
-                        <div
-                            className="mt-4 p-3 rounded-md"
-                            style={{
-                                backgroundColor: '#ffffff',
-                                border: '1px solid #e5e7eb',
-                            }}
-                        >
-                            <span
-                                className="font-medium"
-                                style={{ color: '#111827' }}
-                            >
+                        <div className="mt-4 p-3 bg-white rounded border border-gray-300">
+                            <span className="font-medium text-gray-700">
                                 Notes:
                             </span>
-                            <p className="mt-1" style={{ color: '#6b7280' }}>
+                            <p className="mt-1 text-gray-600">
                                 {salary.notes}
                             </p>
                         </div>
@@ -842,13 +657,10 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                 </div>
 
                 {/* Footer */}
-                <div
-                    className="mt-6 pt-4 text-center text-sm"
-                    style={{ borderTop: '1px solid #e5e7eb', color: '#6b7280' }}
-                >
+                <div className="mt-8 pt-4 border-t text-center text-gray-500 text-sm">
                     <p>
-                        Generated on {new Date().toLocaleDateString()} - This is
-                        an official salary statement
+                        Generated on {new Date().toLocaleDateString()} •
+                        This is an official salary statement
                     </p>
                 </div>
             </div>
@@ -929,7 +741,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                         <div className="flex justify-between items-center pb-2 border-b border-gray-200">
                             <span className="text-gray-700">Base Salary:</span>
                             <span className="font-semibold text-gray-900">
-                                ${salary.base_salary.toLocaleString()}
+                                {salary.base_salary.toLocaleString()}
                             </span>
                         </div>
 
@@ -938,7 +750,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-700">Overtime:</span>
                                 <span className="font-semibold text-gray-900">
-                                    ${salary.ot_amount.toLocaleString()}
+                                    {salary.ot_amount.toLocaleString()}
                                 </span>
                             </div>
                             {salary.ot_hours && (
@@ -955,7 +767,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                     Bonus
                                 </div>
                                 <div className="text-sm font-semibold text-gray-900">
-                                    ${salary.bonus.toLocaleString()}
+                                    {salary.bonus.toLocaleString()}
                                 </div>
                             </div>
                             <div>
@@ -963,7 +775,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                     Commission
                                 </div>
                                 <div className="text-sm font-semibold text-gray-900">
-                                    ${salary.commission.toLocaleString()}
+                                    {salary.commission.toLocaleString()}
                                 </div>
                             </div>
                         </div>
@@ -975,7 +787,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                     Fuel Costs:
                                 </span>
                                 <span className="text-sm font-semibold text-gray-900">
-                                    ${salary.fuel_costs.toLocaleString()}
+                                    {salary.fuel_costs.toLocaleString()}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -983,7 +795,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                     Holiday Money:
                                 </span>
                                 <span className="text-sm font-semibold text-gray-900">
-                                    $
+                                    
                                     {salary.money_not_spent_on_holidays.toLocaleString()}
                                 </span>
                             </div>
@@ -992,7 +804,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                     Other Income:
                                 </span>
                                 <span className="text-sm font-semibold text-gray-900">
-                                    ${salary.other_income.toLocaleString()}
+                                    {salary.other_income.toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -1004,7 +816,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                     Total Income:
                                 </span>
                                 <span className="text-sm font-bold text-green-900">
-                                    ${totalIncome.toLocaleString()}
+                                    {totalIncome.toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -1029,7 +841,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                         Office Expenses:
                                     </span>
                                     <span className="text-sm font-semibold text-gray-900">
-                                        $
+                                        
                                         {salary.office_expenses.toLocaleString()}
                                     </span>
                                 </div>
@@ -1038,10 +850,20 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                         Social Security:
                                     </span>
                                     <span className="text-sm font-semibold text-gray-900">
-                                        $
+                                        
                                         {salary.social_security.toLocaleString()}
                                     </span>
                                 </div>
+                                {(salary.cut_off_pay_days || 0) > 0 && (
+                                    <div className="flex justify-between items-center py-1 border-t border-gray-100 pt-2">
+                                        <span className="text-sm text-gray-600">
+                                            Absence Deduction:
+                                        </span>
+                                        <span className="text-sm font-semibold text-red-600">
+                                            {cutOffTotal.toLocaleString()}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div className="border-t border-red-200 pt-2 mt-2">
                                 <div className="flex justify-between items-center">
@@ -1049,7 +871,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                         Total Deductions:
                                     </span>
                                     <span className="text-sm font-bold text-red-900">
-                                        ${totalDeductions.toLocaleString()}
+                                        {totalDeductions.toLocaleString()}
                                     </span>
                                 </div>
                             </div>
@@ -1170,10 +992,10 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                                             {detail.hours} hrs
                                         </td>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                                            ${detail.rate_per_hour}/hr
+                                            {detail.rate_per_hour}/hr
                                         </td>
                                         <td className="px-4 py-2 whitespace-nowrap text-sm font-semibold text-gray-900">
-                                            ${detail.amount.toLocaleString()}
+                                            {detail.amount.toLocaleString()}
                                         </td>
                                     </tr>
                                 ))}

@@ -99,14 +99,20 @@ const SalaryListUser: React.FC = () => {
         return Array.from(statusSet).sort()
     }, [users])
 
-    // Fetch users
+    // Fetch users - แก้ไข: กรองเฉพาะ role employee
     const fetchUsers = async () => {
         try {
             setLoading(true)
             const response = await axios.get('/api/users')
             if (response.data && response.data.users) {
-                setUsers(response.data.users)
-                setFilteredUsers(response.data.users)
+                // กรองเฉพาะผู้ใช้ที่มี role เป็น employee (ไม่สนใจ case-sensitive)
+                const employees = response.data.users.filter(
+                    (user: User) => 
+                        user.role.toLowerCase() === 'employee' ||
+                        user.role.toLowerCase() === 'พนักงาน' // กรณีเป็นภาษาไทย
+                )
+                setUsers(employees)
+                setFilteredUsers(employees)
             }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to fetch users')
@@ -219,16 +225,8 @@ const SalaryListUser: React.FC = () => {
     }
 
     const getRoleBadge = (role: string) => {
-        switch (role) {
-            case 'Admin':
-                return 'bg-red-50 text-red-700 border border-red-200'
-            case 'Supervisor':
-                return 'bg-amber-50 text-amber-700 border border-amber-200'
-            case 'User':
-                return 'bg-blue-50 text-blue-700 border border-blue-200'
-            default:
-                return 'bg-gray-50 text-gray-700 border border-gray-200'
-        }
+        // เนื่องจากเรา filter เฉพาะ employee แล้ว badge นี้ควรเป็นสีเดียวกัน
+        return 'bg-blue-50 text-blue-700 border border-blue-200'
     }
 
     const formatCurrency = (amount: number | undefined) => {
@@ -269,7 +267,7 @@ const SalaryListUser: React.FC = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#F9FAFB] flex justify-center items-center">
-                <div className="text-[#6B7280]">Loading users...</div>
+                <div className="text-[#6B7280]">Loading employees...</div>
             </div>
         )
     }
@@ -288,7 +286,6 @@ const SalaryListUser: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
             {/* Header */}
-
             <div className="p-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -340,6 +337,14 @@ const SalaryListUser: React.FC = () => {
                 </div>
 
                 {/* Info Alert */}
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6 flex items-start gap-2 text-sm">
+                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                    <span>
+                        ເລືອກພະນັກງານເພື່ອຄິດໄລ່ເງິນເດືອນສຳລັບປັດຈຸບັນ
+                        ({getMonthName(selectedMonth)} {selectedYear}).
+                        ໃຫ້ຄລິກໃສ່ປຸ່ມ "ຄິດໄລ່ເງິນເດືອນ" ເພື່ອເລີ່ມຕົ້ນ.
+                    </span>
+                </div>
 
                 {/* Search and Filter */}
                 <div className="bg-white border border-[#E5E7EB] rounded mb-6">
@@ -351,29 +356,17 @@ const SalaryListUser: React.FC = () => {
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9CA3AF] w-4 h-4" />
                                     <input
                                         type="text"
-                                        placeholder="Search by name, email, or role..."
+                                        placeholder="Search by name, email..."
                                         value={searchTerm}
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
                                         }
-                                        className="w-full pl-10 pr-4 py-2 text-sm border border-[#E5E7EB] rounded focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F]"
+                                        className="w-full pl-10 h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                     />
                                 </div>
-                                {/* <span className="text-sm text-[#6B7280]">
-                                    Showing {filteredUsers.length} of{' '}
-                                    {totalUsers} employees
-                                </span> */}
                                 <div className="flex items-center gap-4 flex-wrap">
                                     <span className="text-sm font-medium text-[#6B7280]">
                                         Filter by:
-                                               <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded mb-6 flex items-start gap-2 text-sm">
-                    <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                    <span>
-                      ເລືອກພະນັກງານເພື່ອຄິດໄລ່ເງິນເດືອນສຳລັບປັດຈຸບັນ
-                     ({getMonthName(selectedMonth)} {selectedYear}).
-                        ໃຫ້ຄລິກໃສ່ປຸ່ມ "ຄິດໄລ່ເງິນເດືອນ" ເພື່ອເລີ່ມຕົ້ນ.
-                    </span>
-                </div>
                                     </span>
 
                                     {/* Department Filter */}
@@ -385,7 +378,7 @@ const SalaryListUser: React.FC = () => {
                                                     e.target.value,
                                                 )
                                             }
-                                            className="appearance-none pl-3 pr-8 py-2 text-sm border border-[#E5E7EB] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[160px]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="all">
                                                 All Departments
@@ -396,7 +389,6 @@ const SalaryListUser: React.FC = () => {
                                                 </option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                                     </div>
 
                                     {/* Position Filter */}
@@ -408,7 +400,7 @@ const SalaryListUser: React.FC = () => {
                                                     e.target.value,
                                                 )
                                             }
-                                            className="appearance-none pl-3 pr-8 py-2 text-sm border border-[#E5E7EB] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[160px]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="all">
                                                 All Positions
@@ -419,7 +411,6 @@ const SalaryListUser: React.FC = () => {
                                                 </option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                                     </div>
 
                                     {/* Status Filter */}
@@ -429,7 +420,7 @@ const SalaryListUser: React.FC = () => {
                                             onChange={(e) =>
                                                 setFilterStatus(e.target.value)
                                             }
-                                            className="appearance-none pl-3 pr-8 py-2 text-sm border border-[#E5E7EB] rounded bg-white focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] focus:border-[#1F3A5F] min-w-[140px]"
+                                            className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                                         >
                                             <option value="all">
                                                 All Status
@@ -443,7 +434,6 @@ const SalaryListUser: React.FC = () => {
                                                 </option>
                                             ))}
                                         </select>
-                                        <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
                                     </div>
 
                                     {/* Clear Filters Button */}
@@ -463,8 +453,6 @@ const SalaryListUser: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-
-                            {/* Filter row */}
                         </div>
                     </div>
 
@@ -512,7 +500,7 @@ const SalaryListUser: React.FC = () => {
                                             colSpan={10}
                                             className="px-4 py-8 text-center text-[#6B7280]"
                                         >
-                                            No users found
+                                            No employees found
                                         </td>
                                     </tr>
                                 ) : (
@@ -564,21 +552,25 @@ const SalaryListUser: React.FC = () => {
                                                     days
                                                 </span>
                                             </td>
-                              <td className="px-4 py-3 text-center">
-  <button
-    onClick={() => handleOpenCalculator(user)}
-    disabled={user.status !== 'Active'}
-    className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-      user.status === 'Active'
-        ? 'bg-[#45CC67] text-white hover:bg-[#3DB75B]'
-        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-    }`}
-  >
-    <Plus className="w-3.5 h-3.5" />
-    Calculate
-  </button>
-</td>
-
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() =>
+                                                        handleOpenCalculator(
+                                                            user,
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        user.status !== 'Active'
+                                                    }
+                                                    className={`inline-flex flex-col items-center justify-center gap-0.5 w-30 h-[45px] text-[15px] font-medium rounded transition-colors ${
+                                                        user.status === 'Active'
+                                                            ? 'bg-[#45CC67] text-white hover:bg-[#3DB75B]'
+                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    }`}
+                                                >
+                                                    Calculate
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))
                                 )}
@@ -728,7 +720,7 @@ const SalaryListUser: React.FC = () => {
                                                             selectedMonth,
                                                         )}{' '}
                                                         {selectedYear}
-                                                 ມີຢູ່ແລ້ວ. ດຳເນີນການສ້າງການຄິດໄລ່ໃໝ່.
+                                                        ມີຢູ່ແລ້ວ. ດຳເນີນການສ້າງການຄິດໄລ່ໃໝ່.
                                                     </div>
                                                 </div>
                                             </div>
