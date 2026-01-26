@@ -64,11 +64,6 @@ const DayoffRequests: React.FC = () => {
     return months[month - 1] || ''
   }
 
-  // Helper function to get unique departments from requests
-  const getUniqueDepartments = (): DepartmentData[] => {
-    return departments
-  }
-
   // Load users first, then requests
   useEffect(() => {
     const initializeData = async () => {
@@ -100,27 +95,33 @@ const DayoffRequests: React.FC = () => {
   }
 
   const loadDepartments = async () => {
-    try {
-      const deptData = await getAllDepartments()
-      setDepartments(deptData.departments)
-    } catch (error) {
-      console.error('Error loading departments:', error)
-    }
+    const deptData = await getAllDepartments()
+    setDepartments(deptData.departments)
   }
 
   const calculatedVacationDays = () => {
     return users.map(user => {
       const userRequests = requests.filter(req => {
-        const reqUserId = typeof req.user_id === 'object' ? req.user_id._id : req.user_id
+        const reqUserId =
+          typeof req.user_id === 'string'
+            ? req.user_id
+            : req.user_id?._id
+
         return reqUserId === user._id && req.status === 'Accepted'
       })
-      const totalDaysOff = userRequests.reduce((sum, req) => sum + req.date_off_number, 0)
+
+      const totalDaysOff = userRequests.reduce(
+        (sum, req) => sum + (req.date_off_number || 0),
+        0
+      )
+
       return {
         ...user,
         vacation_days: user.vacation_days - totalDaysOff
       }
     })
   }
+
 
   const usersWithUpdatedVacationDays = calculatedVacationDays()
 
@@ -159,14 +160,27 @@ const DayoffRequests: React.FC = () => {
 
         const employee = users.find(u => u._id === employeeId)
 
-        const employeeDeptId =
-          typeof employee?.department_id === 'string'
-            ? employee.department_id
-            : employee?.department_id?._id
+        const userId =
+          typeof request.user_id === 'string'
+            ? request.user_id
+            : request.user_id?._id ||
+            (typeof request.employee_id === 'string'
+              ? request.employee_id
+              : request.employee_id?._id)
+
+        const getId = (val: any): string => {
+          if (!val) return ''
+          if (typeof val === 'string') return val
+          return val._id || ''
+        }
+
+
+        const employeeDeptId = getId(employee?.department_id)
 
         if (employeeDeptId !== selectedDepartment) {
           return false
         }
+
       }
 
       // ✅ Day off type filter (FULL / HALF)
@@ -596,14 +610,17 @@ const DayoffRequests: React.FC = () => {
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F] min-w-[180px]"
-              disabled={loading}
+              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm"
             >
               <option value="">ພະແໜກທັງໝົດ</option>
-              {getUniqueDepartments().map(dept => (
-                <option key={dept._id} value={dept._id}>{dept.department_name}</option>
+
+              {departments.map((dept: DepartmentData) => (
+                <option key={dept._id} value={dept._id}>
+                  {dept.department_name}
+                </option>
               ))}
             </select>
+
           </div>
           {/* Day off type */}
           <div>

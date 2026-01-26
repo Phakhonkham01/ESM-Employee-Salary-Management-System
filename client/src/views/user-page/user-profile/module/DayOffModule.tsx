@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import Swal from 'sweetalert2'
@@ -11,7 +11,7 @@ import {
   Sun, 
   Moon, 
   Coffee,
-  UserPlus
+  AlertTriangle
 } from 'lucide-react'
 
 import { getSupervisors, Supervisor } from '@/services/User_Page/user_api'
@@ -26,28 +26,46 @@ const DayOffModule = ({ open, onClose }: Props) => {
   /* =====================
      State
   ===================== */
-  const [dayOffType, setDayOffType] =
-    useState<'FULL_DAY' | 'HALF_DAY'>('FULL_DAY')
-
-  // 📅 Date (calendar)
+  const [dayOffType, setDayOffType] = useState<'FULL_DAY' | 'HALF_DAY'>('FULL_DAY')
   const [startDate, setStartDate] = useState<Date | null>(null)
   const [endDate, setEndDate] = useState<Date | null>(null)
-
-  // ⏰ Half Day: Morning or Afternoon
   const [halfDayPeriod, setHalfDayPeriod] = useState<'MORNING' | 'AFTERNOON'>('MORNING')
-
   const [title, setTitle] = useState('')
-
   const [supervisors, setSupervisors] = useState<Supervisor[]>([])
-  const [supervisorId, setSupervisorId] = useState('')
-
-  // Admin only
-  const [employeeId, setEmployeeId] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const auth = JSON.parse(localStorage.getItem('auth') || 'null')
   const loggedUser = auth?.user
   const role = loggedUser?.role // "Admin" | "Employee"
+
+  /* =====================
+     Find user's supervisor automatically
+  ===================== */
+  const userSupervisor = useMemo(() => {
+    if (!loggedUser?.department_id || !supervisors.length) {
+      return null
+    }
+    
+    // Find supervisor who is in the same department as the user
+    return supervisors.find(supervisor => 
+      supervisor.department_id === loggedUser.department_id
+    ) || null
+  }, [supervisors, loggedUser?.department_id])
+
+  /* =====================
+     Find any available supervisor (fallback)
+  ===================== */
+  const fallbackSupervisor = useMemo(() => {
+    if (supervisors.length > 0 && !userSupervisor) {
+      // Return first active supervisor as fallback
+      const activeSupervisors = supervisors.filter(s => s.status === 'Active')
+      return activeSupervisors.length > 0 ? activeSupervisors[0] : supervisors[0]
+    }
+    return null
+  }, [supervisors, userSupervisor])
+
+  // Use fallback if no department-specific supervisor found
+  const selectedSupervisor = userSupervisor || fallbackSupervisor
 
   /* =====================
      Date Range for Current Month
@@ -125,8 +143,6 @@ const DayOffModule = ({ open, onClose }: Props) => {
   const totalDays = calculateTotalDays()
 
   const resetForm = () => {
-    setEmployeeId('')
-    setSupervisorId('')
     setDayOffType('FULL_DAY')
     setStartDate(null)
     setEndDate(null)
@@ -148,11 +164,12 @@ const DayOffModule = ({ open, onClose }: Props) => {
       return
     }
 
-    if (!supervisorId) {
+    // Check if supervisor exists
+    if (!selectedSupervisor) {
       Swal.fire({
-        icon: 'warning',
-        title: 'Missing Information',
-        text: 'ກະລຸນາເລືອກຫົວຫນ້າ',
+        icon: 'error',
+        title: 'ບໍ່ພົບຫົວໜ້າ',
+        text: 'ບໍ່ມີຫົວໜ້າໃນລະບົບ. ກະລຸນາຕິດຕໍ່ຜູ້ເບິ່ງແຍງລະບົບ.',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -188,15 +205,11 @@ const DayOffModule = ({ open, onClose }: Props) => {
       return
     }
 
-    // 🔐 Decide employee_id
-    const targetEmployeeId =
-      role === 'Admin' ? employeeId : loggedUser._id
-
-    if (!targetEmployeeId) {
+    if (dayOffType === 'FULL_DAY' && endDate && endDate < startDate) {
       Swal.fire({
-        icon: 'warning',
-        title: 'Missing Information',
-        text: 'ກະລຸນາເລືອກພະນັກງານ',
+        icon: 'error',
+        title: 'Invalid Date Range',
+        text: 'ວັນທີສິ້ນສຸດຕ້ອງຊ້າກວ່າ ຫຼື ເທົ່າກັບວັນທີເລີ່ມຕົ້ນ',
         confirmButtonColor: '#2563eb',
       })
       return
@@ -216,16 +229,6 @@ const DayOffModule = ({ open, onClose }: Props) => {
         return
       }
 
-      if (endDate < startDate) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid Date Range',
-          text: 'ວັນທີສິ້ນສຸດຕ້ອງຊ້າກວ່າ ຫຼື ເທົ່າກັບວັນທີເລີ່ມຕົ້ນ',
-          confirmButtonColor: '#2563eb',
-        })
-        return
-      }
-
       startDateTime = getDateTimeForFullDay(startDate, true)
       endDateTime = getDateTimeForFullDay(endDate, false)
     } else {
@@ -239,8 +242,8 @@ const DayOffModule = ({ open, onClose }: Props) => {
     try {
       await createDayOffRequest({
         user_id: loggedUser._id,        // actor
-        employee_id: targetEmployeeId,  // target employee
-        supervisor_id: supervisorId,
+        employee_id: loggedUser._id,    // target employee (always the logged user)
+        supervisor_id: selectedSupervisor._id, // Auto select supervisor
         day_off_type: dayOffType,
         start_date_time: startDateTime,
         end_date_time: endDateTime,
@@ -304,6 +307,45 @@ const DayOffModule = ({ open, onClose }: Props) => {
 
         {/* Form */}
         <div className="p-8 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto no-scrollbar">
+          {/* Auto Selected Supervisor Info */}
+          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-green-700 mb-1">
+              <User size={16} />
+              <span className="font-medium">ຫົວໜ້າທີ່ຮັບຜິດຊອບ</span>
+            </div>
+            {selectedSupervisor ? (
+              <>
+                <p className="text-sm text-green-800">
+                  {selectedSupervisor.first_name_en} {selectedSupervisor.last_name_en}
+                  {selectedSupervisor.status !== 'Active' && (
+                    <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                      ({selectedSupervisor.status})
+                    </span>
+                  )}
+                </p>
+                {userSupervisor ? (
+                  <p className="text-xs text-green-600 mt-1">
+                    ຫົວໜ້າພາກສ່ວນຂອງທ່ານ
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-600 mt-1">
+                    ຫົວໜ້າທີ່ພົບໄດ້ (ການຈັດການຊົ່ວຄາວ)
+                  </p>
+                )}
+              </>
+            ) : (
+              <div>
+                <p className="text-sm text-green-800 flex items-center gap-1">
+                  <AlertTriangle size={14} />
+                  <span>ກຳລັງຄົ້ນຫາຫົວໜ້າ...</span>
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  (ລະບົບຈະສົ່ງຄຳຂໍໃຫ້ຫົວໜ້າທີ່ພົບໄດ້ອັດຕະໂນມັດ)
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Day Off Type Selection */}
           <div className="space-y-3">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -452,26 +494,6 @@ const DayOffModule = ({ open, onClose }: Props) => {
             </div>
           )}
 
-          {/* Supervisor Selection */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <User size={18} className="text-blue-600" />
-              ຫົວໜ້າຜູ້ອະນຸມັດ
-            </label>
-            <select
-              value={supervisorId}
-              onChange={(e) => setSupervisorId(e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
-            >
-              <option value="">ເລືອກຫົວໜ້າ</option>
-              {supervisors.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.first_name_en} {s.last_name_en}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Reason */}
           <div className="space-y-3">
             <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -527,7 +549,7 @@ const DayOffModule = ({ open, onClose }: Props) => {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedSupervisor}
               className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-base shadow-md"
             >
               {isSubmitting ? (

@@ -1,4 +1,4 @@
-import { UserData } from '@/services/User_Page/user_api'
+import { UserData } from '@/services/Create_user/api'
 import { useState, useEffect } from 'react'
 import RequestModule from './module/RequestModule'
 import DayOffModule from './module/DayOffModule'
@@ -169,8 +169,6 @@ const UserDashboard = ({ user }: Props) => {
         rejectedRequests: 0
     })
 
-    console.log('--------------->', dayOffRequests);
-
     // Fetch day off requests
     const fetchDayOffRequests = async () => {
         try {
@@ -264,6 +262,9 @@ const UserDashboard = ({ user }: Props) => {
                 }
         }
     }
+
+    console.log(user.department_id)
+
 
     // Calculate total
     const calculateTotal = (field: keyof Salary) => {
@@ -392,7 +393,7 @@ const UserDashboard = ({ user }: Props) => {
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
                                 {/* Statistics Cards */}
-                                {loadingDayOffs ? (
+                                {/* {loadingDayOffs ? (
                                     <div className="text-center py-8">
                                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                         <p className="mt-2 text-slate-600">Loading dashboard data...</p>
@@ -420,7 +421,7 @@ const UserDashboard = ({ user }: Props) => {
                                             icon={<XCircle />}
                                         />
                                     </div>
-                                )}
+                                )} */}
 
                                 {/* Quick Actions & Department Summary Side by Side */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -434,7 +435,8 @@ const UserDashboard = ({ user }: Props) => {
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-slate-600">ພະແນກ</span>
-                                                <span className="font-semibold">{user.department_id?.department_name || 'N/A'}</span>
+                                                <span className="font-semibold"> {user.department_id?.[0]?.department_name || 'N/A'}
+</span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-slate-600">ຕຳແໜ່ງ</span>
@@ -483,7 +485,7 @@ const UserDashboard = ({ user }: Props) => {
                                     />
                                     <ProfileField
                                         label="Department"
-                                        value={user.department_id?.department_name}
+                                        value={user.department_id?.[0]?.department_name || 'N/A'}
                                         icon={<PiBuildingOfficeLight />}
                                     />
                                     <ProfileField
