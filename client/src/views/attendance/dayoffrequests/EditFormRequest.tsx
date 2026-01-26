@@ -65,14 +65,14 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
   // Filter employees by selected department
   // Filter employees by selected department
   const filteredEmployees = formData.department_id
-  ? users.filter(
-    user =>
-      user.role === 'Employee' &&
-      // Check if the user's department array contains the selected department
-      user.department_id?.some(dept => dept._id === formData.department_id)
-  )
-  : []
-  
+    ? users.filter(
+      user =>
+        user.role === 'Employee' &&
+        // Check if the user's department array contains the selected department
+        user.department_id?.some(dept => dept._id === formData.department_id)
+    )
+    : []
+
   // Fetch departments on component mount
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -228,7 +228,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                     employee_id: ''
                   })
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 disabled={loadingDepartments}
               >
                 <option value="">
@@ -248,7 +248,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 disabled={!formData.department_id}
               >
                 <option value="">
@@ -271,7 +271,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={formData.supervisor_id}
                 onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">ເລືອກຫົວໜ້າ</option>
                 {supervisors.map(user => (
@@ -294,7 +294,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g., Family Vacation"
             />
           </div>
@@ -313,7 +313,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                   setEndDate(null)
                 }
               }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="FULL_DAY">ໝົດມື້</option>
               <option value="HALF_DAY">ເຄີ່ງມື້</option>
@@ -328,7 +328,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={halfDayPeriod}
                 onChange={(e) => setHalfDayPeriod(e.target.value as 'MORNING' | 'AFTERNOON')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="MORNING">ຊ່ວງເຊົ້າ (08:30 - 12:00)</option>
                 <option value="AFTERNOON">ຊ່ວງບາຍ (13:30 - 17:00)</option>
@@ -355,7 +355,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                   placeholderText="Select date"
                   minDate={minDate}
                   maxDate={maxDate}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div>
@@ -369,7 +369,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                   placeholderText="Select date"
                   minDate={startDate ?? minDate}
                   maxDate={maxDate}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -386,7 +386,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                   placeholderText="Select date"
                   minDate={minDate}
                   maxDate={maxDate}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
