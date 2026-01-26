@@ -63,14 +63,16 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
   const supervisors = users.filter(user => user.role === 'Supervisor')
 
   // Filter employees by selected department
+  // Filter employees by selected department
   const filteredEmployees = formData.department_id
-    ? users.filter(
-      user =>
-        user.role === 'Employee' &&
-        user.department_id?._id === formData.department_id
-    )
-    : []
-
+  ? users.filter(
+    user =>
+      user.role === 'Employee' &&
+      // Check if the user's department array contains the selected department
+      user.department_id?.some(dept => dept._id === formData.department_id)
+  )
+  : []
+  
   // Fetch departments on component mount
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -103,7 +105,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
 
       // Find employee's department
       const employee = users.find(u => u._id === employeeId)
-      const departmentId = employee?.department_id?._id || ''
+      const departmentId = employee?.department_id?.[0]?._id || ''
 
       setFormData({
         employee_id: employeeId,
@@ -274,7 +276,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                 <option value="">ເລືອກຫົວໜ້າ</option>
                 {supervisors.map(user => (
                   <option key={user._id} value={user._id}>
-                    {user.first_name_en} {user.last_name_en}
+                    {user.first_name_en} {user.last_name_en} {user.department_id ? `- ${user.department_id.map((dept: any) => dept.department_name).join(', ')}` : ''}
                   </option>
                 ))}
               </select>

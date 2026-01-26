@@ -154,10 +154,7 @@ const Attendance: React.FC = () => {
     const getFilteredUsers = () => {
         if (!selectedDepartment) return users
         return users.filter(user => {
-            const deptId = typeof user.department_id === 'object' && user.department_id !== null
-                ? user.department_id._id
-                : user.department_id
-            return deptId === selectedDepartment
+            return user.department_id?.some(dept => dept._id === selectedDepartment)
         })
     }
 
@@ -443,10 +440,10 @@ const Attendance: React.FC = () => {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <p className="text-xs text-gray-400 mb-1">ພະແໜກ</p>
+                                        <p className="text-xs text-gray-400 mb-1">ພະແໜກ3</p>
                                         <p className="text-sm font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg">
                                             {selectedUser.department_id && typeof selectedUser.department_id === 'object'
-                                                ? selectedUser.department_id.department_name
+                                                ? selectedUser.department_id.map((dept: any) => dept.department_name).join(', ')
                                                 : 'N/A'}
                                         </p>
                                     </div>

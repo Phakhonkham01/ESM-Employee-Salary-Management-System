@@ -160,27 +160,14 @@ const DayoffRequests: React.FC = () => {
 
         const employee = users.find(u => u._id === employeeId)
 
-        const userId =
-          typeof request.user_id === 'string'
-            ? request.user_id
-            : request.user_id?._id ||
-            (typeof request.employee_id === 'string'
-              ? request.employee_id
-              : request.employee_id?._id)
-
-        const getId = (val: any): string => {
-          if (!val) return ''
-          if (typeof val === 'string') return val
-          return val._id || ''
-        }
-
-
-        const employeeDeptId = getId(employee?.department_id)
+        const employeeDeptId =
+          typeof employee?.department_id === 'string'
+            ? employee.department_id
+            : employee?.department_id?.[0]._id
 
         if (employeeDeptId !== selectedDepartment) {
           return false
         }
-
       }
 
       // ✅ Day off type filter (FULL / HALF)

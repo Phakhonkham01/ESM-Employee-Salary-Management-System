@@ -127,7 +127,7 @@ const OTandFieldWork: React.FC = () => {
 
           const deptId =
             typeof user.department_id === 'object'
-              ? String(user.department_id._id)
+              ? String(user.department_id[0]._id)
               : String(user.department_id)
 
           return deptId === String(selectedDepartment)
