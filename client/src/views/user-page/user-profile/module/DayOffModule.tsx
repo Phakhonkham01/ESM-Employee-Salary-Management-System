@@ -3,14 +3,14 @@ import { useState, useEffect, useMemo } from 'react'
 import DatePicker from 'react-datepicker'
 import 'react-datepicker/dist/react-datepicker.css'
 import Swal from 'sweetalert2'
-import { 
-  X, 
-  Calendar, 
-  User, 
-  FileText, 
-  Clock, 
-  Sun, 
-  Moon, 
+import {
+  X,
+  Calendar,
+  User,
+  FileText,
+  Clock,
+  Sun,
+  Moon,
   Coffee,
   AlertTriangle
 } from 'lucide-react'
@@ -19,24 +19,24 @@ import { getAllDepartments, DepartmentData } from '@/services/departments/api'
 import { createDayOffRequest, updateDayOffRequest, DayOffRequestData } from '@/services/User_Page/day_off_request_api'
 
 export interface DayOffFormData {
-    _id?: string
-    user_id: string
-    employee_id: string
-    supervisor_id: string
-    day_off_type: 'FULL_DAY' | 'HALF_DAY'
-    start_date_time: string
-    end_date_time: string
-    title: string
-    status?: 'Pending' | 'Approved' | 'Rejected'
+  _id?: string
+  user_id: string
+  employee_id: string
+  supervisor_id: string
+  day_off_type: 'FULL_DAY' | 'HALF_DAY'
+  start_date_time: string
+  end_date_time: string
+  title: string
+  status?: 'Pending' | 'Approved' | 'Rejected'
 }
 
 type Supervisor = {
-    _id: string
-    first_name_en: string
-    last_name_en: string
-    role: 'Supervisor'
-    department_id?: string | string[] | { _id: string }[]
-    status: 'Active' | 'Inactive' | 'On Leave'
+  _id: string
+  first_name_en: string
+  last_name_en: string
+  role: 'Supervisor'
+  department_id?: string | string[] | { _id: string }[]
+  status: 'Active' | 'Inactive' | 'On Leave'
 }
 
 type Props = {
@@ -68,30 +68,30 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
   ===================== */
   useEffect(() => {
     if (requestData) {
-        setIsEditMode(true)
-        
-        // Parse day off type
-        setDayOffType(requestData.day_off_type)
-        
-        // Parse dates from ISO string
-        const startDateTime = new Date(requestData.start_date_time)
-        const endDateTime = new Date(requestData.end_date_time)
-        
-        if (requestData.day_off_type === 'FULL_DAY') {
-            setStartDate(startDateTime)
-            setEndDate(endDateTime)
-        } else {
-            // For half day, check period based on time
-            setStartDate(startDateTime)
-            const hour = startDateTime.getHours()
-            setHalfDayPeriod(hour < 12 ? 'MORNING' : 'AFTERNOON')
-        }
-        
-        // Set other fields
-        setTitle(requestData.title || '')
+      setIsEditMode(true)
+
+      // Parse day off type
+      setDayOffType(requestData.day_off_type)
+
+      // Parse dates from ISO string
+      const startDateTime = new Date(requestData.start_date_time)
+      const endDateTime = new Date(requestData.end_date_time)
+
+      if (requestData.day_off_type === 'FULL_DAY') {
+        setStartDate(startDateTime)
+        setEndDate(endDateTime)
+      } else {
+        // For half day, check period based on time
+        setStartDate(startDateTime)
+        const hour = startDateTime.getHours()
+        setHalfDayPeriod(hour < 12 ? 'MORNING' : 'AFTERNOON')
+      }
+
+      // Set other fields
+      setTitle(requestData.title || '')
     } else {
-        setIsEditMode(false)
-        resetForm()
+      setIsEditMode(false)
+      resetForm()
     }
   }, [requestData, open])
 
@@ -100,16 +100,16 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
   ===================== */
   useEffect(() => {
     if (!open) return
-    
+
     const loadSupervisors = async () => {
       try {
         const response = await getAllUsers()
-        
+
         // Filter users with role 'Supervisor' and active status
-        const supervisorUsers = response.users.filter((user: UserData) => 
+        const supervisorUsers = response.users.filter((user: UserData) =>
           user.role === 'Supervisor' && user.status === 'Active'
         )
-        
+
         // Transform to Supervisor type
         const transformedSupervisors: Supervisor[] = supervisorUsers.map((user: UserData) => ({
           _id: user._id,
@@ -119,15 +119,13 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
           department_id: user.department_id,
           status: user.status as 'Active' | 'Inactive' | 'On Leave'
         }))
-        
-        console.log('Active Supervisors found:', transformedSupervisors.length)
+
         setSupervisors(transformedSupervisors)
       } catch (error) {
-        console.error('Error loading supervisors:', error)
         setSupervisors([])
       }
     }
-    
+
     loadSupervisors()
   }, [open])
 
@@ -174,9 +172,9 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
   ===================== */
   const userSupervisor = useMemo(() => {
     if (!loggedUser?.department_id || supervisors.length === 0) return null
-    
+
     const userDeptIds = normalizeDeptIds(loggedUser.department_id)
-    
+
     // Find supervisor in the same department
     const matchingSupervisor = supervisors.find(s => {
       const sDeptIds = normalizeDeptIds(s.department_id)
@@ -187,28 +185,19 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
   }, [supervisors, loggedUser?.department_id])
 
   /* =====================
-     Find any available supervisor (fallback)
-  ===================== */
-  const fallbackSupervisor = useMemo(() => {
-    if (supervisors.length > 0 && !userSupervisor) {
-      // Return first active supervisor as fallback
-      const activeSupervisors = supervisors.filter(s => s.status === 'Active')
-      return activeSupervisors.length > 0 ? activeSupervisors[0] : supervisors[0]
-    }
-    return null
-  }, [supervisors, userSupervisor])
-
-  /* =====================
      Select supervisor (edit mode uses original if available)
   ===================== */
   const selectedSupervisor = useMemo(() => {
-    // In edit mode, use the original supervisor if available
+    // In edit mode keep original supervisor if still exists
     if (isEditMode && requestData?.supervisor_id) {
       const originalSupervisor = supervisors.find(s => s._id === requestData.supervisor_id)
-      return originalSupervisor || userSupervisor || fallbackSupervisor
+      return originalSupervisor || null
     }
-    return userSupervisor || fallbackSupervisor
-  }, [isEditMode, requestData?.supervisor_id, supervisors, userSupervisor, fallbackSupervisor])
+
+    // Only allow supervisor from same department
+    return userSupervisor || null
+  }, [isEditMode, requestData?.supervisor_id, supervisors, userSupervisor])
+
 
   /* =====================
      Date Range for Current Month
@@ -288,9 +277,10 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
     if (!selectedSupervisor) {
       return {
         valid: false,
-        message: 'ບໍ່ມີຫົວໜ້າໃນລະບົບ. ກະລຸນາຕິດຕໍ່ຜູ້ເບິ່ງແຍງລະບົບ.'
+        message: 'ບໍ່ມີຫົວໜ້າໃນລະບົບ.'
       }
     }
+
 
     // Check date
     if (!startDate) {
@@ -306,9 +296,9 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
     }
 
     if (dayOffType === 'FULL_DAY' && endDate && endDate < startDate) {
-      return { 
-        valid: false, 
-        message: 'ວັນທີສິ້ນສຸດຕ້ອງຊ້າກວ່າ ຫຼື ເທົ່າກັບວັນທີເລີ່ມຕົ້ນ' 
+      return {
+        valid: false,
+        message: 'ວັນທີສິ້ນສຸດຕ້ອງຊ້າກວ່າ ຫຼື ເທົ່າກັບວັນທີເລີ່ມຕົ້ນ'
       }
     }
 
@@ -324,7 +314,7 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
     if (!validation.valid) {
       Swal.fire({
         icon: 'error',
-        title: 'Error',
+        title: 'ຂໍ້ຜິດພາດ',
         text: validation.message,
         confirmButtonColor: '#2563eb',
       })
@@ -389,7 +379,7 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
       Swal.fire({
         icon: 'error',
         title: isEditMode ? 'ແກ້ໄຂບໍ່ສຳເລັດ' : 'ສົ່ງຄຳຂໍບໍ່ສຳເລັດ',
-        text: isEditMode 
+        text: isEditMode
           ? 'ການແກ້ໄຂຄຳຂໍມື້ພັກບໍ່ສຳເລັດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.'
           : 'ສົ່ງຄຳຂໍມື້ພັກບໍ່ສຳເລັດ. ກະລຸນາລອງໃໝ່ອີກຄັ້ງ.',
         confirmButtonColor: '#2563eb',
@@ -420,7 +410,7 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
                 {isEditMode ? 'ແກ້ໄຂຄຳຂໍມື້ພັກ' : 'ຄຳຂໍມື້ພັກ'}
               </h2>
               <p className="text-black text-sm">
-                {isEditMode 
+                {isEditMode
                   ? 'ແກ້ໄຂຂໍ້ມູນການຂໍມື້ພັກ'
                   : 'ກະລຸນາຕື່ມຂໍ້ມູນການຂໍມື້ພັກຕາມຟອມຂ້າງລຸ່ມນີ້'
                 }
@@ -447,8 +437,8 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
           )}
 
           {/* Auto Selected Supervisor Info */}
-          <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-            <div className="flex items-center gap-2 text-green-700 mb-1">
+          <div className={`border rounded-lg p-4 ${selectedSupervisor ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100'}`}>
+            <div className={`flex items-center gap-2 mb-1 ${selectedSupervisor ? 'text-green-700' : 'text-amber-700'}`}>
               <User size={16} />
               <span className="font-medium">ຫົວໜ້າທີ່ຮັບຜິດຊອບ</span>
             </div>
@@ -456,30 +446,19 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
               <>
                 <p className="text-sm text-green-800">
                   {selectedSupervisor.first_name_en} {selectedSupervisor.last_name_en}
-                  {selectedSupervisor.status !== 'Active' && (
-                    <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
-                      ({selectedSupervisor.status})
-                    </span>
-                  )}
                 </p>
-                {userSupervisor && !isEditMode ? (
+                {userDepartments.length > 0 && (
                   <p className="text-xs text-green-600 mt-1">
-                    ຫົວໜ້າພາກສ່ວນຂອງທ່ານ
+                    ພະແນກ: {userDepartments.map(dept => dept.department_name).join(', ')}
                   </p>
-                ) : !userSupervisor && !isEditMode ? (
-                  <p className="text-xs text-green-600 mt-1">
-                    ຫົວໜ້າທີ່ພົບໄດ້ (ການຈັດການຊົ່ວຄາວ)
-                  </p>
-                ) : null}
+                )}
+
               </>
             ) : (
               <div>
                 <p className="text-sm text-amber-800 flex items-center gap-1">
                   <AlertTriangle size={14} />
                   <span>ບໍ່ພົບຫົວໜ້າໃນລະບົບ</span>
-                </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  ກະລຸນາຕິດຕໍ່ຜູ້ເບິ່ງແຍງລະບົບເພື່ອເພີ່ມຫົວໜ້າ
                 </p>
               </div>
             )}
@@ -501,8 +480,8 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
                 }}
                 disabled={isEditMode && requestData?.status !== 'Pending'}
                 className={`flex-1 px-6 py-4 rounded-xl border-2 transition-all ${dayOffType === 'FULL_DAY'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
+                  ? 'bg-blue-50 border-blue-500 text-blue-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
                   } ${isEditMode && requestData?.status !== 'Pending' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className="flex flex-col items-center">
@@ -519,8 +498,8 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
                 }}
                 disabled={isEditMode && requestData?.status !== 'Pending'}
                 className={`flex-1 px-6 py-4 rounded-xl border-2 transition-all ${dayOffType === 'HALF_DAY'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700'
-                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
+                  ? 'bg-blue-50 border-blue-500 text-blue-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
                   } ${isEditMode && requestData?.status !== 'Pending' ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <div className="flex flex-col items-center">
@@ -611,8 +590,8 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
                     }}
                     disabled={isEditMode && requestData?.status !== 'Pending'}
                     className={`px-6 py-4 rounded-xl border-2 transition-all ${halfDayPeriod === 'MORNING'
-                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
+                      ? 'bg-blue-50 border-blue-500 text-blue-700'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
                       } ${isEditMode && requestData?.status !== 'Pending' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -631,8 +610,8 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
                     }}
                     disabled={isEditMode && requestData?.status !== 'Pending'}
                     className={`px-6 py-4 rounded-xl border-2 transition-all ${halfDayPeriod === 'AFTERNOON'
-                        ? 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
+                      ? 'bg-blue-50 border-blue-500 text-blue-700'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-blue-300 hover:bg-blue-25'
                       } ${isEditMode && requestData?.status !== 'Pending' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -672,11 +651,11 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
                   ຈຳນວນມື້ພັກທັງໝົດ
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {dayOffType === 'FULL_DAY' && startDate && endDate 
+                  {dayOffType === 'FULL_DAY' && startDate && endDate
                     ? `${startDate.toLocaleDateString('en-GB')} ຫາ ${endDate.toLocaleDateString('en-GB')}`
                     : dayOffType === 'HALF_DAY' && startDate
-                    ? `ວັນທີ ${startDate.toLocaleDateString('en-GB')} (${halfDayPeriod === 'MORNING' ? 'ເຊົ້າ' : 'ບາຍ'})`
-                    : 'ກະລຸນາເລືອກວັນທີ'
+                      ? `ວັນທີ ${startDate.toLocaleDateString('en-GB')} (${halfDayPeriod === 'MORNING' ? 'ເຊົ້າ' : 'ບາຍ'})`
+                      : 'ກະລຸນາເລືອກວັນທີ'
                   }
                 </div>
               </div>

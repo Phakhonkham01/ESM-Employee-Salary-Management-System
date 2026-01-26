@@ -46,9 +46,6 @@ const MainComponent: React.FC = () => {
     }
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this day off request?')) {
-            return
-        }
 
         try {
             await axios.delete(`/api/day-off-requests/${id}`)

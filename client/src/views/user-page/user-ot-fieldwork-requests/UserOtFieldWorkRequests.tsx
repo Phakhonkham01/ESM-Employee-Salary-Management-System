@@ -288,7 +288,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
       html: 'ການຍົກເລິກນີ້ບໍ່ສາມາດກັບຄືນໄດ້',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'ແມ່ນແລ້ວ, ຍົກເລິກ',
+      confirmButtonText: 'ດຳເນີນການຕໍ່',
       cancelButtonText: 'ບໍ່, ຍົກເລິກ',
       reverseButtons: true,
       confirmButtonColor: '#ef4444',
