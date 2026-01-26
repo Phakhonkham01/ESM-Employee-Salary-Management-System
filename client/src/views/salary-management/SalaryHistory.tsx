@@ -390,9 +390,9 @@ const SalaryHistory: React.FC<SalaryHistoryProps> = ({
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden p-2">
             {/* Header */}
-            <div className="px-4 py-4 sm:px-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+            <div className="p-10 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="min-w-0">
                         <h2 className="text-lg sm:text-xl font-bold text-gray-800 truncate">

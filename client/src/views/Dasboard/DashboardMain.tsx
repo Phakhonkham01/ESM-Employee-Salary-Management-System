@@ -58,6 +58,9 @@ interface Salary {
         first_name_en: string
         last_name_en: string
         email: string
+        role?: string
+        department_id?: any
+        position_id?: any
     }
     month: number
     year: number
@@ -98,6 +101,18 @@ interface DayOffItem {
     date_off_number: number
     title: string
     created_at: string
+}
+
+// API Configuration ຕາມຕົວຈິງ
+const API_CONFIG = {
+    BASE_URL: 'http://localhost:8000/api',
+    getHeaders() {
+        const token = localStorage.getItem('token')
+        return {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+        }
+    }
 }
 
 // ຄອມໂປເນັນຕ່າງໆ
@@ -146,76 +161,6 @@ const StatCard: React.FC<{
     )
 }
 
-const ActivityItemComponent: React.FC<{
-    type: 'salary' | 'request' | 'dayoff' | 'user'
-    title: string
-    description: string
-    status: string
-    timestamp: string
-    icon: React.ElementType
-}> = ({ type, title, description, status, timestamp, icon: Icon }) => {
-    const getStatusColor = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'pending':
-            case 'ລໍຖ້າການອະນຸມັດ':
-                return 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-            case 'accepted':
-            case 'approved':
-            case 'paid':
-            case 'ອະນຸມັດແລ້ວ':
-            case 'ຈ່າຍແລ້ວ':
-                return 'bg-green-100 text-green-800 border border-green-200'
-            case 'rejected':
-            case 'cancelled':
-            case 'ປະຕິເສດ':
-                return 'bg-red-100 text-red-800 border border-red-200'
-            default:
-                return 'bg-gray-100 text-gray-800 border border-gray-200'
-        }
-    }
-
-    const getTypeColor = (type: string) => {
-        switch (type) {
-            case 'salary':
-                return 'text-blue-600 bg-blue-50'
-            case 'request':
-                return 'text-orange-600 bg-orange-50'
-            case 'dayoff':
-                return 'text-purple-600 bg-purple-50'
-            case 'user':
-                return 'text-green-600 bg-green-50'
-            default:
-                return 'text-gray-600 bg-gray-50'
-        }
-    }
-
-    return (
-        <div className="flex items-center p-4 hover:bg-gray-50 rounded-lg transition-colors duration-200 group cursor-pointer">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTypeColor(type)}`}>
-                <Icon className="w-5 h-5" />
-            </div>
-            <div className="ml-4 flex-1 min-w-0">
-                <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-                            {title}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(status)}`}>
-                                {status}
-                            </span>
-                            <span className="text-xs text-gray-600 truncate">{description}</span>
-                        </div>
-                    </div>
-                    <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
-                        {moment(timestamp).fromNow()}
-                    </span>
-                </div>
-            </div>
-        </div>
-    )
-}
-
 const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(true)
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'quarter'>('month')
@@ -226,7 +171,6 @@ const Dashboard: React.FC = () => {
     const [salaries, setSalaries] = useState<Salary[]>([])
     const [requests, setRequests] = useState<RequestData[]>([])
     const [dayOffs, setDayOffs] = useState<DayOffItem[]>([])
-    const [filteredData, setFilteredData] = useState<any[]>([])
 
     // ສະຖິຕິ
     const [stats, setStats] = useState({
@@ -242,52 +186,148 @@ const Dashboard: React.FC = () => {
         totalPositions: 0,
     })
 
-    // ດຶງຂໍ້ມູນທັງໝົດ
-    useEffect(() => {
-        const fetchAllData = async () => {
+    // ຟັງຊັນດຶງຂໍ້ມູນທັງໝົດ (ປັບຕົວແລ້ວ)
+    const fetchAllData = async () => {
+        try {
+            setLoading(true)
+            
+            // 1. ດຶງຂໍ້ມູນພະນັກງານ (ຕາມ API ຈິງ)
             try {
-                setLoading(true)
+                const usersRes = await axios.get(`${API_CONFIG.BASE_URL}/users`, {
+                    headers: API_CONFIG.getHeaders()
+                })
                 
-                // ດຶງຂໍ້ມູນພະນັກງານ
-                const usersRes = await axios.get('/api/users')
-                const allUsers = usersRes.data?.users || []
-                const employees = allUsers.filter((user: User) => 
-                    user.role.toLowerCase() === 'employee' || 
-                    user.role.toLowerCase() === 'ພະນັກງານ'
-                )
-                setUsers(employees)
+                if (usersRes.data && usersRes.data.users) {
+                    // ຕັ້ງຄ່າຂໍ້ມູນ department ແລະ position ໃຫ້ຖືກຕ້ອງ
+                    const formattedUsers = usersRes.data.users.map((user: any) => {
+                        // ປັບຮູບແບບ department (ອາດຈະເປັນ array ຫຼື object)
+                        let departmentData = null
+                        if (Array.isArray(user.department_id) && user.department_id.length > 0) {
+                            // ຖ້າເປັນ array ໃຊ້ໂຕແລກ
+                            departmentData = {
+                                _id: user.department_id[0]?._id || '',
+                                department_name: user.department_id[0]?.department_name || ''
+                            }
+                        } else if (user.department_id && typeof user.department_id === 'object') {
+                            // ຖ້າເປັນ object ປົກກະຕິ
+                            departmentData = {
+                                _id: user.department_id._id || '',
+                                department_name: user.department_id.department_name || ''
+                            }
+                        }
 
-                // ດຶງຂໍ້ມູນເງິນເດືອນ
-                try {
-                    const salariesRes = await axios.get('/api/salaries')
-                    setSalaries(salariesRes.data?.salaries || [])
-                } catch (salaryError) {
-                    console.log('ບໍ່ສາມາດດຶງຂໍ້ມູນເງິນເດືອນ:', salaryError)
+                        // ປັບຮູບແບບ position
+                        let positionData = null
+                        if (user.position_id && typeof user.position_id === 'object') {
+                            positionData = {
+                                _id: user.position_id._id || '',
+                                position_name: user.position_id.position_name || ''
+                            }
+                        }
+
+                        return {
+                            ...user,
+                            department_id: departmentData,
+                            position_id: positionData
+                        }
+                    })
+                    
+                    setUsers(formattedUsers)
                 }
-
-                // ດຶງຂໍ້ມູນຄຳຮ້ອງຂໍ
-                try {
-                    const requestsRes = await axios.get('/api/requests')
-                    setRequests(requestsRes.data?.requests || [])
-                } catch (requestError) {
-                    console.log('ບໍ່ສາມາດດຶງຂໍ້ມູນຄຳຮ້ອງຂໍ:', requestError)
-                }
-
-                // ດຶງຂໍ້ມູນການລາພັກ
-                try {
-                    const dayOffsRes = await axios.get('/api/day-off-requests')
-                    setDayOffs(dayOffsRes.data?.requests || [])
-                } catch (dayOffError) {
-                    console.log('ບໍ່ສາມາດດຶງຂໍ້ມູນການລາພັກ:', dayOffError)
-                }
-
             } catch (error) {
-                console.error('ຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ:', error)
-            } finally {
-                setLoading(false)
+                console.error('ຜິດພາດໃນການດຶງຂໍ້ມູນຜູ້ໃຊ້:', error)
             }
-        }
 
+            // 2. ດຶງຂໍ້ມູນເງິນເດືອນ
+            try {
+                const salariesRes = await axios.get(`${API_CONFIG.BASE_URL}/salaries`, {
+                    headers: API_CONFIG.getHeaders()
+                })
+                
+                if (salariesRes.data && salariesRes.data.salaries) {
+                    // ປັບຮູບແບບ user_id ຖ້າຕ້ອງການ
+                    const formattedSalaries = salariesRes.data.salaries.map((salary: any) => {
+                        // ປັບຮູບແບບ department ແລະ position ໃນ user_id
+                        let departmentData = null
+                        let positionData = null
+                        
+                        if (salary.user_id?.department_id) {
+                            if (Array.isArray(salary.user_id.department_id)) {
+                                departmentData = {
+                                    _id: salary.user_id.department_id[0]?._id || '',
+                                    name: salary.user_id.department_id[0]?.name || 
+                                          salary.user_id.department_id[0]?.department_name || ''
+                                }
+                            } else if (typeof salary.user_id.department_id === 'object') {
+                                departmentData = {
+                                    _id: salary.user_id.department_id._id || '',
+                                    name: salary.user_id.department_id.name || 
+                                          salary.user_id.department_id.department_name || ''
+                                }
+                            }
+                        }
+
+                        if (salary.user_id?.position_id && typeof salary.user_id.position_id === 'object') {
+                            positionData = {
+                                _id: salary.user_id.position_id._id || '',
+                                name: salary.user_id.position_id.name || 
+                                      salary.user_id.position_id.position_name || ''
+                            }
+                        }
+
+                        return {
+                            ...salary,
+                            user_id: {
+                                ...salary.user_id,
+                                department_id: departmentData,
+                                position_id: positionData
+                            }
+                        }
+                    })
+                    
+                    setSalaries(formattedSalaries)
+                }
+            } catch (error) {
+                console.error('ຜິດພາດໃນການດຶງຂໍ້ມູນເງິນເດືອນ:', error)
+            }
+
+            // 3. ດຶງຂໍ້ມູນຄຳຮ້ອງຂໍ OT ແລະ Field Work
+            try {
+                const requestsRes = await axios.get(`${API_CONFIG.BASE_URL}/requests`, {
+                    headers: API_CONFIG.getHeaders()
+                })
+                
+                if (requestsRes.data && requestsRes.data.requests) {
+                    setRequests(requestsRes.data.requests)
+                }
+            } catch (error) {
+                console.error('ຜິດພາດໃນການດຶງຂໍ້ມູນຄຳຮ້ອງຂໍ:', error)
+            }
+
+            // 4. ດຶງຂໍ້ມູນການລາພັກ
+            try {
+                const dayOffsRes = await axios.get(`${API_CONFIG.BASE_URL}/day-off-requests/allrequests`, {
+                    headers: API_CONFIG.getHeaders()
+                })
+                
+                if (dayOffsRes.data && dayOffsRes.data.requests) {
+                    setDayOffs(dayOffsRes.data.requests)
+                } else if (dayOffsRes.data && Array.isArray(dayOffsRes.data)) {
+                    setDayOffs(dayOffsRes.data)
+                }
+            } catch (error) {
+                console.error('ຜິດພາດໃນການດຶງຂໍ້ມູນການລາພັກ:', error)
+            }
+
+        } catch (error) {
+            console.error('ຂໍ້ຜິດພາດໃນການດຶງຂໍ້ມູນ:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // ດຶງຂໍ້ມູນເມື່ອ component ເລີ່ມຕົ້ນ
+    useEffect(() => {
         fetchAllData()
     }, [])
 
@@ -307,7 +347,7 @@ const Dashboard: React.FC = () => {
                 ? salaries.reduce((sum, s) => sum + (s.net_salary || 0), 0) / salaries.length 
                 : 0
 
-            // ຄິດໄລ່ການເຕີບໂຕ (ງ່າຍໆ)
+            // ຄິດໄລ່ການເຕີບໂຕ
             const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1
             const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear
             const lastMonthSalaries = salaries.filter(s => 
@@ -513,6 +553,68 @@ const Dashboard: React.FC = () => {
         link.href = url
         link.download = `dashboard-export-${moment().format('YYYY-MM-DD')}.json`
         link.click()
+    }
+
+    // ຟັງຊັນສຳລັບດຶງຂໍ້ມູນລະອຽດ
+    const fetchUserDetails = async (userId: string) => {
+        try {
+            const response = await axios.get(`${API_CONFIG.BASE_URL}/users/${userId}`, {
+                headers: API_CONFIG.getHeaders()
+            })
+            return response.data
+        } catch (error) {
+            console.error('Error fetching user details:', error)
+            return null
+        }
+    }
+
+    // ຟັງຊັນສຳລັບອັບເດດສະຖານະ
+    const handleUpdateStatus = async (type: string, id: string, newStatus: string) => {
+        try {
+            let endpoint = ''
+            
+            switch (type) {
+                case 'request':
+                    endpoint = `${API_CONFIG.BASE_URL}/requests/${id}/status`
+                    break
+                case 'dayoff':
+                    endpoint = `${API_CONFIG.BASE_URL}/day-off-requests/${id}/status`
+                    break
+                case 'salary':
+                    endpoint = `${API_CONFIG.BASE_URL}/salaries/${id}/status`
+                    break
+                default:
+                    return
+            }
+            
+            await axios.put(endpoint, { status: newStatus }, {
+                headers: API_CONFIG.getHeaders()
+            })
+            
+            // Refresh data
+            fetchAllData()
+            
+        } catch (error) {
+            console.error('Error updating status:', error)
+        }
+    }
+
+    // ຟັງຊັນສຳລັບຄົ້ນຫາ
+    const handleSearch = async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+            fetchAllData()
+            return
+        }
+        
+        // ຄົ້ນຫາໃນຂໍ້ມູນທີ່ມີຢູ່ກ່ອນ (ຫຼືສາມາດດຶງ API ໃໝ່ໄດ້)
+        const filteredUsers = users.filter(user => 
+            user.first_name_en.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.last_name_en.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        
+        // ສາມາດຕັ້ງຄ່າ filtered data ຢູ່ນີ້
+        console.log('Filtered users:', filteredUsers)
     }
 
     if (loading) {
@@ -723,47 +825,55 @@ const Dashboard: React.FC = () => {
                             </div>
 
                             {/* ແນວໂນ້ມເງິນເດືອນ */}
-                            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                                <div className="flex items-center justify-between mb-6">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900">ແນວໂນ້ມເງິນເດືອນລາຍເດືອນ</h3>
-                                        <p className="text-sm text-gray-500 mt-1">ສະເລ່ຍເງິນເດືອນຕະຫຼອດປີ {new Date().getFullYear()}</p>
+            {/* ແນວໂນ້ມເງິນເດືອນ - แบบ Fix สูงตายตัว */}
+<div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+    <div className="flex items-center justify-between mb-6">
+        <div>
+            <h3 className="text-lg font-semibold text-gray-900">ແນວໂນ້ມເງິນເດືອນລາຍເດືອນ</h3>
+            <p className="text-sm text-gray-500 mt-1">
+                ສະເລ່ຍເງິນເດືອນຕະຫຼອດປີ {new Date().getFullYear()}
+            </p>
+        </div>
+        <BarChart className="w-5 h-5 text-gray-400" />
+    </div>
+    
+    <div className="h-64">
+        {monthlySalaryTrend.some(m => m.average > 0) ? (
+            <div className="h-full flex items-end gap-1 md:gap-2 pb-2 border-b border-l border-gray-200">
+                {monthlySalaryTrend.map((data) => {
+                    const maxSalary = Math.max(...monthlySalaryTrend.map(d => d.average))
+                    // ตั้งความสูงขั้นต่ำ 2% และสูงสุด 100%
+                    const height = maxSalary > 0 
+                        ? Math.max((data.average / maxSalary) * 100, 2) 
+                        : 2
+                    
+                    return (
+                        <div key={data.month} className="flex flex-col items-center flex-1 group relative h-full">
+                            <div className="flex-1 w-full flex items-end">
+                                <div 
+                                    className="w-full bg-gradient-to-t from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 rounded-t-lg cursor-pointer"
+                                    style={{ height: `${height}%` }}
+                                    title={`ເດືອນ ${data.month}: ฿${Math.round(data.average).toLocaleString()}`}
+                                >
+                                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                        ฿{Math.round(data.average).toLocaleString()}
                                     </div>
-                                    <BarChart className="w-5 h-5 text-gray-400" />
-                                </div>
-                                
-                                <div className="h-64">
-                                    {monthlySalaryTrend.some(m => m.average > 0) ? (
-                                        <div className="h-full flex items-end gap-1 md:gap-2 pb-2">
-                                            {monthlySalaryTrend.map((data) => {
-                                                const maxSalary = Math.max(...monthlySalaryTrend.map(d => d.average))
-                                                const height = maxSalary > 0 ? (data.average / maxSalary) * 100 : 0
-                                                
-                                                return (
-                                                    <div key={data.month} className="flex flex-col items-center flex-1 group relative">
-                                                        <div 
-                                                            className="w-full bg-gradient-to-t from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 rounded-t-lg cursor-pointer"
-                                                            style={{ height: `${height}%` }}
-                                                            title={`ເດືອນ ${data.month}: ฿${Math.round(data.average).toLocaleString()}`}
-                                                        >
-                                                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                                                ฿{Math.round(data.average).toLocaleString()}
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-xs text-gray-500 mt-2">
-                                                            {moment().month(data.month - 1).format('MMM')}
-                                                        </span>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="h-full flex items-center justify-center">
-                                            <p className="text-gray-500">ຍັງບໍ່ມີຂໍ້ມູນເງິນເດືອນ</p>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
+                            <span className="text-xs text-gray-500 mt-2">
+                                {moment().month(data.month - 1).format('MMM')}
+                            </span>
+                        </div>
+                    )
+                })}
+            </div>
+        ) : (
+            <div className="h-full flex items-center justify-center">
+                <p className="text-gray-500">ຍັງບໍ່ມີຂໍ້ມູນເງິນເດືອນ</p>
+            </div>
+        )}
+    </div>
+</div>
                         </div>
 
                         {/* ກິດຈະກຳລ່າສຸດ */}
@@ -778,17 +888,34 @@ const Dashboard: React.FC = () => {
                             
                             <div className="space-y-1">
                                 {recentActivities.length > 0 ? (
-                                    recentActivities.map((activity) => (
-                                        <ActivityItemComponent
-                                            key={activity.id}
-                                            type={activity.type}
-                                            title={activity.title}
-                                            description={activity.description}
-                                            status={activity.status}
-                                            timestamp={activity.timestamp}
-                                            icon={activity.icon}
-                                        />
-                                    ))
+                                    recentActivities.map((activity) => {
+                                        const Icon = activity.icon
+                                        return (
+                                            <div key={activity.id} className="flex items-center p-4 hover:bg-gray-50 rounded-lg transition-colors duration-200 group cursor-pointer">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activity.color.replace('text-', 'bg-')} bg-opacity-10`}>
+                                                    <Icon className={`w-5 h-5 ${activity.color}`} />
+                                                </div>
+                                                <div className="ml-4 flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                                                {activity.title}
+                                                            </p>
+                                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                                <span className={`text-xs px-2 py-1 rounded-full ${activity.status === 'pending' || activity.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : activity.status === 'accepted' || activity.status === 'Accepted' || activity.status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
+                                                                    {activity.status}
+                                                                </span>
+                                                                <span className="text-xs text-gray-600 truncate">{activity.description}</span>
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+                                                            {moment(activity.timestamp).fromNow()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )
+                                    })
                                 ) : (
                                     <div className="text-center py-8">
                                         <p className="text-gray-500">ຍັງບໍ່ມີກິດຈະກຳ</p>
@@ -920,6 +1047,7 @@ const Dashboard: React.FC = () => {
                                             type="text"
                                             placeholder="ຄົ້ນຫາພະນັກງານ..."
                                             className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            onChange={(e) => handleSearch(e.target.value)}
                                         />
                                     </div>
                                     <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -946,7 +1074,7 @@ const Dashboard: React.FC = () => {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                             ຕຳແໜ່ງ
                                         </th>
-                                        <th className="px6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                                             ເງິນເດືອນພື້ນຖານ
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
@@ -987,11 +1115,17 @@ const Dashboard: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex items-center gap-2">
-                                                    <button className="text-blue-600 hover:text-blue-900 p-1">
+                                                    <button 
+                                                        onClick={() => handleViewDetails('user', user._id)}
+                                                        className="text-blue-600 hover:text-blue-900 p-1"
+                                                    >
                                                         <Eye className="w-4 h-4" />
                                                     </button>
-                                                    <button className="text-green-600 hover:text-green-900 p-1">
-                                                        <Briefcase className="w-4 h-4" />
+                                                    <button 
+                                                        onClick={() => window.location.href = `/salary-calculator?userId=${user._id}`}
+                                                        className="text-green-600 hover:text-green-900 p-1"
+                                                    >
+                                                        <DollarSign className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -1020,12 +1154,21 @@ const Dashboard: React.FC = () => {
                                     <p className="text-sm text-gray-500 mt-1">ລວມ {salaries.length} ການຄິດໄລ່</p>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option>ທັງໝົດ</option>
-                                        <option>ເດືອນນີ້</option>
-                                        <option>3 ເດືອນຜ່ານມາ</option>
+                                    <select 
+                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        onChange={(e) => {
+                                            // ຟັງຊັນ filter ຕາມເດືອນ
+                                            console.log('Filter by:', e.target.value)
+                                        }}
+                                    >
+                                        <option value="">ທັງໝົດ</option>
+                                        <option value="current">ເດືອນນີ້</option>
+                                        <option value="last3">3 ເດືອນຜ່ານມາ</option>
                                     </select>
-                                    <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                    <button 
+                                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                        onClick={() => window.location.href = '/salary-calculator'}
+                                    >
                                         <Plus className="w-4 h-4 mr-2" />
                                         ຄິດໄລ່ເງິນເດືອນໃໝ່
                                     </button>

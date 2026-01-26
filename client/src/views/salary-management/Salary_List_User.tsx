@@ -286,7 +286,7 @@ const SalaryListUser: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
             {/* Header */}
-            <div className="p-6">
+            <div className="p-2">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white border border-[#E5E7EB] rounded p-4">
