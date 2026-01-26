@@ -17,7 +17,7 @@
         "@floating-ui/react": "^0.27.16",
         "@hookform/resolvers": "^5.2.2",
         "@tailwindcss/vite": "^4.1.18",
-        "axios": "^1.13.2",
+        "axios": "^1.13.3",
         "axios-mock-adapter": "^2.1.0",
         "classnames": "^2.5.1",
         "datepicker": "^0.0.0",

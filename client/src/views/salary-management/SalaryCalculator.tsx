@@ -168,7 +168,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 days: 0,
                 rate_per_day: 0,
                 amount: amount,
-                description: `Weekday OT: ${manualOT.weekday.hours} hours @ ฿${manualOT.weekday.rate_per_hour}/hour`,
+                description: `Weekday OT: ${manualOT.weekday.hours} hours @ ${manualOT.weekday.rate_per_hour}/hour`,
                 is_manual: true,
             })
         }
@@ -187,7 +187,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 days: 0,
                 rate_per_day: 0,
                 amount: amount,
-                description: `Weekend OT: ${manualOT.weekend.hours} hours @ ฿${manualOT.weekend.rate_per_hour}/hour`,
+                description: `Weekend OT: ${manualOT.weekend.hours} hours @ ${manualOT.weekend.rate_per_hour}/hour`,
                 is_manual: true,
             })
         }
@@ -205,7 +205,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                 days: manualOT.weekend.days,
                 rate_per_day: manualOT.weekend.rate_per_day,
                 amount: amount,
-                description: `Weekend OT: ${manualOT.weekend.days} days @ ฿${manualOT.weekend.rate_per_day}/day`,
+                description: `Weekend OT: ${manualOT.weekend.days} days @ ${manualOT.weekend.rate_per_day}/day`,
                 is_manual: true,
             })
         }
@@ -384,7 +384,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         html: `
                             <div style="text-align: left; padding: 10px;">
                                 <p>✓ ຄຳນວນເງິນເດືອນສຳເລັດແລ້ວ</p>
-                                <p style="color: #ff9800;">⚠ ແຕ່ບໍ່ສາມາດອັບເດດວັນລາໄດ້</p>
+                                <p style="color: #ff9800;">⚠ ແຕ່ບໍ່ສາມາດອັບເດດວັນລາໄດ້</p>   
                                 <p style="font-size: 14px; color: #666;">${updateError.response?.data?.message || 'ກະລຸນາກວດສອບລະບົບ'}</p>
                             </div>
                         `,
@@ -685,7 +685,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         disabled={activeStep === 0 || loading || success}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                     >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-7 h-7" />
                         Previous
                     </button>
 
@@ -702,7 +702,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                                 </>
                             ) : (
                                 <>
-                                    <CheckCircle2 className="w-4 h-4" />
+                                    <CheckCircle2 className="h-[35px] w-[40px]" />
                                     Confirm Calculation
                                 </>
                             )}
@@ -711,7 +711,7 @@ const SalaryCalculator: React.FC<SalaryCalculatorProps> = ({
                         <button
                             onClick={handleNext}
                             disabled={!prefillData && activeStep === 0}
-                            className="px-4 py-2 text-sm font-medium text-white bg-[#45cc67] hover:bg-[#3aa85a] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
+                            className="h-[45px] w-[120px] pl-5 text-sm font-medium text-white bg-[#45cc67] hover:bg-[#3aa85a] disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors rounded-sm flex items-center gap-1.5"
                         >
                             Next Step
                             <ChevronRight className="w-4 h-4" />

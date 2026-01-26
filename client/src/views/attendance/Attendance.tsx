@@ -212,7 +212,7 @@ const Attendance: React.FC = () => {
     }
 
     return (
-        <div className="bg-white rounded-xl p-8 shadow-sm">
+        <div className="bg-white rounded-xl p-2 shadow-sm">
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-semibold text-gray-800">ຂໍ້ມູນການມາວຽກ</h2>
                 <div className="flex items-center gap-3">

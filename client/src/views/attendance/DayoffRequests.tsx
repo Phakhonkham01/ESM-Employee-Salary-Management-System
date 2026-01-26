@@ -520,8 +520,8 @@ const DayoffRequests: React.FC = () => {
   const stats = getTotalStats()
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-2">
+      <div className="max-w-full mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">

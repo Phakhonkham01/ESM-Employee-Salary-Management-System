@@ -592,7 +592,7 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
                                                         onClick={() =>
                                                             handleEditUser(user)
                                                         }
-                                                        className="flex items-center justify-center w-9 h-9 border border-none bg-blue-50 text-[#1F3A5F] rounded-lg shadow-sm hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-95"
+                                                        className="flex items-center justify-center w-15 h-12 border border-none bg-blue-50 text-[#1F3A5F] rounded-lg shadow-sm hover:bg-blue-100 hover:border-blue-300 transition-all active:scale-95"
                                                         title="Edit"
                                                     >
                                                         <HiPencil size={18} />
@@ -605,7 +605,7 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
                                                                 user,
                                                             )
                                                         }
-                                                        className="flex items-center justify-center w-9 h-9 border border-none bg-red-50 text-[#9B1C1C] rounded-lg shadow-sm hover:bg-red-100 hover:border-red-300 transition-all active:scale-95"
+                                                        className="flex items-center justify-center w-15 h-12 border border-none bg-red-50 text-[#9B1C1C] rounded-lg shadow-sm hover:bg-red-100 hover:border-red-300 transition-all active:scale-95"
                                                         title="Delete"
                                                     >
                                                         <HiTrash size={18} />

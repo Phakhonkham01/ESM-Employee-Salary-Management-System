@@ -322,7 +322,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 <option value="">Select Supervisor</option>
                 {supervisors.map(user => (
                   <option key={user._id} value={user._id}>
-                    {user.first_name_en} {user.last_name_en}
+                    {user.first_name_en} {user.last_name_en} {user.department_id ? `- ${user.department_id.map((dept: any) => dept.department_name).join(', ')}` : ''}
                   </option>
                 ))}
               </select>
