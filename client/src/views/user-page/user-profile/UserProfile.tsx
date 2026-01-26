@@ -1,4 +1,4 @@
-import { UserData } from '@/services/User_Page/user_api'
+import { UserData } from '@/services/Create_user/api'
 import { useState, useEffect } from 'react'
 import RequestModule from './module/RequestModule'
 import DayOffModule from './module/DayOffModule'
@@ -169,8 +169,6 @@ const UserDashboard = ({ user }: Props) => {
         rejectedRequests: 0
     })
 
-    console.log('--------------->', dayOffRequests);
-
     // Fetch day off requests
     const fetchDayOffRequests = async () => {
         try {
@@ -265,6 +263,9 @@ const UserDashboard = ({ user }: Props) => {
         }
     }
 
+    console.log(user.department_id)
+
+
     // Calculate total
     const calculateTotal = (field: keyof Salary) => {
         return filteredSalaries.reduce(
@@ -286,29 +287,26 @@ const UserDashboard = ({ user }: Props) => {
     const quickActions = [
         {
             icon: <MdOutlineRequestQuote className="text-xl" />,
-            label: 'New OT Request',
-            description: 'Submit overtime request',
+            label: 'ຄຳຂໍເຮັດ OT',
             color: 'bg-blue-500',
             onClick: () => { setRequestType('OT'); setOpenRequest(true); }
         },
         {
             icon: <MdOutlineWork className="text-xl" />,
-            label: 'Field Work',
-            description: 'Request field work',
+            label: 'ຄຳຂໍວຽກນອກສະຖານທີ',
             color: 'bg-green-500',
             onClick: () => { setRequestType('FIELD_WORK'); setOpenRequest(true); }
         },
         {
             icon: <PiCalendarBlank className="text-xl" />,
-            label: 'Day Off',
+            label: 'ຄຳຂໍລາພັກວຽກ',
             description: 'Request time off',
             color: 'bg-purple-500',
             onClick: () => setOpenDayOff(true)
         },
         {
             icon: <MdOutlineReceipt className="text-xl" />,
-            label: 'View Payslip',
-            description: 'Latest salary details',
+            label: 'ລາຍລະອຽດເງິນເດືອນ',
             color: 'bg-amber-500',
             onClick: () => setActiveTab('viewpayslip')
         }
@@ -395,7 +393,7 @@ const UserDashboard = ({ user }: Props) => {
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
                                 {/* Statistics Cards */}
-                                {loadingDayOffs ? (
+                                {/* {loadingDayOffs ? (
                                     <div className="text-center py-8">
                                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                                         <p className="mt-2 text-slate-600">Loading dashboard data...</p>
@@ -423,7 +421,7 @@ const UserDashboard = ({ user }: Props) => {
                                             icon={<XCircle />}
                                         />
                                     </div>
-                                )}
+                                )} */}
 
                                 {/* Quick Actions & Department Summary Side by Side */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -431,20 +429,21 @@ const UserDashboard = ({ user }: Props) => {
                                     {/* Department Summary */}
                                     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
                                         <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg font-semibold text-slate-900">Department Overview</h3>
+                                            <h3 className="text-lg font-semibold text-slate-900">ຂໍ້ມູນພະແນກ</h3>
                                             <PiUsers className="text-2xl text-blue-600" />
                                         </div>
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center">
-                                                <span className="text-slate-600">Department</span>
-                                                <span className="font-semibold">{user.department_id?.department_name || 'N/A'}</span>
+                                                <span className="text-slate-600">ພະແນກ</span>
+                                                <span className="font-semibold"> {user.department_id?.[0]?.department_name || 'N/A'}
+</span>
                                             </div>
                                             <div className="flex justify-between items-center">
-                                                <span className="text-slate-600">Position</span>
+                                                <span className="text-slate-600">ຕຳແໜ່ງ</span>
                                                 <span className="font-semibold">{user.position_id?.position_name || 'N/A'}</span>
                                             </div>
                                             <div className="flex justify-between items-center">
-                                                <span className="text-slate-600">Base Salary</span>
+                                                <span className="text-slate-600">ເງິນເດືອນພື້ນຖານ</span>
                                                 <span className="font-semibold text-green-600">
                                                     {user.base_salary?.toLocaleString()}₭
                                                 </span>
@@ -486,7 +485,7 @@ const UserDashboard = ({ user }: Props) => {
                                     />
                                     <ProfileField
                                         label="Department"
-                                        value={user.department_id?.department_name}
+                                        value={user.department_id?.[0]?.department_name || 'N/A'}
                                         icon={<PiBuildingOfficeLight />}
                                     />
                                     <ProfileField

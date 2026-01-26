@@ -448,6 +448,7 @@ const SupervisorRequests: FC = () => {
                                                     All Months
                                                 </option>
                                                 {availableMonths.map(
+                                                    
                                                     (month) => (
                                                         <option
                                                             key={month}
@@ -651,7 +652,7 @@ const SupervisorRequests: FC = () => {
                                         </div>
 
                                         {/* Page Size Selector (Optional) */}
-                                        <div className="mt-4 pt-4 border-t border-gray-100">
+                                        {/* <div className="mt-4 pt-4 border-t border-gray-100">
                                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                                 <span>Rows per page:</span>
                                                 <select
@@ -675,7 +676,7 @@ const SupervisorRequests: FC = () => {
                                                     </option>
                                                 </select>
                                             </div>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 )}
                             </>

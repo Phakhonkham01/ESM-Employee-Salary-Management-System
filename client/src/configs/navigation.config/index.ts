@@ -133,7 +133,7 @@ const navigationConfig: NavigationTree[] = [
     {
         key: 'user',
         path: '/user-profile',
-        title: 'ໂປຣໄຟລ໌ຳພະນັກງານ',
+        title: 'ໂປຣໄຟລ໌ພະນັກງານ',
         translateKey: '',
         icon: 'user',
         type: NAV_ITEM_TYPE_ITEM,

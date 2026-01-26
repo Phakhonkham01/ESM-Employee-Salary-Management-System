@@ -172,8 +172,6 @@ export const getRequestsBySupervisor = async (
     return;
   }
 
-  console.log('🔍 Fetching requests for supervisor:', supervisorId);
-
   try {
     // วิธีที่ 1: Populate ข้อมูลทั้งหมดของ user
     const requests = await RequestModel.find({
@@ -184,18 +182,6 @@ export const getRequestsBySupervisor = async (
       select: '-password', // ไม่เอา password
     })
     .sort({ created_at: -1 });
-
-    console.log(`✅ Found ${requests.length} requests`);
-    
-    // Log ข้อมูลตัวอย่าง
-    if (requests.length > 0) {
-      const sample = requests[0];
-      console.log('Sample request user_id:', {
-        type: typeof sample.user_id,
-        isObject: typeof sample.user_id === 'object',
-        user: sample.user_id
-      });
-    }
 
     res.json({ 
       message: "Successfully fetched requests",

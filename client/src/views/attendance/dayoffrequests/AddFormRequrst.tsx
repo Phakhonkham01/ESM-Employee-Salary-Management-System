@@ -35,7 +35,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   const [halfDayPeriod, setHalfDayPeriod] = useState<'MORNING' | 'AFTERNOON'>('MORNING')
   const [departments, setDepartments] = useState<DepartmentData[]>([])
   const [loadingDepartments, setLoadingDepartments] = useState(false)
-  
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
   const [formData, setFormData] = useState({
     employee_id: '',
     supervisor_id: '',
@@ -62,10 +63,11 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   // Filter employees by selected department
   const filteredEmployees = formData.department_id
     ? users.filter(
-        user =>
-          user.role === 'Employee' &&
-          user.department_id?._id === formData.department_id
-      )
+      user =>
+        user.role === 'Employee' &&
+        // Check if the user's department array contains the selected department
+        user.department_id?.some(dept => dept._id === formData.department_id)
+    )
     : []
 
   // Fetch departments on component mount
@@ -111,8 +113,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
 
       setFormData(prev => ({
         ...prev,
-        start_date_time: startDateTime.toISOString().slice(0, 16),
-        end_date_time: endDateTime.toISOString().slice(0, 16)
+        start_date_time: startDateTime.toISOString(),
+        end_date_time: endDateTime.toISOString()
       }))
 
       setEndDate(startDate)
@@ -120,12 +122,29 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
       if (startDate) {
         const dateTime = new Date(startDate)
         dateTime.setHours(8, 30, 0, 0)
-        setFormData(prev => ({ ...prev, start_date_time: dateTime.toISOString().slice(0, 16) }))
+        setFormData(prev => ({
+          ...prev,
+          start_date_time: dateTime.toISOString()
+        }))
+
+        // Auto-set end date if not set
+        if (!endDate) {
+          setEndDate(startDate)
+          const endDateTime = new Date(startDate)
+          endDateTime.setHours(17, 0, 0, 0)
+          setFormData(prev => ({
+            ...prev,
+            end_date_time: endDateTime.toISOString()
+          }))
+        }
       }
       if (endDate) {
         const dateTime = new Date(endDate)
         dateTime.setHours(17, 0, 0, 0)
-        setFormData(prev => ({ ...prev, end_date_time: dateTime.toISOString().slice(0, 16) }))
+        setFormData(prev => ({
+          ...prev,
+          end_date_time: dateTime.toISOString()
+        }))
       }
     }
   }, [startDate, endDate, formData.day_off_type, halfDayPeriod])
@@ -135,10 +154,10 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   // Calculate days off correctly
   const calculatedDaysOff = (() => {
     if (!formData.start_date_time || !formData.end_date_time) return 0
-    
+
     const start = new Date(formData.start_date_time)
     const end = new Date(formData.end_date_time)
-    
+
     if (formData.day_off_type === 'HALF_DAY') {
       return 0.5
     } else {
@@ -149,6 +168,24 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
       return diffDays
     }
   })()
+
+  // Validate form
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+
+    if (!formData.department_id) errors.department_id = 'Department is required'
+    if (!formData.employee_id) errors.employee_id = 'Employee is required'
+    if (!formData.supervisor_id) errors.supervisor_id = 'Supervisor is required'
+    if (!formData.title.trim()) errors.title = 'Reason is required'
+    if (!startDate) errors.start_date = 'Start date is required'
+    if (formData.day_off_type === 'FULL_DAY' && !endDate) errors.end_date = 'End date is required'
+    if (endDate && startDate && endDate < startDate) {
+      errors.date_range = 'End date cannot be before start date'
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const resetForm = () => {
     setFormData({
@@ -163,6 +200,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
     setStartDate(null)
     setEndDate(null)
     setHalfDayPeriod('MORNING')
+    setFormErrors({})
   }
 
   const handleClose = () => {
@@ -171,15 +209,24 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
   }
 
   const handleSubmit = async () => {
-    await onSubmit(formData)
-    resetForm()
+    if (!validateForm()) {
+      return
+    }
+
+    try {
+      await onSubmit(formData)
+      resetForm()
+      setShowModal(false)
+    } catch (error) {
+      console.error('Error submitting form:', error)
+    }
   }
 
   return (
     <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-8 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-3xl font-bold text-gray-900">New Day Off Request</h2>
+          <h2 className="text-3xl font-bold text-gray-900">ສ້າງຄຳຂໍລາພັກ</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
             <FaTimes className="text-2xl" />
           </button>
@@ -187,18 +234,27 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
         <div className="p-8 space-y-6">
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Department *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                ພະແໜກ *
+                {formErrors.department_id && (
+                  <span className="text-red-500 text-sm ml-2">{formErrors.department_id}</span>
+                )}
+              </label>
               <select
                 value={formData.department_id}
                 onChange={(e) => {
                   const newDeptId = e.target.value
-                  setFormData({ 
-                    ...formData, 
+                  setFormData({
+                    ...formData,
                     department_id: newDeptId,
                     employee_id: ''
                   })
+                  // Clear department error when selected
+                  if (formErrors.department_id) {
+                    setFormErrors(prev => ({ ...prev, department_id: '' }))
+                  }
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full h-[50px] px-3 py-2 border ${formErrors.department_id ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 disabled={loadingDepartments}
               >
                 <option value="">
@@ -211,12 +267,24 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 ))}
               </select>
             </div>
+
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Employee *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Employee *
+                {formErrors.employee_id && (
+                  <span className="text-red-500 text-sm ml-2">{formErrors.employee_id}</span>
+                )}
+              </label>
               <select
                 value={formData.employee_id}
-                onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                  setFormData({ ...formData, employee_id: e.target.value })
+                  // Clear employee error when selected
+                  if (formErrors.employee_id) {
+                    setFormErrors(prev => ({ ...prev, employee_id: '' }))
+                  }
+                }}
+                className={`w-full h-[50px] px-3 py-2 border ${formErrors.employee_id ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 disabled={!formData.department_id}
               >
                 <option value="">
@@ -232,12 +300,24 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 <p className="text-sm text-amber-600 mt-1">No employees found in this department</p>
               )}
             </div>
+
             <div className="col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Supervisor *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Supervisor *
+                {formErrors.supervisor_id && (
+                  <span className="text-red-500 text-sm ml-2">{formErrors.supervisor_id}</span>
+                )}
+              </label>
               <select
                 value={formData.supervisor_id}
-                onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => {
+                  setFormData({ ...formData, supervisor_id: e.target.value })
+                  // Clear supervisor error when selected
+                  if (formErrors.supervisor_id) {
+                    setFormErrors(prev => ({ ...prev, supervisor_id: '' }))
+                  }
+                }}
+                className={`w-full h-[50px] px-3 py-2 border ${formErrors.supervisor_id ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
               >
                 <option value="">Select Supervisor</option>
                 {supervisors.map(user => (
@@ -253,12 +333,23 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Reason *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Reason *
+              {formErrors.title && (
+                <span className="text-red-500 text-sm ml-2">{formErrors.title}</span>
+              )}
+            </label>
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value })
+                // Clear title error when typing
+                if (formErrors.title) {
+                  setFormErrors(prev => ({ ...prev, title: '' }))
+                }
+              }}
+              className={`w-full h-[50px] px-3 py-2 border ${formErrors.title ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
               placeholder="e.g., Family Vacation"
             />
           </div>
@@ -272,9 +363,13 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 setFormData({ ...formData, day_off_type: newType })
                 if (newType === 'HALF_DAY') {
                   setEndDate(null)
+                  // Clear end date error if switching to half day
+                  if (formErrors.end_date) {
+                    setFormErrors(prev => ({ ...prev, end_date: '' }))
+                  }
                 }
               }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="FULL_DAY">FULL_DAY</option>
               <option value="HALF_DAY">HALF_DAY</option>
@@ -287,7 +382,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
               <select
                 value={halfDayPeriod}
                 onChange={(e) => setHalfDayPeriod(e.target.value as 'MORNING' | 'AFTERNOON')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="MORNING">Morning (08:30 - 12:00)</option>
                 <option value="AFTERNOON">Afternoon (13:30 - 17:00)</option>
@@ -298,7 +393,12 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
           {formData.day_off_type === 'FULL_DAY' ? (
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Start Date *
+                  {formErrors.start_date && (
+                    <span className="text-red-500 text-sm ml-2">{formErrors.start_date}</span>
+                  )}
+                </label>
                 <DatePicker
                   selected={startDate}
                   onChange={(date: Date | null) => {
@@ -306,39 +406,71 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                     if (date && endDate && endDate < date) {
                       setEndDate(null)
                     }
+                    // Clear start date error when selected
+                    if (formErrors.start_date) {
+                      setFormErrors(prev => ({ ...prev, start_date: '' }))
+                    }
                   }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Select date"
                   minDate={minDate}
                   maxDate={maxDate}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.start_date ? 'border-red-500' : 'border-gray-300'} rounded-sm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">End Date *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  End Date *
+                  {formErrors.end_date && (
+                    <span className="text-red-500 text-sm ml-2">{formErrors.end_date}</span>
+                  )}
+                  {formErrors.date_range && (
+                    <span className="text-red-500 text-sm ml-2 block">{formErrors.date_range}</span>
+                  )}
+                </label>
                 <DatePicker
                   selected={endDate}
-                  onChange={(date: Date | null) => setEndDate(date)}
+                  onChange={(date: Date | null) => {
+                    setEndDate(date)
+                    // Clear end date error when selected
+                    if (formErrors.end_date) {
+                      setFormErrors(prev => ({ ...prev, end_date: '' }))
+                    }
+                    if (formErrors.date_range) {
+                      setFormErrors(prev => ({ ...prev, date_range: '' }))
+                    }
+                  }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Select date"
                   minDate={startDate ?? minDate}
                   maxDate={maxDate}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.end_date || formErrors.date_range ? 'border-red-500' : 'border-gray-300'} rounded-sm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
               </div>
             </div>
           ) : (
             <>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Date *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Date *
+                  {formErrors.start_date && (
+                    <span className="text-red-500 text-sm ml-2">{formErrors.start_date}</span>
+                  )}
+                </label>
                 <DatePicker
                   selected={startDate}
-                  onChange={(date: Date | null) => setStartDate(date)}
+                  onChange={(date: Date | null) => {
+                    setStartDate(date)
+                    // Clear start date error when selected
+                    if (formErrors.start_date) {
+                      setFormErrors(prev => ({ ...prev, start_date: '' }))
+                    }
+                  }}
                   dateFormat="dd/MM/yyyy"
                   placeholderText="Select date"
                   minDate={minDate}
                   maxDate={maxDate}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.start_date ? 'border-red-500' : 'border-gray-300'} rounded-sm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -359,9 +491,13 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">From</p>
-                  <p className="font-semibold text-gray-900">{startDate?.toLocaleDateString('en-GB')}</p>
+                  <p className="font-semibold text-gray-900">
+                    {new Date(formData.start_date_time).toLocaleDateString('en-GB')}
+                  </p>
                   <p className="text-sm text-gray-600 mt-2">To</p>
-                  <p className="font-semibold text-gray-900">{endDate?.toLocaleDateString('en-GB')}</p>
+                  <p className="font-semibold text-gray-900">
+                    {new Date(formData.end_date_time).toLocaleDateString('en-GB')}
+                  </p>
                 </div>
               </div>
             </div>

@@ -388,7 +388,7 @@ const WeekendOTCard: React.FC<{
 
     return (
         <div className="border border-gray-300 rounded bg-white">
-            <div className="bg-[#FFFFFF] px-4 py-3 rounded-t">
+            <div className="bg-[#FF5a3d] px-4 py-3 rounded-t">
                 <h5 className="font-bold text-white">
                     ມື້ພັກ (ວັນເສົາ-ວັນອາທິດ)
                 </h5>
@@ -464,7 +464,7 @@ const WeekendOTCard: React.FC<{
                                             onRatePerHourChange(e.target.value)
                                         }
                                         className="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent outline-none"
-                                        placeholder="0.00"
+                                        placeholder="0"
                                     />
                                 </div>
                             </div>
@@ -570,7 +570,7 @@ const WeekendOTCard: React.FC<{
                                             onRatePerDayChange(e.target.value)
                                         }
                                         className="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#E67E22] focus:border-transparent outline-none"
-                                        placeholder="0.00"
+                                        placeholder="0"
                                     />
                                     <span className="absolute right-3 top-2 text-gray-400 text-sm italic pointer-events-none">
                                         ກີບ/ມື້
@@ -1079,7 +1079,8 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                             <input
                                 type="number"
                                 name="bonus"
-                                value={formData.bonus}
+                                value={formData.bonus === 0 ? " " : formData.bonus}
+                                
                                 onChange={onInputChange}
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
@@ -1093,8 +1094,8 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                             <input
                                 type="number"
                                 name="commission"
-                                value={formData.commission}
-                                onChange={onInputChange}
+                                value={formData.commission === 0 ? " " :formData.commission}
+                                onChange={onInputChange} 
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
                         </div>
@@ -1107,7 +1108,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                             <input
                                 type="number"
                                 name="money_not_spent_on_holidays"
-                                value={formData.money_not_spent_on_holidays}
+                                value={formData.money_not_spent_on_holidays === 0 ? '' : formData.money_not_spent_on_holidays}
                                 onChange={onInputChange}
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
@@ -1121,7 +1122,7 @@ export const Step3AdditionalIncome: React.FC<StepComponentsProps> = ({
                             <input
                                 type="number"
                                 name="other_income"
-                                value={formData.other_income}
+                                value={formData.other_income === 0 ? " " : formData.other_income}
                                 onChange={onInputChange}
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
@@ -1190,7 +1191,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                 <input
                                     type="number"
                                     name="cut_off_pay_days"
-                                    value={formData.cut_off_pay_days}
+                                    value={formData.cut_off_pay_days === 0 ? " " : formData.cut_off_pay_days}
                                     onChange={handleCutOffDaysChange}
                                     min="0"
                                     step="0.5"
@@ -1211,7 +1212,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                     <input
                                         type="number"
                                         name="cut_off_pay_amount"
-                                        value={formData.cut_off_pay_amount}
+                                        value={formData.cut_off_pay_amount === 0 ? " ": formData.cut_off_pay_amount}
                                         onChange={onInputChange}
                                         min="0"
                                         className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#FFFFFF] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
@@ -1220,7 +1221,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                 </div>
                                 <p className="mt-1 text-xs text-gray-500">
                                     ປ້ອນຈຳນວນເງິນທີ່ຕ້ອງການຫັກຕໍ່ 1 ວັນ
-                                    {prefillData && (
+                                    {/* {prefillData && (
                                         <span className="block font-medium text-gray-600 mt-1">
                                             ແນະນຳ:
                                             {(
@@ -1229,7 +1230,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                                             ).toLocaleString()}
                                             /ວັນ
                                         </span>
-                                    )}
+                                    )} */}
                                 </p>
                             </div>
                         </div>
@@ -1263,7 +1264,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                             <input
                                 type="number"
                                 name="office_expenses"
-                                value={formData.office_expenses}
+                                value={formData.office_expenses === 0 ? " " : formData.office_expenses}
                                 onChange={onInputChange}
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />
@@ -1279,7 +1280,7 @@ export const Step4Deductions: React.FC<StepComponentsProps> = ({
                             <input
                                 type="number"
                                 name="social_security"
-                                value={formData.social_security}
+                                value={formData.social_security === 0 ? " " : formData.social_security}
                                 onChange={onInputChange}
                                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                             />

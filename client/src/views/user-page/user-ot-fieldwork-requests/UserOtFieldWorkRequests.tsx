@@ -138,69 +138,63 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
     <div style={containerStyle}>
       <Section title="⏱ ຄຳຂໍ OT ແລະ ວຽກນອກສະຖານທີ່">
         {/* FILTERS */}
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            marginBottom: "16px",
-            flexWrap: "wrap",
-          }}
-        >
-          <select
-            value={selectedType}
-            onChange={(e) =>
-              setSelectedType(
-                e.target.value as "all" | "OT" | "FIELD_WORK"
-              )
-            }
-            style={{
-              padding: "6px 10px",
-              borderRadius: "6px",
-              border: "1px solid #d1d5db",
-              fontSize: "12px",
-            }}
-          >
-            <option value="all">ປະເພດທັງໝົດ</option>
-            <option value="OT">OT</option>
-            <option value="FIELD_WORK">ວຽກນອກສະຖານທີ່</option>
-          </select>
+        <div style={{ display: "flex", justifyContent: "space-between", width: "100%"}}>
+          <div style={{ display: "flex", gap: "12px", marginBottom: "30px", marginTop: "20px" }}>
+            <div>
+              <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ປະເພດ</label>
+              <select
+                value={selectedType}
+                onChange={(e) =>
+                  setSelectedType(
+                    e.target.value as "all" | "OT" | "FIELD_WORK"
+                  )
+                }
+                className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              >
+                <option value="all">ປະເພດທັງໝົດ</option>
+                <option value="OT">OT</option>
+                <option value="FIELD_WORK">ວຽກນອກສະຖານທີ່</option>
+              </select>
+            </div>
 
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: "6px",
-              border: "1px solid #d1d5db",
-              fontSize: "12px",
-            }}
-          >
-            <option value="all">ສະຖານະທັງໝົດ</option>
-            <option value="Pending">Pending</option>
-            <option value="Accepted">Accepted</option>
-            <option value="Rejected">Rejected</option>
-          </select>
+            <div>
+              <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ສະຖານະ</label>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              >
+                <option value="all">ສະຖານະທັງໝົດ</option>
+                <option value="Pending">Pending</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
 
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: "6px",
-              border: "1px solid #d1d5db",
-              fontSize: "12px",
-            }}
-          >
-            <option value="">ເດືອນ</option>
-            {availableMonths.map((m) => (
-              <option key={m} value={m}>
-                {new Date(m + "-01").toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                })}
-              </option>
-            ))}
-          </select>
+            <div>
+              <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ເດືອນ</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              >
+                <option value="">ເດືອນ</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>
+                    {new Date(m + "-01").toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                    })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Results Count */}
+          <div style={{ marginTop: "70px", fontSize: "14px", color: "#6b7280" }}>
+            Showing {filteredRequests.length} of {requests.length} requests
+          </div>
         </div>
 
         {/* TABLE */}
@@ -263,8 +257,8 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                   <td style={td}>
                     <div style={{ display: "flex", gap: "8px" }}>
                       <ActionButton
-                        color="#3b82f6"
-                        hoverColor="#2563eb"
+                        color="#45CC67"
+                        hoverColor="#1fd371"
                         disabled={!isPending}
                         onClick={() => onEdit(r)}
                       >
@@ -278,8 +272,8 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
                         disabled={!isPending}
                         onClick={() => {
                           Swal.fire({
-                            title: 'Confirm Cancellation',
-                            html: `Are you sure you want to cancel this request?`,
+                            title: 'ຕ້ອງການທີ່ຈະຍົກເລິກຟຟຟ?',
+                            html: `ການຍົກເລິກນີ້ບໍ່ສາມາດກັບຄືນໄດ້`,
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonText: 'Yes, Cancel',

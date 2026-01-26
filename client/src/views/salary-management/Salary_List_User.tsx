@@ -4,18 +4,15 @@ import type React from 'react'
 import { useState, useEffect, useMemo } from 'react'
 import {
     Search,
-    Plus,
     AlertCircle,
-    Calendar,
     Users,
     DollarSign,
     Briefcase,
-    ChevronDown,
 } from 'lucide-react'
 import axios from 'axios'
 import SalaryCalculator from './SalaryCalculator'
 
-// Interface for users
+// Interface for users - ปรับให้รองรับทั้ง Array และ Object
 interface User {
     _id: string
     first_name_en: string
@@ -24,15 +21,24 @@ interface User {
     role: string
     status: string
     base_salary?: number
-    department_id?: {
+    // รองรับทั้ง Array ของ Object และ Object เดียว
+    department_id?: Array<{
         _id: string
-        department_name: string
+        department_name?: string
+        name?: string
+    }> | {
+        _id: string
+        department_name?: string
+        name?: string
     }
     position_id?: {
         _id: string
-        position_name: string
+        position_name?: string
+        name?: string
     }
     vacation_days?: number
+    created_at?: string
+    date_of_birth?: string
 }
 
 // Interface for existing salaries
@@ -59,9 +65,7 @@ const SalaryListUser: React.FC = () => {
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [openCalculator, setOpenCalculator] = useState(false)
     const [openConfirmDialog, setOpenConfirmDialog] = useState(false)
-    const [existingSalaries, setExistingSalaries] = useState<ExistingSalary[]>(
-        [],
-    )
+    const [existingSalaries, setExistingSalaries] = useState<ExistingSalary[]>([])
     const [selectedMonth, setSelectedMonth] = useState<number>(
         new Date().getMonth() + 1,
     )
@@ -69,11 +73,86 @@ const SalaryListUser: React.FC = () => {
         new Date().getFullYear(),
     )
 
+    // ฟังก์ชัน helper เพื่อดึงชื่อ department - แก้ไขให้รองรับทุกกรณี
+    const getDepartmentName = (user: User): string => {
+        if (!user.department_id) {
+            return '-'
+        }
+        
+        // ตรวจสอบว่าเป็น Array หรือ Object
+        if (Array.isArray(user.department_id)) {
+            // เป็น Array
+            if (user.department_id.length === 0) {
+                return '-'
+            }
+            
+            const department = user.department_id[0]
+            // ตรวจสอบว่า department เป็น object ที่มีข้อมูลไหม
+            if (!department || typeof department !== 'object') {
+                return '-'
+            }
+            
+            // ดึงชื่อจาก field ที่เป็นไปได้
+            if (department.department_name) {
+                return department.department_name
+            }
+            if (department.name) {
+                return department.name
+            }
+            return '-'
+        } else {
+            // เป็น Object เดียว
+            const department = user.department_id
+            if (department.department_name) {
+                return department.department_name
+            }
+            if (department.name) {
+                return department.name
+            }
+            return '-'
+        }
+    }
+
+    // ฟังก์ชัน helper เพื่อดึงชื่อ position
+    const getPositionName = (user: User): string => {
+        if (!user.position_id) {
+            return '-'
+        }
+        
+        const position = user.position_id
+        if (position.position_name) {
+            return position.position_name
+        }
+        if (position.name) {
+            return position.name
+        }
+        return '-'
+    }
+
+    // ฟังก์ชัน helper เพื่อดึง department object
+    const getDepartmentObject = (user: User) => {
+        if (!user.department_id) {
+            return null
+        }
+        
+        if (Array.isArray(user.department_id)) {
+            return user.department_id.length > 0 ? user.department_id[0] : null
+        } else {
+            return user.department_id
+        }
+    }
+
+    // ฟังก์ชัน helper เพื่อดึง position object
+    const getPositionObject = (user: User) => {
+        return user.position_id || null
+    }
+
     const departments = useMemo(() => {
         const deptSet = new Set<string>()
         users.forEach((user) => {
-            if (user.department_id?.department_name) {
-                deptSet.add(user.department_id.department_name)
+            const deptName = getDepartmentName(user)
+            if (deptName && deptName !== '-') {
+                deptSet.add(deptName)
             }
         })
         return Array.from(deptSet).sort()
@@ -82,8 +161,9 @@ const SalaryListUser: React.FC = () => {
     const positions = useMemo(() => {
         const posSet = new Set<string>()
         users.forEach((user) => {
-            if (user.position_id?.position_name) {
-                posSet.add(user.position_id.position_name)
+            const posName = getPositionName(user)
+            if (posName && posName !== '-') {
+                posSet.add(posName)
             }
         })
         return Array.from(posSet).sort()
@@ -99,23 +179,48 @@ const SalaryListUser: React.FC = () => {
         return Array.from(statusSet).sort()
     }, [users])
 
-    // Fetch users - แก้ไข: กรองเฉพาะ role employee
+    // Fetch users
     const fetchUsers = async () => {
         try {
             setLoading(true)
+            setError(null)
+            
             const response = await axios.get('/api/users')
+            
+            console.log('API Response received')
+            
             if (response.data && response.data.users) {
-                // กรองเฉพาะผู้ใช้ที่มี role เป็น employee (ไม่สนใจ case-sensitive)
+                // Debug: ตรวจสอบโครงสร้างข้อมูล
+                if (response.data.users.length > 0) {
+                    const firstUser = response.data.users[0]
+                    console.log('First user department structure:', {
+                        raw: firstUser.department_id,
+                        type: typeof firstUser.department_id,
+                        isArray: Array.isArray(firstUser.department_id),
+                        arrayLength: Array.isArray(firstUser.department_id) ? firstUser.department_id.length : 'N/A',
+                        extractedName: getDepartmentName(firstUser)
+                    })
+                    console.log('First user position structure:', {
+                        raw: firstUser.position_id,
+                        extractedName: getPositionName(firstUser)
+                    })
+                }
+                
+                // กรองเฉพาะผู้ใช้ที่มี role เป็น employee
                 const employees = response.data.users.filter(
                     (user: User) => 
                         user.role.toLowerCase() === 'employee' ||
-                        user.role.toLowerCase() === 'พนักงาน' // กรณีเป็นภาษาไทย
+                        user.role.toLowerCase() === 'พนักงาน'
                 )
+                
+                console.log(`Found ${employees.length} employees`)
+                
                 setUsers(employees)
                 setFilteredUsers(employees)
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to fetch users')
+            const errorMessage = err.response?.data?.message || 'Failed to fetch users'
+            setError(errorMessage)
             console.error('Error fetching users:', err)
         } finally {
             setLoading(false)
@@ -151,22 +256,23 @@ const SalaryListUser: React.FC = () => {
                     user.email
                         .toLowerCase()
                         .includes(searchTerm.toLowerCase()) ||
-                    user.role.toLowerCase().includes(searchTerm.toLowerCase()),
+                    user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    getDepartmentName(user).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    getPositionName(user).toLowerCase().includes(searchTerm.toLowerCase()),
             )
         }
 
         // Department filter
         if (filterDepartment !== 'all') {
             filtered = filtered.filter(
-                (user) =>
-                    user.department_id?.department_name === filterDepartment,
+                (user) => getDepartmentName(user) === filterDepartment,
             )
         }
 
         // Position filter
         if (filterPosition !== 'all') {
             filtered = filtered.filter(
-                (user) => user.position_id?.position_name === filterPosition,
+                (user) => getPositionName(user) === filterPosition,
             )
         }
 
@@ -225,7 +331,6 @@ const SalaryListUser: React.FC = () => {
     }
 
     const getRoleBadge = (role: string) => {
-        // เนื่องจากเรา filter เฉพาะ employee แล้ว badge นี้ควรเป็นสีเดียวกัน
         return 'bg-blue-50 text-blue-700 border border-blue-200'
     }
 
@@ -286,7 +391,7 @@ const SalaryListUser: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#F9FAFB]">
             {/* Header */}
-            <div className="p-6">
+            <div className="p-2">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white border border-[#E5E7EB] rounded p-4">
@@ -304,7 +409,7 @@ const SalaryListUser: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-[#76FF70]/10 border border-[#76FF70]/30 rounded p-4 shadow-sm">
+                    <div className="bg-[#76FF70]/10 border border-none rounded p-4 shadow-sm">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-emerald-50 rounded flex items-center justify-center">
                                 <Briefcase className="w-5 h-5 text-emerald-600" />
@@ -319,11 +424,9 @@ const SalaryListUser: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-[#52FFFF]/50 border border-[#52FFFF] rounded p-4 shadow-sm">
+                    <div className="bg-[#52FFFF]/50 border border-none rounded p-4 shadow-sm">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-50 rounded flex items-center justify-center">
-                                <DollarSign className="w-5 h-5 text-blue-600" />
-                            </div>
+                       
                             <div>
                                 <p className="text-sm text-[#6B7280]">
                                     Total Base Salary
@@ -346,6 +449,22 @@ const SalaryListUser: React.FC = () => {
                     </span>
                 </div>
 
+                {/* Debug Info - สามารถลบออกได้หลังจากทำงานปกติ */}
+                {/* {users.length > 0 && (
+                    <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded text-sm">
+                        <p className="font-medium text-gray-700">ข้อมูลระบบ:</p>
+                        <p className="text-gray-600">จำนวนพนักงานทั้งหมด: {users.length}</p>
+                        <p className="text-gray-600">แผนกที่พบ: {departments.length} แผนก</p>
+                        <p className="text-gray-600">ตำแหน่งที่พบ: {positions.length} ตำแหน่ง</p>
+                        <div className="mt-2 text-xs text-gray-500">
+                            <p>ตัวอย่างข้อมูลแผนกของพนักงานคนแรก:</p>
+                            <p>• ชื่อ: {users[0]?.first_name_en} {users[0]?.last_name_en}</p>
+                            <p>• แผนก: {getDepartmentName(users[0])}</p>
+                            <p>• ตำแหน่ง: {getPositionName(users[0])}</p>
+                        </div>
+                    </div>
+                )} */}
+
                 {/* Search and Filter */}
                 <div className="bg-white border border-[#E5E7EB] rounded mb-6">
                     <div className="p-4 border-b border-[#E5E7EB]">
@@ -356,7 +475,7 @@ const SalaryListUser: React.FC = () => {
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9CA3AF] w-4 h-4" />
                                     <input
                                         type="text"
-                                        placeholder="Search by name, email..."
+                                        placeholder="Search by name, email, department..."
                                         value={searchTerm}
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
@@ -527,12 +646,10 @@ const SalaryListUser: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-[#6B7280]">
-                                                {user.department_id
-                                                    ?.department_name || '-'}
+                                                {getDepartmentName(user)}
                                             </td>
                                             <td className="px-4 py-3 text-[#6B7280]">
-                                                {user.position_id
-                                                    ?.position_name || '-'}
+                                                {getPositionName(user)}
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium text-[#1F2937]">
                                                 {formatCurrency(
@@ -581,213 +698,147 @@ const SalaryListUser: React.FC = () => {
             </div>
 
             {/* Confirmation Dialog */}
-            {openConfirmDialog && (
-                <div className="min-h-[600px] min-w-[600px] ">
-                    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white p-10 border border-gray-300 rounded-md">
-                            {/* Dialog Header */}
-                            <div className="bg-[#FFFFFF] px-6 py-4 border-b border-[#FFFFFF]">
-                                <div className="flex items-center justify-between">
+            {openConfirmDialog && selectedUser && (
+                <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-10">
+                    <div className="bg-white p-10 rounded-lg shadow-xl max-w-[600px] h-[600px] w-full mx-4">
+                        {/* Dialog Header */}
+                        <div className="px-6 py-4 border-b border-gray-200">
+                            <h2 className="text-lg font-semibold text-gray-900">
+                                Confirm Salary Calculation
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Review employee details before proceeding
+                            </p>
+                        </div>
+
+                        {/* Dialog Body */}
+                        <div className="px-6 py-4">
+                            {/* Employee Details */}
+                            <div className="space-y-4 mb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <Users className="w-6 h-6 text-blue-600" />
+                                        </div>
+                                    </div>
                                     <div>
-                                        <h2 className="text-lg font-medium text-dark ">
-                                            Confirm Salary Calculation
-                                        </h2>
-                                        <p className="text-gray-300 text-xs mt-0.5">
-                                            Review details before proceeding
+                                        <h3 className="font-medium text-gray-900">
+                                            {selectedUser.first_name_en} {selectedUser.last_name_en}
+                                        </h3>
+                                        <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Department</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            {getDepartmentName(selectedUser)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Position</p>
+                                        <p className="text-sm font-medium text-gray-900">
+                                            {getPositionName(selectedUser)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Status</p>
+                                        <span className={`px-2 py-1 text-xs rounded ${getStatusBadge(selectedUser.status)}`}>
+                                            {selectedUser.status}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 mb-1">Base Salary</p>
+                                        <p className="text-sm font-medium text-green-600">
+                                            {formatCurrency(selectedUser.base_salary)}
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Dialog Body */}
-                            <div className="p-6">
-                                {/* Employee Summary Card */}
-                                <div className="mb-6 p-4 bg-gray-50 border border-gray-300 rounded-sm">
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-sm flex items-center justify-center">
-                                                <span className="text-gray-700 text-sm font-medium">
-                                                    ID
-                                                </span>
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="text-sm text-gray-600">
-                                                    Employee
-                                                </div>
-                                                <div className="font-medium text-gray-900">
-                                                    {
-                                                        selectedUser?.first_name_en
-                                                    }{' '}
-                                                    {selectedUser?.last_name_en}
-                                                </div>
-                                            </div>
-                                        </div>
+                            {/* Period Selection */}
+                            <div className="mb-6">
+                                <h3 className="text-sm font-medium text-gray-900 mb-3">
+                                    Select Calculation Period
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                            Month
+                                        </label>
+                                        <select
+                                            value={selectedMonth}
+                                            onChange={(e) =>
+                                                setSelectedMonth(
+                                                    parseInt(e.target.value),
+                                                )
+                                            }
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {Array.from(
+                                                { length: 12 },
+                                                (_, i) => i + 1,
+                                            ).map((month) => (
+                                                <option key={month} value={month}>
+                                                    {getMonthName(month)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                            Year
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={selectedYear}
+                                            onChange={(e) =>
+                                                setSelectedYear(
+                                                    parseInt(e.target.value),
+                                                )
+                                            }
+                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <div className="text-xs text-gray-500 mb-0.5">
-                                                    Email
-                                                </div>
-                                                <div className="text-sm text-gray-900 truncate">
-                                                    {selectedUser?.email}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="text-xs text-gray-500 mb-0.5">
-                                                    Base Salary
-                                                </div>
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {formatCurrency(
-                                                        selectedUser?.base_salary,
-                                                    )}
-                                                </div>
-                                            </div>
+                            {/* Warning if salary exists */}
+                            {checkExistingSalary(
+                                selectedUser._id,
+                                selectedMonth,
+                                selectedYear,
+                            ) && (
+                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg">
+                                    <div className="flex items-start gap-2">
+                                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                        <div>
+                                            <p className="font-medium">Warning: Duplicate Record</p>
+                                            <p className="mt-1">
+                                                Salary for {getMonthName(selectedMonth)} {selectedYear} already exists.
+                                                Creating new calculation will overwrite existing record.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
+                            )}
+                        </div>
 
-                                {/* Period Selection */}
-                                <div className="mb-6">
-                                    <h3 className="text-sm font-medium text-gray-900 mb-3">
-                                        Select Processing Period
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-normal text-gray-700 mb-1.5">
-                                                Month
-                                            </label>
-                                            <select
-                                                value={selectedMonth}
-                                                onChange={(e) =>
-                                                    setSelectedMonth(
-                                                        parseInt(
-                                                            e.target.value,
-                                                        ),
-                                                    )
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
-                                            >
-                                                {Array.from(
-                                                    { length: 12 },
-                                                    (_, i) => i + 1,
-                                                ).map((month) => (
-                                                    <option
-                                                        key={month}
-                                                        value={month}
-                                                    >
-                                                        {getMonthName(month)}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-normal text-gray-700 mb-1.5">
-                                                Year
-                                            </label>
-                                            <input
-                                                type="number"
-                                                value={selectedYear}
-                                                onChange={(e) =>
-                                                    setSelectedYear(
-                                                        parseInt(
-                                                            e.target.value,
-                                                        ),
-                                                    )
-                                                }
-                                                className="w-full px-3 py-2 border border-gray-300 rounded-sm text-sm focus:outline-none focus:border-[#1F3A5F] focus:ring-1 focus:ring-[#1F3A5F]"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Existing Salaries Warning */}
-                                {selectedUser &&
-                                    checkExistingSalary(
-                                        selectedUser._id,
-                                        selectedMonth,
-                                        selectedYear,
-                                    ) && (
-                                        <div className="mb-6 p-3 bg-[#FEF3C7] border border-[#B45309] text-[#B45309] text-sm rounded-sm">
-                                            <div className="flex items-start gap-2">
-                                                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                                <div>
-                                                    <div className="font-medium mb-0.5">
-                                                        ຄຳເຕືອນກ່ຽວກັບບັນທຶກຊໍ້າກັນ
-                                                    </div>
-                                                    <div>
-                                                        ບັນທຶກເງິນເດືອນສຳລັບ{' '}
-                                                        {getMonthName(
-                                                            selectedMonth,
-                                                        )}{' '}
-                                                        {selectedYear}
-                                                        ມີຢູ່ແລ້ວ. ດຳເນີນການສ້າງການຄິດໄລ່ໃໝ່.
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                {/* Existing Salaries Preview */}
-                                {existingSalaries.length > 0 && (
-                                    <div className="mb-6">
-                                        <h3 className="text-sm font-medium text-gray-900 mb-2">
-                                            Existing Salary Records
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {existingSalaries
-                                                .slice(0, 3)
-                                                .map((salary) => (
-                                                    <div
-                                                        key={salary._id}
-                                                        className="flex items-center justify-between p-2 bg-gray-50 border border-gray-200 rounded-sm"
-                                                    >
-                                                        <div className="text-sm text-gray-700">
-                                                            {getMonthName(
-                                                                salary.month,
-                                                            )}{' '}
-                                                            {salary.year}
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-sm font-medium text-gray-900">
-                                                                ฿
-                                                                {salary.net_salary.toLocaleString()}
-                                                            </span>
-                                                            <span
-                                                                className={`px-2 py-0.5 text-xs rounded-sm ${salary.status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-blue-100 text-blue-800 border border-blue-200'}`}
-                                                            >
-                                                                {salary.status}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            {existingSalaries.length > 3 && (
-                                                <div className="text-xs text-gray-500 text-center mt-1">
-                                                    +{' '}
-                                                    {existingSalaries.length -
-                                                        3}{' '}
-                                                    more records
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Dialog Footer */}
-                            <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex justify-end gap-3">
-                                <button
-                                    onClick={() => setOpenConfirmDialog(false)}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 transition-colors rounded-sm"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleConfirmCalculate}
-                                    className="px-4 py-2 text-sm font-medium text-white bg-[#45CC67] hover:bg-[#3aa85a] transition-colors rounded-sm flex items-center gap-1.5"
-                                >
-                                    Proceed to Calculation
-                                </button>
-                            </div>
+                        {/* Dialog Footer */}
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                            <button
+                                onClick={() => setOpenConfirmDialog(false)}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmCalculate}
+                                className="h-[45px] px-4 py-2 text-sm font-medium text-white bg-[#45CC67] hover:bg-[#3DB75B] rounded-sm transition-colors"
+                            >
+                                Proceed to Calculator
+                            </button>
                         </div>
                     </div>
                 </div>
