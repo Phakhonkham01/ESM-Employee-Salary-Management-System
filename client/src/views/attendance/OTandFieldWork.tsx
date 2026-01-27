@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { FaTimes, FaCheck, FaTrash, FaClock, FaFilePdf, FaEye } from "react-icons/fa"
 import { getAllUsers } from '../../services/Create_user/api'
 import type { UserData } from '../../services/Create_user/api'
@@ -11,13 +11,16 @@ import {
 } from '../../services/requests/api'
 import {
   Download,
-
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import { useExportOTToPDF } from './ExportToPDF'
 import Swal from 'sweetalert2'
 
 type RequestStatus = 'Pending' | 'Accept' | 'Reject'
 type RequestTitle = 'OT' | 'FIELD_WORK'
+
+const ITEMS_PER_PAGE = 8
 
 const OTandFieldWork: React.FC = () => {
   const [requests, setRequests] = useState<RequestData[]>([])
@@ -31,6 +34,7 @@ const OTandFieldWork: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('')
   const [filterTitle, setFilterTitle] = useState<'OT' | 'FIELD_WORK' | 'ALL'>('ALL')
   const [filterStatus, setFilterStatus] = useState<RequestStatus | 'ALL'>('ALL')
+  const [currentPage, setCurrentPage] = useState(1)
 
   const useUsersMap = (users: UserData[]) => {
     return React.useMemo(() => {
@@ -42,6 +46,28 @@ const OTandFieldWork: React.FC = () => {
 
   const usersMap = useUsersMap(users)
 
+  // Pagination logic
+  const { paginatedRequests, totalPages } = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    const paginated = requests.slice(startIndex, endIndex)
+    const pages = Math.ceil(requests.length / ITEMS_PER_PAGE)
+    
+    return {
+      paginatedRequests: paginated,
+      totalPages: pages
+    }
+  }, [requests, currentPage])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedYear, selectedMonth, selectedDepartment, filterTitle, filterStatus])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   useEffect(() => {
     loadUsers()
@@ -61,7 +87,6 @@ const OTandFieldWork: React.FC = () => {
       loadRequests()
     }
   }, [selectedYear, selectedMonth, selectedDepartment, filterTitle, filterStatus])
-
 
   const loadUsers = async () => {
     try {
@@ -188,13 +213,14 @@ const OTandFieldWork: React.FC = () => {
 
   const handleDelete = async (requestId: string) => {
     const result = await Swal.fire({
-      title: 'Confirm Deletion',
-      text: 'Do you want to delete this request?',
+      title: 'ຢືນຢັນການລົບ',
+      text: 'ທ່ານຕ້ອງການລົບຄຳຂໍນີ້ບໍ?',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Yes, delete',
-      cancelButtonText: 'Cancel',
+      confirmButtonText: 'ແມ່ນ, ລົບເລີຍ',
+      cancelButtonText: 'ຍົກເລີກ',
       confirmButtonColor: '#d33',
+      cancelButtonColor: '#6b7280',
       reverseButtons: true,
     })
 
@@ -205,9 +231,10 @@ const OTandFieldWork: React.FC = () => {
       await deleteRequest(requestId)
       await Swal.fire({
         icon: 'success',
-        title: 'Deleted',
-        text: 'Request deleted successfully!',
-        confirmButtonColor: '#3085d6'
+        title: 'ສຳເລັດ',
+        text: 'ລົບຄຳຂໍສຳເລັດແລ້ວ!',
+        confirmButtonColor: '#3085d6',
+        timer: 2000
       })
 
       await loadRequests()
@@ -215,8 +242,8 @@ const OTandFieldWork: React.FC = () => {
     } catch (error: any) {
       await Swal.fire({
         icon: 'error',
-        title: 'Delete failed',
-        text: error?.message || 'Failed to delete request',
+        title: 'ລົບບໍ່ສຳເລັດ',
+        text: error?.message || 'ເກີດຂໍ້ຜິດພາດໃນການລົບຄຳຂໍ',
         confirmButtonColor: '#d33'
       })
 
@@ -263,8 +290,8 @@ const OTandFieldWork: React.FC = () => {
   }
 
   const getMonthName = (month: number) => {
-    const months = ['January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December']
+    const months = ['ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ',
+      'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ']
     return months[month - 1]
   }
 
@@ -332,7 +359,7 @@ const OTandFieldWork: React.FC = () => {
             <button
               onClick={handleExportToPDF}
               disabled={loading || otDataForExport.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
               Export to PDF
@@ -373,13 +400,13 @@ const OTandFieldWork: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-4 mb-4 bg-gray-50 p-4 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm">
           <div>
-            <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ປີ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ປີ</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -387,11 +414,11 @@ const OTandFieldWork: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ເດືອນ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ເດືອນ</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                 <option key={month} value={month}>{getMonthName(month)}</option>
@@ -399,11 +426,11 @@ const OTandFieldWork: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ພະແໜກ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ພະແໜກ</label>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition disabled:bg-gray-100 disabled:cursor-not-allowed"
               disabled={loading}
             >
               <option value="">ພະແໜກທັງໝົດ</option>
@@ -413,11 +440,11 @@ const OTandFieldWork: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ປະເພດ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ປະເພດ</label>
             <select
               value={filterTitle}
               onChange={(e) => setFilterTitle(e.target.value as 'OT' | 'FIELD_WORK' | 'ALL')}
-              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               <option value="ALL">ປະເພດທັງໝົດ</option>
               <option value="OT">ວຽກລ່ວງເວລາ(OT)</option>
@@ -425,11 +452,11 @@ const OTandFieldWork: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ສະຖານະ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ສະຖານະ</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as RequestStatus | 'ALL')}
-              className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               <option value="ALL">ສະຖານະທັງໝົດ</option>
               <option value="Pending">ກຳລັງດຳເນີນການ</option>
@@ -439,150 +466,321 @@ const OTandFieldWork: React.FC = () => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ພະນັກງານ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ປະເພດ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ຊົ່ວໂມງ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ເລືອງ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading && requests.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500 text-sm">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : requests.map((request) => {
-                  const isDisabled = request.status === 'Reject' || request.status === 'Accept'
-                  const hours = parseTimeToHours(request.start_hour as any, request.end_hour as any)
-                  return (
-                    <tr key={request._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{getUserName(request.user_id)}</td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-md text-xs font-medium ${getTitleColor(request.title)}`}>
-                          {request.title}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-gray-900 font-semibold text-sm whitespace-nowrap">
-                        <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium text-sm">
-                          <FaClock size={12} />
-                          {hours.toFixed(1)}h
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{request.reason}</td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-md text-xs font-medium ${getStatusColor(request.status)}`}>
-                          {request.status === 'Accept' ? 'Accepted' : request.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => {
-                              setSelectedRequest(request)
-                              setShowDetailModal(true)
-                            }}
-                            className="flex items-center justify-center h-[40px] w-[90px] rounded-sm text-xs transition bg-gray-600 hover:bg-gray-700 text-white"
-                          >
-                            <FaEye className="text-xs" /> ລາຍລະອຽດ
-                          </button>
-                          <button
-                            onClick={() => handleDelete(request._id)}
-                            disabled={loading || isDisabled}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-medium transition ${isDisabled
-                              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                              : 'bg-red-600 text-white hover:bg-red-700'
-                              }`}
-                          >
-                            <FaTrash className="text-xs" /> ລົບ
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        {/* Results Info */}
+        <div className="mb-4 text-sm text-gray-600 flex justify-between items-center">
+          <div>
+            ສະແດງ <span className="font-semibold text-gray-900">
+              {paginatedRequests.length > 0 ? ((currentPage - 1) * ITEMS_PER_PAGE + 1) : 0}
+            </span> - <span className="font-semibold text-gray-900">
+              {Math.min(currentPage * ITEMS_PER_PAGE, requests.length)}
+            </span> ຈາກທັງໝົດ <span className="font-semibold text-gray-900">{requests.length}</span> ລາຍການ
           </div>
-          {!loading && requests.length === 0 && (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              No requests found
+          {totalPages > 1 && (
+            <div className="text-gray-500">
+              ໜ້າ {currentPage} / {totalPages}
             </div>
           )}
         </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ພະນັກງານ
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ປະເພດ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ຊົ່ວໂມງ
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ເລືອງ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ສະຖານະ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {loading && requests.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 text-sm">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>ກຳລັງໂຫລດຂໍ້ມູນ...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 text-sm">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-base font-medium">ບໍ່ພົບຂໍ້ມູນ</span>
+                        <span className="text-xs text-gray-400">ກະລຸນາປ່ຽນຕົວກອງຂໍ້ມູນເພື່ອຄົ້ນຫາຄຳຂໍ</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedRequests.map((request) => {
+                    const isDisabled = request.status === 'Reject' || request.status === 'Accept'
+                    const hours = parseTimeToHours(request.start_hour as any, request.end_hour as any)
+                    return (
+                      <tr key={request._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-gray-900 text-sm">
+                          <div className="font-medium">{getUserName(request.user_id)}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getTitleColor(request.title)}`}>
+                            {request.title === 'OT' ? 'ວຽກລ່ວງເວລາ' : 'ວຽກນອກ'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full font-medium text-sm">
+                            <FaClock size={12} />
+                            {hours.toFixed(1)}h
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-900 text-sm max-w-xs truncate" title={request.reason}>
+                          {request.reason}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                            {request.status === 'Accept' ? 'ອະນຸມັດແລ້ວ' : request.status === 'Pending' ? 'ກຳລັງດຳເນີນການ' : 'ປະຕິເສດ'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedRequest(request)
+                                setShowDetailModal(true)
+                              }}
+                              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors bg-gray-600 hover:bg-gray-700 text-white shadow-sm hover:shadow-md"
+                              title="ເບິ່ງລາຍລະອຽດ"
+                            >
+                              <FaEye size={12} />
+                              <span>ລາຍລະອຽດ</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDelete(request._id)}
+                              disabled={loading || isDisabled}
+                              className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-colors ${
+                                isDisabled
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-red-600 text-white hover:bg-red-700 shadow-sm hover:shadow-md'
+                              }`}
+                              title={isDisabled ? 'ບໍ່ສາມາດລົບໄດ້' : 'ລົບຄຳຂໍ'}
+                            >
+                              <FaTrash size={12} />
+                              <span>ລົບ</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm">
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  ກຳລັງສະແດງ <span className="font-medium">{((currentPage - 1) * ITEMS_PER_PAGE + 1)}</span> ເຖິງ{' '}
+                  <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, requests.length)}</span> ຈາກທັງໝົດ{' '}
+                  <span className="font-medium">{requests.length}</span> ລາຍການ
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center gap-1 rounded-l-md px-3 py-2 text-sm font-medium transition-colors ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                    }`}
+                  >
+                    <ChevronLeft size={16} />
+                    <span className="hidden sm:inline">ກ່ອນໜ້າ</span>
+                  </button>
+
+                  <div className="hidden md:flex">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      const showPage = 
+                        page === 1 || 
+                        page === totalPages || 
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      
+                      const showEllipsis = 
+                        (page === currentPage - 2 && currentPage > 3) ||
+                        (page === currentPage + 2 && currentPage < totalPages - 2)
+
+                      if (showEllipsis) {
+                        return (
+                          <span key={page} className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-white border border-gray-300">
+                            ...
+                          </span>
+                        )
+                      }
+
+                      if (!showPage) return null
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 text-sm font-medium transition-colors ${
+                            currentPage === page
+                              ? 'z-10 bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center gap-1 rounded-r-md px-3 py-2 text-sm font-medium transition-colors ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">ຕໍ່ໄປ</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </nav>
+              </div>
+            </div>
+
+            {/* Mobile Pagination */}
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                ກ່ອນໜ້າ
+              </button>
+              <span className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                ຕໍ່ໄປ
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Detail Modal */}
       {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center px-[60px] py-[40px]">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 flex justify-between items-center z-10 rounded-t-2xl">
               <h2 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດຄຳຂໍ</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
               >
                 <FaTimes className="text-xl" />
               </button>
             </div>
-            <div className="p-6 space-y-6 px-[60px] py-[40px]">
-              <div className="grid grid-cols-2 gap-6">
+            
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ພະນັກງານ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{getUserName(selectedRequest.user_id)}</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ພະນັກງານ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {getUserName(selectedRequest.user_id)}
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ຫົວໜ້າ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{getUserName(selectedRequest.supervisor_id)}</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ຫົວໜ້າ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {getUserName(selectedRequest.supervisor_id)}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">ເລືອງ</label>
-                <p className="text-lg font-semibold w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.reason}</p>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">ເລືອງ</label>
+                <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                  {selectedRequest.reason}
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ປະເພດ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">
-                    <span className={`px-3 py-1 rounded-md text-sm font-medium ${getTitleColor(selectedRequest.title)}`}>
-                      {selectedRequest.title}
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ປະເພດ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getTitleColor(selectedRequest.title)}`}>
+                      {selectedRequest.title === 'OT' ? 'ວຽກລ່ວງເວລາ' : 'ວຽກນອກ'}
                     </span>
-                  </p>
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ຊົ່ວໂມງ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ຊົ່ວໂມງ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm font-semibold">
                     {parseTimeToHours(selectedRequest.start_hour as any, selectedRequest.end_hour as any).toFixed(1)}h
-                  </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ວັນທິ່</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{formatDate(selectedRequest.date)}</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ວັນທີ່</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {formatDate(selectedRequest.date)}
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ເວລາ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{formatTimeRange(selectedRequest.start_hour, selectedRequest.end_hour)}</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ເວລາ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {formatTimeRange(selectedRequest.start_hour, selectedRequest.end_hour)}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">ສະຖານະປັດຈຸບັນ</label>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">ສະຖານະປັດຈຸບັນ</label>
                 <div className="mt-2">
-                  <span className={`px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
-                    {selectedRequest.status === 'Accept' ? 'ອານຸມັດແລ້ວ' : selectedRequest.status}
+                  <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
+                    {selectedRequest.status === 'Accept' ? 'ອະນຸມັດແລ້ວ' : selectedRequest.status === 'Pending' ? 'ກຳລັງດຳເນີນການ' : 'ປະຕິເສດ'}
                   </span>
                 </div>
               </div>
