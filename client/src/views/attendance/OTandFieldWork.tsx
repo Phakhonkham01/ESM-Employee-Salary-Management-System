@@ -326,7 +326,7 @@ const OTandFieldWork: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-gray-900">⏰ ຂໍ້ມູນການເຮັດ Overtime(OT) ແລະ ວຽກນອກ</h1>
+            <h1 className="text-3xl font-bold text-gray-900">ຂໍ້ມູນການເຮັດ Overtime(OT) ແລະ ວຽກນອກ</h1>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -363,11 +363,11 @@ const OTandFieldWork: React.FC = () => {
             <div className="text-2xl font-bold text-indigo-700">{stats.otRequests}</div>
           </div>
           <div className="bg-purple-50 rounded-lg p-4">
-            <div className="text-sm text-purple-600 font-medium mb-1">ຄຳຂໍເຮັດວຽກນອກ</div>
+            <div className="text-sm text-purple-600 font-medium mb-1">ຄຳຂໍວຽກນອກ</div>
             <div className="text-2xl font-bold text-purple-700">{stats.fieldWorkRequests}</div>
           </div>
           <div className="bg-cyan-50 rounded-lg p-4">
-            <div className="text-sm text-cyan-600 font-medium mb-1">ຈຳນວນຊົ່ວໂມງ</div>
+            <div className="text-sm text-cyan-600 font-medium mb-1">ຊົ່ວໂມງທັງໝົດ</div>
             <div className="text-2xl font-bold text-cyan-700">{stats.totalHours.toFixed(1)}h</div>
           </div>
         </div>

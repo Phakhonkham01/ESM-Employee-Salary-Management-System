@@ -141,22 +141,12 @@ export const getRequestsByUser = async (userId: string): Promise<ApiResponse<Req
  */
 export const getRequestsBySupervisor = async (supervisorId: string): Promise<ApiResponse<RequestData[]>> => {
     try {
-        console.log('📡 Calling API: GET', `${API_BASE_URL}/requests/supervisor/${supervisorId}`)
-
         const response = await axios.get(`${API_BASE_URL}/requests/supervisor/${supervisorId}`, {
             timeout: 10000,
             headers: {
                 'Content-Type': 'application/json',
             }
         })
-
-        console.log('✅ API Response received:', {
-            success: !!response.data,
-            message: response.data?.message,
-            requestsCount: response.data?.requests?.length,
-            sampleRequest: response.data?.requests?.[0]
-        })
-
         // Handle response structure
         if (response.data) {
             return {
@@ -209,8 +199,6 @@ export const updateRequestStatus = async (
     status: 'Accept' | 'Reject'
 ): Promise<ApiResponse<RequestData>> => {
     try {
-        console.log('📡 Updating request status:', { id, status })
-
         const response = await axios.put(`${API_BASE_URL}/requests/${id}/status`, { status })
         return response.data
     } catch (error: any) {

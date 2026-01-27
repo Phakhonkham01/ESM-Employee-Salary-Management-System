@@ -304,7 +304,8 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
           title: 'ສຳເລັດ!',
           text: 'ຄຳຂໍຖືກຍົກເລິກແລ້ວ',
           icon: 'success',
-          confirmButtonColor: '#45CC67'
+          timer: 2000,
+          showConfirmButton: false,
         })
       }
     })
@@ -314,7 +315,7 @@ const UserOtFieldWorkRequests: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-      <Section title="⏱ ຄຳຂໍ OT ແລະ ວຽກນອກສະຖານທີ່">
+      <Section title="ຄຳຂໍ OT ແລະ ວຽກນອກສະຖານທີ່">
         {/* FILTERS */}
         <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
           <div style={{ display: "flex", gap: "12px", marginBottom: "30px", marginTop: "20px" }}>

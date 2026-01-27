@@ -181,14 +181,15 @@ const RequestForm = ({ open, type, onClose, requestData, onSuccess }: Props) => 
     }, [loggedUser?.department_id, supervisors])
 
     const selectedSupervisor = useMemo(() => {
-        // In edit mode keep original supervisor if still exists
+        // First check if we have the original supervisor from requestData
         if (isEditMode && requestData?.supervisor_id) {
             const originalSupervisor = supervisors.find(s => s._id === requestData.supervisor_id)
-            return originalSupervisor || null
+            if (originalSupervisor) {
+                return originalSupervisor
+            }
         }
 
-        // Only allow supervisor from same department
-        return userSupervisor || null
+        return userSupervisor
     }, [isEditMode, requestData?.supervisor_id, supervisors, userSupervisor])
 
     /* =====================
