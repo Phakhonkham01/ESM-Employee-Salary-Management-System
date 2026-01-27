@@ -699,151 +699,151 @@ const SalaryListUser: React.FC = () => {
 
             {/* Confirmation Dialog */}
             {openConfirmDialog && selectedUser && (
-                <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-10">
-                    <div className="bg-white p-10 rounded-lg shadow-xl max-w-[600px] h-[600px] w-full mx-4">
-                        {/* Dialog Header */}
-                        <div className="px-6 py-4 border-b border-gray-200">
-                            <h2 className="text-lg font-semibold text-gray-900">
-                                Confirm Salary Calculation
-                            </h2>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Review employee details before proceeding
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-10">
+        <div className="bg-white p-10 rounded-lg shadow-xl max-w-[600px] h-[700px] w-full mx-4">
+            {/* Dialog Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">
+                    Confirm Salary Calculation
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                    Review employee details before proceeding
+                </p>
+            </div>
+
+            {/* Dialog Body */}
+            <div className="px-6 py-4">
+                {/* Employee Details */}
+                <div className="space-y-4 mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Users className="w-6 h-6 text-blue-600" />
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="font-medium text-gray-900">
+                                {selectedUser.first_name_en} {selectedUser.last_name_en}
+                            </h3>
+                            <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <p className="text-xs text-gray-500 mb-1">Department</p>
+                            <p className="text-sm font-medium text-gray-900">
+                                {getDepartmentName(selectedUser)}
                             </p>
                         </div>
-
-                        {/* Dialog Body */}
-                        <div className="px-6 py-4">
-                            {/* Employee Details */}
-                            <div className="space-y-4 mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex-shrink-0">
-                                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <Users className="w-6 h-6 text-blue-600" />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-medium text-gray-900">
-                                            {selectedUser.first_name_en} {selectedUser.last_name_en}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">{selectedUser.email}</p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Department</p>
-                                        <p className="text-sm font-medium text-gray-900">
-                                            {getDepartmentName(selectedUser)}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Position</p>
-                                        <p className="text-sm font-medium text-gray-900">
-                                            {getPositionName(selectedUser)}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Status</p>
-                                        <span className={`px-2 py-1 text-xs rounded ${getStatusBadge(selectedUser.status)}`}>
-                                            {selectedUser.status}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500 mb-1">Base Salary</p>
-                                        <p className="text-sm font-medium text-green-600">
-                                            {formatCurrency(selectedUser.base_salary)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Period Selection */}
-                            <div className="mb-6">
-                                <h3 className="text-sm font-medium text-gray-900 mb-3">
-                                    Select Calculation Period
-                                </h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">
-                                            Month
-                                        </label>
-                                        <select
-                                            value={selectedMonth}
-                                            onChange={(e) =>
-                                                setSelectedMonth(
-                                                    parseInt(e.target.value),
-                                                )
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            {Array.from(
-                                                { length: 12 },
-                                                (_, i) => i + 1,
-                                            ).map((month) => (
-                                                <option key={month} value={month}>
-                                                    {getMonthName(month)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs text-gray-600 mb-1">
-                                            Year
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={selectedYear}
-                                            onChange={(e) =>
-                                                setSelectedYear(
-                                                    parseInt(e.target.value),
-                                                )
-                                            }
-                                            className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Warning if salary exists */}
-                            {checkExistingSalary(
-                                selectedUser._id,
-                                selectedMonth,
-                                selectedYear,
-                            ) && (
-                                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg">
-                                    <div className="flex items-start gap-2">
-                                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                                        <div>
-                                            <p className="font-medium">Warning: Duplicate Record</p>
-                                            <p className="mt-1">
-                                                Salary for {getMonthName(selectedMonth)} {selectedYear} already exists.
-                                                Creating new calculation will overwrite existing record.
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+                        <div>
+                            <p className="text-xs text-gray-500 mb-1">Position</p>
+                            <p className="text-sm font-medium text-gray-900">
+                                {getPositionName(selectedUser)}
+                            </p>
                         </div>
-
-                        {/* Dialog Footer */}
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                            <button
-                                onClick={() => setOpenConfirmDialog(false)}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleConfirmCalculate}
-                                className="h-[45px] px-4 py-2 text-sm font-medium text-white bg-[#45CC67] hover:bg-[#3DB75B] rounded-sm transition-colors"
-                            >
-                                Proceed to Calculator
-                            </button>
+                        <div>
+                            <p className="text-xs text-gray-500 mb-1">Status</p>
+                            <span className={`px-2 py-1 text-xs rounded ${getStatusBadge(selectedUser.status)}`}>
+                                {selectedUser.status}
+                            </span>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 mb-1">Base Salary</p>
+                            <p className="text-sm font-medium text-green-600">
+                                {(selectedUser.base_salary)} ກີບ
+                            </p>
                         </div>
                     </div>
                 </div>
-            )}
 
+                {/* Period Selection */}
+                <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-900 mb-3">
+                        Select Calculation Period
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                Month
+                            </label>
+                            <select
+                                value={selectedMonth}
+                                onChange={(e) =>
+                                    setSelectedMonth(
+                                        parseInt(e.target.value),
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                {Array.from(
+                                    { length: 12 },
+                                    (_, i) => i + 1,
+                                ).map((month) => (
+                                    <option key={month} value={month}>
+                                        {getMonthName(month)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs text-gray-600 mb-1">
+                                Year
+                            </label>
+                            <input
+                                type="number"
+                                value={selectedYear}
+                                onChange={(e) =>
+                                    setSelectedYear(
+                                        parseInt(e.target.value),
+                                    )
+                                }
+                                className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Warning if salary exists */}
+                {checkExistingSalary(
+                    selectedUser._id,
+                    selectedMonth,
+                    selectedYear,
+                ) && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg">
+                        <div className="flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                            <div>
+                                <p className="font-medium">Warning: Duplicate Record</p>
+                                <p className="mt-1">
+                                    Salary for {getMonthName(selectedMonth)} {selectedYear} already exists.
+                                    Creating new calculation will overwrite existing record.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Dialog Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                <button
+                    onClick={() => setOpenConfirmDialog(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-sm hover:bg-gray-50 transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleConfirmCalculate}
+                    disabled={checkExistingSalary(selectedUser._id, selectedMonth, selectedYear)}
+                    className="h-[45px] px-4 py-2 text-sm font-medium text-white bg-[#45CC67] hover:bg-[#3DB75B] rounded-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#45CC67]"
+                >
+                    Proceed to Calculator
+                </button>
+            </div>
+        </div>
+    </div>
+)}
             {/* Salary Calculator Dialog */}
             {selectedUser && (
                 <SalaryCalculator

@@ -937,7 +937,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
             </div>
 
             {/* OT Details Section */}
-            {salary.ot_details && salary.ot_details.length > 0 && (
+            {/* {salary.ot_details && salary.ot_details.length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-yellow-200 shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <h4 className="text-sm font-bold text-yellow-700 uppercase flex items-center gap-2">
@@ -1003,7 +1003,7 @@ const SalaryDetails: React.FC<SalaryDetailsProps> = ({
                         </table>
                     </div>
                 </div>
-            )}
+            )} */}
         </div>
     )
 }

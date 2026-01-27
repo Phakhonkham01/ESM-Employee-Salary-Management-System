@@ -998,7 +998,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                                 : 'text-gray-700 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400'
                                                         } transition-colors`}
                                                     >
-                                                        <HiChevronLeft className="w-4 h-4" />
+                                                       Previous <HiChevronLeft className="w-4 h-4" />
                                                     </button>
 
                                                     {/* Page Numbers */}
@@ -1034,9 +1034,10 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                                         >
                                                                             {
                                                                                 pageNum
-                                                                            }
+                                                                            } 
                                                                         </button>
                                                                     )}
+                                                                    
                                                                 </div>
                                                             ),
                                                         )}
@@ -1065,7 +1066,7 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                                                                 : 'text-gray-700 border-gray-300 bg-white hover:bg-gray-50 hover:border-gray-400'
                                                         } transition-colors`}
                                                     >
-                                                        <HiChevronRight className="w-4 h-4" />
+                                                      Next  <HiChevronRight className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             </div>

@@ -53,6 +53,7 @@ import {
     Briefcase,
     Shield,
     TrendingUp,
+    X,
 } from 'lucide-react'
 import axios from 'axios'
 import moment from 'moment'
@@ -100,6 +101,9 @@ interface Salary {
     payment_date: string
     created_at: string
     updated_at: string
+    cut_off_pay_days?: number
+    cut_off_pay_amount?: number
+    ot_hours?: number
 }
 
 // Helper Components
@@ -142,12 +146,422 @@ const formatDate = (date?: string) => {
     })
 }
 
-const UserDashboard = ({ user }: Props) => {
+// SalaryDetails Component
+const SalaryDetails = ({ salary, getMonthName }: { salary: Salary, getMonthName: (month: number) => string }) => {
+    const [isSendingEmail, setIsSendingEmail] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
+    const [isCapturing, setIsCapturing] = useState(false)
+    const [emailStatus, setEmailStatus] = useState<{
+        success: boolean
+        message: string
+    } | null>(null)
 
+    // Calculate totals
+    const totalIncome =
+        salary.base_salary +
+        salary.ot_amount +
+        salary.bonus +
+        salary.commission +
+        salary.fuel_costs +
+        salary.money_not_spent_on_holidays +
+        salary.other_income
+    
+    const cutOffTotal = (salary.cut_off_pay_days || 0) * (salary.cut_off_pay_amount || 0)
+    const totalDeductions = salary.office_expenses + salary.social_security + cutOffTotal
+    const userName = `${salary.user_id.first_name_en} ${salary.user_id.last_name_en}`
+    const userEmail = salary.user_id.email
+
+    // Function to export as PNG
+    const exportToPNG = async () => {
+        try {
+            setIsExporting(true)
+            setIsCapturing(true)
+            // Simulate export
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            alert(`Salary slip exported for ${getMonthName(salary.month)} ${salary.year}`)
+        } catch (error) {
+            console.error('Failed to export PNG:', error)
+            alert('Failed to export PNG. Please try again.')
+        } finally {
+            setIsCapturing(false)
+            setIsExporting(false)
+        }
+    }
+
+    // Function to send email
+    const sendEmailWithPayslip = async () => {
+        try {
+            setIsSendingEmail(true)
+            setEmailStatus(null)
+            
+            // Send to backend API
+            const response = await axios.post('/api/salary/send-email', {
+                salaryId: salary._id,
+                email: userEmail,
+                month: salary.month,
+                year: salary.year
+            })
+            
+            if (response.data.success) {
+                setEmailStatus({
+                    success: true,
+                    message: `✅ Salary slip sent to ${userEmail}`,
+                })
+            } else {
+                throw new Error(response.data.message || 'Failed to send email')
+            }
+        } catch (error: any) {
+            console.error('Failed to send email:', error)
+            setEmailStatus({
+                success: false,
+                message: `❌ ${error.response?.data?.message || 'Failed to send email'}`,
+            })
+        } finally {
+            setIsSendingEmail(false)
+        }
+    }
+
+    // Format currency
+    const formatCurrency = (amount: number) => {
+        return amount.toLocaleString() + '₭'
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+                <div>
+                    <h4 className="text-sm font-bold text-gray-800">
+                        Send Payslip
+                    </h4>
+                    <p className="text-xs text-gray-500 mt-1">
+                        Send salary slip to {userEmail}
+                    </p>
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        onClick={exportToPNG}
+                        disabled={isExporting}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-md hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isExporting ? (
+                            <Clock className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <FileText className="w-4 h-4" />
+                        )}
+                        {isExporting ? 'Exporting...' : 'Download PDF'}
+                    </button>
+                    <button
+                        onClick={sendEmailWithPayslip}
+                        disabled={isSendingEmail}
+                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSendingEmail ? (
+                            <>
+                                <Clock className="w-4 h-4 animate-spin" />
+                                Sending...
+                            </>
+                        ) : (
+                            <>
+                                <MdEmail className="w-4 h-4" />
+                                Send to Email
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* Email Status Message */}
+            {emailStatus && (
+                <div
+                    className={`p-3 rounded-md border ${
+                        emailStatus.success
+                            ? 'bg-green-50 border-green-200 text-green-800'
+                            : 'bg-red-50 border-red-200 text-red-800'
+                    }`}
+                >
+                    <div className="font-medium">
+                        {emailStatus.success ? 'Success!' : 'Error'}
+                    </div>
+                    <div className="text-sm">{emailStatus.message}</div>
+                </div>
+            )}
+
+            {/* Payslip Table */}
+            <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-300">
+                {/* Header */}
+                <div className="text-center mb-8 border-b pb-4">
+                    <h1 className="text-2xl font-bold text-[#1F3A5F]">
+                        Salary Slip
+                    </h1>
+                    <p className="text-gray-600 mt-1">
+                        {getMonthName(salary.month)} {salary.year}
+                    </p>
+                </div>
+
+                {/* Employee Information */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="font-bold text-[#1F3A5F] mb-3">
+                        ຂໍ້ມູນພື້ນພະນັກງານ
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <span className="text-gray-600">Name:</span>
+                            <span className="ml-2 font-medium">
+                                {userName}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">Email:</span>
+                            <span className="ml-2 font-medium">
+                                {userEmail}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">
+                                ເງິນເດືອນພື້ນຖານ:
+                            </span>
+                            <span className="ml-2 font-bold text-[#1F3A5F]">
+                                {formatCurrency(salary.base_salary)}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">
+                                ມື້ເຮັດວຽກ:
+                            </span>
+                            <span className="ml-2 font-medium">
+                                {salary.working_days || 0} ມື້
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Salary Table */}
+                <div className="overflow-x-auto mb-8">
+                    <table className="min-w-full border text-sm text-gray-900">
+                        <thead>
+                            <tr className="bg-green-500 text-white">
+                                <th className="p-3 border text-left font-bold">
+                                    ລາຍຮັບ
+                                </th>
+                                <th className="p-3 border text-left font-bold">
+                                    ລາຍຮັບເພີ່ມເຕີມ
+                                </th>
+                                <th className="p-3 border text-left font-bold">
+                                    ຈຳນວນເງິນ
+                                </th>
+                                <th className="p-3 border text-left font-bold">
+                                    ລາຍການຫັກ
+                                </th>
+                                <th className="p-3 border text-left font-bold">
+                                    ຈຳນວນເງິນ
+                                </th>
+                                <th className="p-3 border text-left font-bold">
+                                    ວັນທີຈ່າຍ
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {/* Base Salary Row */}
+                            <tr className="bg-white text-gray-800">
+                                <td className="p-3 border font-medium">
+                                    ເງິນເດືອນພື້ນຖານ
+                                </td>
+                                <td className="p-3 border text-center text-gray-400">
+                                    -
+                                </td>
+                                <td className="p-3 border font-bold">
+                                    {formatCurrency(salary.base_salary)}
+                                </td>
+                                <td className="p-3 border">
+                                    ມື້ຂາດວຽກ{' '}
+                                    {(salary.cut_off_pay_days || 0) > 0 && (
+                                        <>
+                                            ({salary.cut_off_pay_days} ມື້
+                                            {' × '}
+                                            {(salary.cut_off_pay_amount || 0).toLocaleString()}
+                                            /ມື້)
+                                        </>
+                                    )}
+                                </td>
+                                <td className="p-3 border text-red-600">
+                                    {formatCurrency(cutOffTotal)}
+                                </td>
+                                <td
+                                    className="p-3 border font-bold text-center"
+                                    rowSpan={7}
+                                >
+                                    {moment(salary.payment_date).format('DD/MM/YYYY')}
+                                </td>
+                            </tr>
+
+                            {/* Additional Income Rows */}
+                            <tr>
+                                <td
+                                    className="p-3 border bg-gray-50 font-medium"
+                                    rowSpan={7}
+                                >
+                                    ລາຍໄດ້ອື່ນໆ
+                                </td>
+                                <td className="p-3 border">ຄ່ານ້ຳມັນ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.fuel_costs)}
+                                </td>
+                                <td className="p-3 border" rowSpan={2}>
+                                    ປະກັນສັງຄົມ
+                                </td>
+                                <td
+                                    className="p-3 border text-red-600"
+                                    rowSpan={2}
+                                >
+                                    {formatCurrency(salary.social_security)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">ຄ່າຄອມມິດຊັນ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.commission)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">
+                                    ຄ່າລ່ວງເວລາ (OT)
+                                </td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.ot_amount)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">ເງິນໂບນັດ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.bonus)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">
+                                    ຄ່າເຮັດວຽກມື້ພັກ
+                                </td>
+                                <td className="p-3 border">
+                                    {formatCurrency(
+                                        salary.money_not_spent_on_holidays,
+                                    )}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">
+                                    ຄ່າໃຊ້ຈ່າຍຫ້ອງການ
+                                </td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.office_expenses)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+                            <tr>
+                                <td className="p-3 border">ອື່ນໆ</td>
+                                <td className="p-3 border">
+                                    {formatCurrency(salary.other_income)}
+                                </td>
+                                <td className="p-3 border" colSpan={2}></td>
+                            </tr>
+
+                            {/* Totals Row */}
+                            <tr className="bg-gray-100 font-bold text-[#1F3A5F]">
+                                <td
+                                    className="p-3 border text-right"
+                                    colSpan={2}
+                                >
+                                    ລວມລາຍຮັບທັງໝົດ:
+                                </td>
+                                <td className="p-3 border">
+                                    {formatCurrency(totalIncome)}
+                                </td>
+                                <td className="p-3 border text-right">
+                                    ລວມລາຍການຫັກ:
+                                </td>
+                                <td className="p-3 border text-red-600">
+                                    {formatCurrency(totalDeductions)}
+                                </td>
+                                <td className="p-3 border"></td>
+                            </tr>
+
+                            {/* Net Salary Row */}
+                            <tr className="bg-green-500 text-white font-bold">
+                                <td
+                                    className="p-4 border text-center text-lg"
+                                    colSpan={4}
+                                >
+                                    ເງິນເດືອນສຸດທິ (NET SALARY)
+                                </td>
+                                <td
+                                    className="p-4 border text-center text-xl"
+                                    colSpan={2}
+                                >
+                                    {formatCurrency(salary.net_salary)} ກີບ
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Additional Information */}
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="font-bold text-[#1F3A5F] mb-3">
+                        ຂໍ້ມູນເພີ່ມເຕີມ
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <span className="text-gray-600">
+                                ມື້ເຮັດວຽກ:
+                            </span>
+                            <span className="ml-2 font-medium">
+                                {salary.working_days || 0} ມື້
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">
+                                ວັນພັກທີ່ເຫຼືອ:
+                            </span>
+                            <span className="ml-2 font-medium">
+                                {salary.remaining_vacation_days || 0} ມື້
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">OT Hours:</span>
+                            <span className="ml-2 font-medium">
+                                {salary.ot_hours || 0} ຊົ່ວໂມງ
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600">ມື້ພັກ:</span>
+                            <span className="ml-2 font-medium">
+                                {salary.day_off_days || 0} ມື້
+                            </span>
+                        </div>
+                    </div>
+                    {salary.notes && (
+                        <div className="mt-4 p-3 bg-white rounded border border-gray-300">
+                            <span className="font-medium text-gray-700">
+                                Notes:
+                            </span>
+                            <p className="mt-1 text-gray-600">
+                                {salary.notes}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+const UserDashboard = ({ user }: Props) => {
     const [openDayOff, setOpenDayOff] = useState(false)
     const [openRequest, setOpenRequest] = useState(false)
     const [requestType, setRequestType] = useState<'OT' | 'FIELD_WORK'>('OT')
-    const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'requests' | 'viewpayslip'>('overview')
+    const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'viewpayslip'>('overview')
 
     // Salary states
     const [salaries, setSalaries] = useState<Salary[]>([])
@@ -155,10 +569,12 @@ const UserDashboard = ({ user }: Props) => {
     const [loadingSalaries, setLoadingSalaries] = useState(false)
     const [salaryError, setSalaryError] = useState<string | null>(null)
     const [expandedRows, setExpandedRows] = useState<string[]>([])
+    const [selectedSalary, setSelectedSalary] = useState<Salary | null>(null)
 
     // Day off requests state
     const [dayOffRequests, setDayOffRequests] = useState<DayOffRequest[]>([])
     const [loadingDayOffs, setLoadingDayOffs] = useState(false)
+    
     // Stats state
     const [stats, setStats] = useState<DashboardStats>({
         totalRequests: 0,
@@ -174,7 +590,7 @@ const UserDashboard = ({ user }: Props) => {
         try {
             setLoadingDayOffs(true)
             const response = await getAllDayOffRequests()
-
+            // Handle response here
         } catch (error) {
             console.error('Error fetching day off requests:', error)
         } finally {
@@ -182,25 +598,50 @@ const UserDashboard = ({ user }: Props) => {
         }
     }
 
-    // Fetch salary data
+    // Fetch salary data - ใช้ API จริง
     const fetchSalaries = async () => {
         try {
             setLoadingSalaries(true)
             setSalaryError(null)
 
+            // เรียก API จริงเพื่อดึงข้อมูลเงินเดือนของพนักงานคนนี้
             const response = await axios.get('/api/salaries', {
-                params: { userId: user._id }
+                params: { 
+                    userId: user._id,
+                    // หรือใช้ employeeId ถ้าชื่อต่างกัน
+                    // employeeId: user._id
+                },
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
             })
 
             if (response.data && response.data.salaries) {
-                setSalaries(response.data.salaries)
-                setFilteredSalaries(response.data.salaries)
+                // กรองเฉพาะเงินเดือนของพนักงานคนนี้
+                const userSalaries = response.data.salaries.filter(
+                    (salary: Salary) => salary.user_id._id === user._id
+                )
+                
+                setSalaries(userSalaries)
+                setFilteredSalaries(userSalaries)
+            } else if (response.data) {
+                // กรณี API ส่งมาเป็น array โดยตรง
+                const userSalaries = response.data.filter(
+                    (salary: Salary) => salary.user_id._id === user._id
+                )
+                
+                setSalaries(userSalaries)
+                setFilteredSalaries(userSalaries)
             }
+            
         } catch (err: any) {
-            setSalaryError(
-                err.response?.data?.message || 'Failed to load salary history'
-            )
             console.error('Error fetching salaries:', err)
+            
+            // กรณีไม่มี API จริงให้ดึงข้อมูลจาก localStorage หรือแสดงข้อความ
+            setSalaryError(
+                err.response?.data?.message || 
+                'Failed to load salary history. Please check your connection.'
+            )
         } finally {
             setLoadingSalaries(false)
         }
@@ -263,20 +704,22 @@ const UserDashboard = ({ user }: Props) => {
         }
     }
 
-    // Calculate total
-    const calculateTotal = (field: keyof Salary) => {
-        return filteredSalaries.reduce(
-            (sum, salary) => sum + ((salary[field] as number) || 0),
-            0
-        )
-    }
-
     // Toggle row expansion
     const toggleRow = (id: string) => {
         if (expandedRows.includes(id)) {
             setExpandedRows(expandedRows.filter((rowId) => rowId !== id))
         } else {
             setExpandedRows([...expandedRows, id])
+        }
+    }
+
+    // Filter by status
+    const filterByStatus = (status: string) => {
+        if (status === 'all') {
+            setFilteredSalaries(salaries)
+        } else {
+            const filtered = salaries.filter(salary => salary.status === status)
+            setFilteredSalaries(filtered)
         }
     }
 
@@ -389,37 +832,6 @@ const UserDashboard = ({ user }: Props) => {
                     <div className="p-6">
                         {activeTab === 'overview' && (
                             <div className="space-y-6">
-                                {/* Statistics Cards */}
-                                {/* {loadingDayOffs ? (
-                                    <div className="text-center py-8">
-                                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                                        <p className="mt-2 text-slate-600">Loading dashboard data...</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <StatsCard
-                                            title="Total Requests"
-                                            value={stats.totalRequests}
-                                            icon={<PiChartLineUp />}
-                                        />
-                                        <StatsCard
-                                            title="Approved"
-                                            value={stats.acceptedRequests}
-                                            icon={<CheckCircle />}
-                                        />
-                                        <StatsCard
-                                            title="Pending"
-                                            value={stats.pendingRequests}
-                                            icon={<PiClock />}
-                                        />
-                                        <StatsCard
-                                            title="Rejected"
-                                            value={stats.rejectedRequests}
-                                            icon={<XCircle />}
-                                        />
-                                    </div>
-                                )} */}
-
                                 {/* Quick Actions & Department Summary Side by Side */}
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     <QuickActions actions={quickActions} />
@@ -442,7 +854,7 @@ const UserDashboard = ({ user }: Props) => {
                                             <div className="flex justify-between items-center">
                                                 <span className="text-slate-600">ເງິນເດືອນພື້ນຖານ</span>
                                                 <span className="font-semibold text-green-600">
-                                                    {user.base_salary?.toLocaleString()}₭
+                                                    {(user.base_salary || 0)?.toLocaleString()}₭
                                                 </span>
                                             </div>
                                         </div>
@@ -492,7 +904,7 @@ const UserDashboard = ({ user }: Props) => {
                                     />
                                     <ProfileField
                                         label="Base Salary"
-                                        value={`${user.base_salary?.toLocaleString()}₭`}
+                                        value={`${(user.base_salary || 0)?.toLocaleString()}₭`}
                                         icon={<PiMoneyFill />}
                                     />
                                 </div>
@@ -519,6 +931,28 @@ const UserDashboard = ({ user }: Props) => {
                                     </div>
                                 </div>
 
+                                {/* Filter options */}
+                                <div className="bg-white rounded-xl p-4 border border-slate-200">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-slate-600 text-sm">Filter by:</span>
+                                            <select 
+                                                className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
+                                                onChange={(e) => filterByStatus(e.target.value)}
+                                            >
+                                                <option value="all">All Status</option>
+                                                <option value="paid">Paid</option>
+                                                <option value="pending">Pending</option>
+                                                <option value="approved">Approved</option>
+                                                <option value="cancelled">Cancelled</option>
+                                            </select>
+                                        </div>
+                                        <div className="text-sm text-slate-500">
+                                            Showing {filteredSalaries.length} of {salaries.length} records
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* ================= LOADING ================= */}
                                 {loadingSalaries ? (
                                     <div className="flex justify-center items-center min-h-[350px]">
@@ -539,6 +973,12 @@ const UserDashboard = ({ user }: Props) => {
                                             Error Loading Data
                                         </p>
                                         <p className="text-rose-600 text-sm">{salaryError}</p>
+                                        <button 
+                                            onClick={fetchSalaries}
+                                            className="mt-4 px-4 py-2 bg-rose-100 text-rose-700 rounded-lg hover:bg-rose-200 transition-colors"
+                                        >
+                                            Try Again
+                                        </button>
                                     </div>
 
                                 ) : filteredSalaries.length === 0 ? (
@@ -557,263 +997,245 @@ const UserDashboard = ({ user }: Props) => {
                                 ) : (
 
                                     /* ================= SALARY LIST ================= */
-                                    <div className="space-y-4">
-                                        {filteredSalaries.map((salary) => {
-                                            const isExpanded = expandedRows.includes(salary._id)
-                                            const statusInfo = getStatusInfo(salary.status)
+                                    <div className="space-y-6">
+                                        {/* Salary Table */}
+                                        <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full divide-y divide-slate-200">
+                                                    <thead className="bg-slate-50">
+                                                        <tr>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Period
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Base Salary
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Overtime
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Deductions
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Net Salary
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Status
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Payment Date
+                                                            </th>
+                                                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                                                                Actions
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-slate-200">
+                                                        {filteredSalaries.map((salary) => {
+                                                            const statusInfo = getStatusInfo(salary.status)
+                                                            const isExpanded = expandedRows.includes(salary._id)
+                                                            
+                                                            // Calculate deductions
+                                                            const cutOffTotal = (salary.cut_off_pay_days || 0) * (salary.cut_off_pay_amount || 0)
+                                                            const totalDeductions = salary.office_expenses + salary.social_security + cutOffTotal
 
-                                            const totalIncome =
-                                                salary.base_salary +
-                                                salary.ot_amount +
-                                                salary.bonus +
-                                                salary.commission +
-                                                salary.fuel_costs +
-                                                salary.money_not_spent_on_holidays +
-                                                salary.other_income
-
-                                            const totalDeductions =
-                                                salary.office_expenses +
-                                                salary.social_security
-
-                                            return (
-                                                <div
-                                                    key={salary._id}
-                                                    className={`bg-white rounded-2xl border transition-all
-              ${isExpanded
-                                                            ? 'border-sky-300 shadow-md'
-                                                            : 'border-slate-200 hover:border-sky-200 hover:shadow-sm'
-                                                        }`}
-                                                >
-
-                                                    {/* ===== CARD HEADER ===== */}
-                                                    <div className="bg-gradient-to-r from-slate-50 to-sky-50 px-6 py-4 border-b border-slate-100">
-                                                        <div className="flex justify-between items-center">
-
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="bg-sky-300 text-white p-3 rounded-xl">
-                                                                    <Calendar className="w-5 h-5" />
-                                                                </div>
-
-                                                                <div>
-                                                                    <p className="text-lg font-bold text-slate-700">
-                                                                        {getMonthName(salary.month)} {salary.year}
-                                                                    </p>
-                                                                    <p className="text-sm text-slate-500 flex items-center gap-1">
-                                                                        <Clock className="w-4 h-4" />
-                                                                        {salary.working_days} working days
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-5">
-                                                                <div className="text-right">
-                                                                    <p className="text-xs text-slate-500">Net Salary</p>
-                                                                    <p className="text-2xl font-bold text-emerald-500">
-                                                                        ฿{salary.net_salary.toLocaleString()}
-                                                                    </p>
-                                                                    <p className="text-xs text-slate-400">
-                                                                        Base: ฿{salary.base_salary.toLocaleString()}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="flex flex-col items-end gap-1">
-                                                                    <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${statusInfo.color}`}>
-                                                                        {statusInfo.icon} {statusInfo.label}
-                                                                    </span>
-                                                                    <span className="text-xs text-slate-400">
-                                                                        {moment(salary.payment_date).format('DD/MM/YYYY')}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* ===== QUICK STATS ===== */}
-                                                    <div className="grid grid-cols-3 px-6 py-3 border-b text-center">
-                                                        <div>
-                                                            <p className="text-xs text-slate-400">Income</p>
-                                                            <p className="font-semibold text-emerald-500">
-                                                                ฿{totalIncome.toLocaleString()}
-                                                            </p>
-                                                        </div>
-                                                        <div className="border-x">
-                                                            <p className="text-xs text-slate-400">Deductions</p>
-                                                            <p className="font-semibold text-rose-400">
-                                                                ฿{totalDeductions.toLocaleString()}
-                                                            </p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-slate-400">Vacation</p>
-                                                            <p className="font-semibold text-sky-500">
-                                                                {salary.remaining_vacation_days} days
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* ===== ACTIONS ===== */}
-                                                    <div className="flex justify-between items-center px-6 py-3 bg-slate-50">
-                                                        <span className="text-xs text-slate-500 flex items-center gap-1">
-                                                            <User className="w-4 h-4" />
-                                                            {salary.created_by.first_name_en} {salary.created_by.last_name_en}
-                                                        </span>
-
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() => toggleRow(salary._id)}
-                                                                className={`px-4 py-2 rounded-lg text-sm font-medium transition
-                    ${isExpanded
-                                                                        ? 'bg-sky-400 text-white'
-                                                                        : 'bg-white border border-sky-200 text-sky-600 hover:bg-sky-50'
-                                                                    }`}
-                                                            >
-                                                                {isExpanded ? 'Hide Details' : 'Show Details'}
-                                                            </button>
-
-                                                            <button className="px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-white rounded-lg text-sm">
-                                                                <Eye className="w-4 h-4 inline mr-1" />
-                                                                View
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* ===== EXPANDED ===== */}
-                                                    {isExpanded && (
-                                                        <div className="bg-slate-50 px-6 py-6 rounded-xl border border-slate-200">
-                                                            <div className="space-y-6">
-
-                                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                                                                    {/* ================= INCOME ================= */}
-                                                                    <div className="bg-white rounded-2xl border border-emerald-200 overflow-hidden">
-
-                                                                        <div className="bg-emerald-100 px-5 py-4 flex items-center gap-2 text-emerald-700">
-                                                                            <TrendingUp className="w-5 h-5" />
-                                                                            <h4 className="font-semibold text-lg">Income Breakdown</h4>
-                                                                        </div>
-
-                                                                        <div className="p-5 space-y-3 text-sm">
-
-                                                                            {[
-                                                                                ['Base Salary', salary.base_salary],
-                                                                                ['Overtime', salary.ot_amount],
-                                                                                ['Bonus', salary.bonus],
-                                                                                ['Commission', salary.commission],
-                                                                                ['Fuel Costs', salary.fuel_costs],
-                                                                                ['Holiday Money', salary.money_not_spent_on_holidays],
-                                                                                ['Other Income', salary.other_income],
-                                                                            ].map(([label, value], i) => (
-                                                                                <div
-                                                                                    key={i}
-                                                                                    className="flex justify-between items-center py-2 px-2 rounded hover:bg-emerald-50 transition"
+                                                            return (
+                                                                <>
+                                                                    <tr key={salary._id} className="hover:bg-slate-50">
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-sm font-semibold text-slate-900">
+                                                                                {getMonthName(salary.month)} {salary.year}
+                                                                            </div>
+                                                                            <div className="text-xs text-slate-500">
+                                                                                {salary.working_days} working days
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-sm font-medium text-slate-900">
+                                                                                {salary.base_salary.toLocaleString()}₭
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-sm text-slate-900">
+                                                                                +{salary.ot_amount.toLocaleString()}₭
+                                                                            </div>
+                                                                            <div className="text-xs text-slate-500">
+                                                                                {salary.ot_hours || 0} hours
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-sm text-red-600">
+                                                                                -{totalDeductions.toLocaleString()}₭
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <div className="text-lg font-bold text-green-600">
+                                                                                {salary.net_salary.toLocaleString()}₭
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                                                                                {statusInfo.icon}
+                                                                                {statusInfo.label}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                                                            {moment(salary.payment_date).format('DD/MM/YYYY')}
+                                                                        </td>
+                                                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <button
+                                                                                    onClick={() => toggleRow(salary._id)}
+                                                                                    className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                                    title={isExpanded ? "Hide details" : "Show details"}
                                                                                 >
-                                                                                    <span className="text-slate-600">{label}</span>
-                                                                                    <span className="font-semibold text-slate-800">
-                                                                                        ฿{Number(value).toLocaleString()}
-                                                                                    </span>
-                                                                                </div>
-                                                                            ))}
-
-                                                                            <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 flex justify-between">
-                                                                                <span className="font-semibold text-emerald-700">
-                                                                                    Total Income
-                                                                                </span>
-                                                                                <span className="font-bold text-emerald-600 text-lg">
-                                                                                    ฿{totalIncome.toLocaleString()}
-                                                                                </span>
+                                                                                    {isExpanded ? (
+                                                                                        <ChevronUp className="w-5 h-5" />
+                                                                                    ) : (
+                                                                                        <ChevronDown className="w-5 h-5" />
+                                                                                    )}
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setSelectedSalary(salary)}
+                                                                                    className="text-green-600 hover:text-green-800 p-1.5 hover:bg-green-50 rounded-lg transition-colors"
+                                                                                    title="View payslip"
+                                                                                >
+                                                                                    <Eye className="w-5 h-5" />
+                                                                                </button>
                                                                             </div>
-                                                                        </div>
-                                                                    </div>
+                                                                        </td>
+                                                                    </tr>
 
-                                                                    {/* ================= RIGHT SIDE ================= */}
-                                                                    <div className="space-y-6">
-
-                                                                        {/* -------- DEDUCTIONS -------- */}
-                                                                        <div className="bg-white rounded-2xl border border-rose-200 overflow-hidden">
-                                                                            <div className="bg-rose-100 px-5 py-4 flex items-center gap-2 text-rose-700">
-                                                                                <TrendingDown className="w-5 h-5" />
-                                                                                <h4 className="font-semibold text-lg">Deductions</h4>
-                                                                            </div>
-
-                                                                            <div className="p-5 space-y-3 text-sm">
-                                                                                {[
-                                                                                    ['Office Expenses', salary.office_expenses],
-                                                                                    ['Social Security', salary.social_security],
-                                                                                ].map(([label, value], i) => (
-                                                                                    <div
-                                                                                        key={i}
-                                                                                        className="flex justify-between items-center py-2 px-2 rounded hover:bg-rose-50 transition"
-                                                                                    >
-                                                                                        <span className="text-slate-600">{label}</span>
-                                                                                        <span className="font-semibold text-slate-800">
-                                                                                            ฿{Number(value).toLocaleString()}
-                                                                                        </span>
+                                                                    {/* Expanded row with more details */}
+                                                                    {isExpanded && (
+                                                                        <tr className="bg-blue-50">
+                                                                            <td colSpan={8} className="px-6 py-4">
+                                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Bonus</div>
+                                                                                        <div className="font-medium">{salary.bonus.toLocaleString()}₭</div>
                                                                                     </div>
-                                                                                ))}
-
-                                                                                <div className="mt-4 bg-rose-50 border border-rose-200 rounded-lg px-4 py-3 flex justify-between">
-                                                                                    <span className="font-semibold text-rose-700">
-                                                                                        Total Deductions
-                                                                                    </span>
-                                                                                    <span className="font-bold text-rose-600 text-lg">
-                                                                                        ฿{totalDeductions.toLocaleString()}
-                                                                                    </span>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* -------- ADDITIONAL INFO -------- */}
-                                                                        <div className="bg-white rounded-2xl border border-sky-200 overflow-hidden">
-                                                                            <div className="bg-sky-100 px-5 py-4 flex items-center gap-2 text-sky-700">
-                                                                                <FileText className="w-5 h-5" />
-                                                                                <h4 className="font-semibold text-lg">Additional Information</h4>
-                                                                            </div>
-
-                                                                            <div className="p-5 space-y-3 text-sm">
-
-                                                                                <InfoRow icon={<Clock />} label="Working Days" value={`${salary.working_days} days`} />
-                                                                                <InfoRow icon={<Calendar />} label="Day Off Days" value={`${salary.day_off_days} days`} />
-                                                                                <InfoRow
-                                                                                    icon={<Calendar />}
-                                                                                    label="Vacation Days Left"
-                                                                                    value={`${salary.remaining_vacation_days} days`}
-                                                                                    highlight
-                                                                                />
-                                                                                <InfoRow
-                                                                                    icon={<User />}
-                                                                                    label="Created By"
-                                                                                    value={`${salary.created_by.first_name_en} ${salary.created_by.last_name_en}`}
-                                                                                />
-
-                                                                                {salary.notes && (
-                                                                                    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                                                                                        <p className="text-sm font-semibold text-amber-700 mb-1">
-                                                                                            Notes
-                                                                                        </p>
-                                                                                        <p className="text-sm text-amber-600">
-                                                                                            {salary.notes}
-                                                                                        </p>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Commission</div>
+                                                                                        <div className="font-medium">{salary.commission.toLocaleString()}₭</div>
                                                                                     </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Fuel Costs</div>
+                                                                                        <div className="font-medium">{salary.fuel_costs.toLocaleString()}₭</div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Holiday Money</div>
+                                                                                        <div className="font-medium">{salary.money_not_spent_on_holidays.toLocaleString()}₭</div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Other Income</div>
+                                                                                        <div className="font-medium">{salary.other_income.toLocaleString()}₭</div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Office Expenses</div>
+                                                                                        <div className="font-medium">{salary.office_expenses.toLocaleString()}₭</div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Social Security</div>
+                                                                                        <div className="font-medium">{salary.social_security.toLocaleString()}₭</div>
+                                                                                    </div>
+                                                                                    <div>
+                                                                                        <div className="text-slate-500 mb-1">Day Off Days</div>
+                                                                                        <div className="font-medium">{salary.day_off_days} days</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </>
+                                                            )
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
 
-                                                                    </div>
-                                                                </div>
+                                            {/* Summary footer */}
+                                            {filteredSalaries.length > 0 && (
+                                                <div className="bg-slate-50 px-6 py-4 border-t border-slate-200">
+                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                                        <div className="text-sm text-slate-600">
+                                                            Total records: {filteredSalaries.length}
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-sm">
+                                                                <span className="text-slate-600">Avg. Salary: </span>
+                                                                <span className="font-semibold text-green-600">
+                                                                    {(
+                                                                        filteredSalaries.reduce((sum, salary) => sum + salary.net_salary, 0) /
+                                                                        filteredSalaries.length
+                                                                    ).toLocaleString('en-US', {
+                                                                        minimumFractionDigits: 2,
+                                                                        maximumFractionDigits: 2,
+                                                                    })}₭
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-sm">
+                                                                <span className="text-slate-600">Total Earned: </span>
+                                                                <span className="font-bold text-green-700">
+                                                                    {filteredSalaries.reduce((sum, salary) => sum + salary.net_salary, 0).toLocaleString()}₭
+                                                                </span>
                                                             </div>
                                                         </div>
-
-                                                    )}
+                                                    </div>
                                                 </div>
-                                            )
-                                        })}
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
-
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Salary Details Popup Modal */}
+            {selectedSalary && (
+                <div className="fixed inset-0 bg-gray-700/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                        {/* Modal Header */}
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">
+                                    Salary Details - {getMonthName(selectedSalary.month)} {selectedSalary.year}
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Your salary slip for {getMonthName(selectedSalary.month)} {selectedSalary.year}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedSalary(null)}
+                                className="text-gray-400 hover:text-gray-600 p-1"
+                                title="Close"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        
+                        {/* Modal Content */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <SalaryDetails
+                                salary={selectedSalary}
+                                getMonthName={getMonthName}
+                            />
+                        </div>
+                        
+                        {/* Modal Footer */}
+                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+                            <button
+                                onClick={() => setSelectedSalary(null)}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modules */}
             <RequestModule

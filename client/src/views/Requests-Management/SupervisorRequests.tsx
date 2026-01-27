@@ -120,7 +120,7 @@ const SupervisorRequests: FC = () => {
 
     // 1. เพิ่ม State สำหรับ Pagination
     const [currentPage, setCurrentPage] = useState<number>(1)
-    const itemsPerPage = 8 // กำหนดให้แสดงหน้าละ 8 รายการ
+    const itemsPerPage = 10 // กำหนดให้แสดงหน้าละ 8 รายการ
 
     useEffect(() => {
         const authData = localStorage.getItem('auth')
