@@ -12,6 +12,7 @@ import {
     HiChevronRight,
 } from 'react-icons/hi'
 import axios from 'axios'
+import Swal from 'sweetalert2' // เพิ่ม import SweetAlert2
 
 /* ================= TYPES ================= */
 
@@ -252,11 +253,48 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
     }
 
     const handleApprove = async (id: string) => {
-        if (!window.confirm('Approve this leave request?')) {
+        // แทนที่ confirm ปกติด้วย SweetAlert
+        const result = await Swal.fire({
+            title: 'Approve Leave Request?',
+            html: `
+                <div class="text-left">
+                    <p class="mb-3 text-gray-600">Are you sure you want to approve this leave request?</p>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-500">Action:</span>
+                            <span class="font-medium text-green-600">Approve</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Status will change to:</span>
+                            <span class="font-medium text-green-600">Accepted</span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10B981', // สีเขียว
+            cancelButtonColor: '#6B7280', // สีเทา
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        })
+
+        if (!result.isConfirmed) {
             return
         }
 
         try {
+            // Show loading state
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Please wait while we approve the request',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                },
+            })
+
             const response = await axios.patch(
                 `/api/day-off-requests/${id}/status`,
                 {
@@ -265,20 +303,77 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
             )
 
             if (response.data.success) {
+                // Close loading and show success
+                Swal.close()
+                
+                await Swal.fire({
+                    title: 'Approved!',
+                    text: 'Leave request has been approved successfully.',
+                    icon: 'success',
+                    confirmButtonColor: '#10B981',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                })
+                
                 fetchDayOffRequests()
                 if (propOnApprove) propOnApprove(id)
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to approve request')
+            Swal.close()
+            
+            await Swal.fire({
+                title: 'Error!',
+                text: err.response?.data?.message || 'Failed to approve request',
+                icon: 'error',
+                confirmButtonColor: '#EF4444',
+            })
         }
     }
 
     const handleReject = async (id: string) => {
-        if (!window.confirm('Reject this leave request?')) {
+        // แทนที่ confirm ปกติด้วย SweetAlert
+        const result = await Swal.fire({
+            title: 'Reject Leave Request?',
+            html: `
+                <div class="text-left">
+                    <p class="mb-3 text-gray-600">Are you sure you want to reject this leave request?</p>
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-500">Action:</span>
+                            <span class="font-medium text-red-600">Reject</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Status will change to:</span>
+                            <span class="font-medium text-red-600">Rejected</span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#EF4444', // สีแดง
+            cancelButtonColor: '#6B7280', // สีเทา
+            confirmButtonText: 'Yes, Reject',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+        })
+
+        if (!result.isConfirmed) {
             return
         }
 
         try {
+            // Show loading state
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Please wait while we reject the request',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                },
+            })
+
             const response = await axios.patch(
                 `/api/day-off-requests/${id}/status`,
                 {
@@ -287,12 +382,41 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
             )
 
             if (response.data.success) {
+                // Close loading and show success
+                Swal.close()
+                
+                await Swal.fire({
+                    title: 'Rejected!',
+                    text: 'Leave request has been rejected.',
+                    icon: 'success',
+                    confirmButtonColor: '#EF4444',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                })
+                
                 fetchDayOffRequests()
                 if (propOnReject) propOnReject(id)
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to reject request')
+            Swal.close()
+            
+            await Swal.fire({
+                title: 'Error!',
+                text: err.response?.data?.message || 'Failed to reject request',
+                icon: 'error',
+                confirmButtonColor: '#EF4444',
+            })
         }
+    }
+
+    const showErrorMessage = (message: string) => {
+        Swal.fire({
+            title: 'Error!',
+            text: message,
+            icon: 'error',
+            confirmButtonColor: '#EF4444',
+        })
     }
 
     useEffect(() => {
@@ -514,6 +638,14 @@ const SupervisorDayOffApproval: React.FC<Props> = ({
                             Supervisor-level access is required to manage leave
                             requests.
                         </p>
+                        <button
+                            onClick={() => {
+                                window.location.href = '/login'
+                            }}
+                            className="px-4 py-2 bg-[#1F3A5F] hover:bg-[#2D4A6F] text-white rounded text-sm transition-colors"
+                        >
+                            Go to Login
+                        </button>
                     </div>
                 </div>
             ) : loading ? (

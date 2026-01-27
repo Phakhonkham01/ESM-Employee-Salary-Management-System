@@ -20,6 +20,7 @@ import {
     type User,
     type ApiResponse,
 } from '../../services/requests/api'
+import Swal from 'sweetalert2'
 
 // ==================== Helper Functions ====================
 const formatDate = (dateString: string): string => {
@@ -117,18 +118,9 @@ const SupervisorRequests: FC = () => {
     const [userRole, setUserRole] = useState<string>('')
     const [supervisorName, setSupervisorName] = useState<string>('')
 
-    const [confirmDialog, setConfirmDialog] = useState<{
-        isOpen: boolean
-        requestId: string
-        action: 'Accept' | 'Reject'
-        userName: string
-        requestType: string
-    } | null>(null)
-    const [actionLoading, setActionLoading] = useState(false)
-
     // 1. เพิ่ม State สำหรับ Pagination
     const [currentPage, setCurrentPage] = useState<number>(1)
-    const itemsPerPage = 8 // กำหนดให้แสดงหน้าละ 10 รายการ
+    const itemsPerPage = 8 // กำหนดให้แสดงหน้าละ 8 รายการ
 
     useEffect(() => {
         const authData = localStorage.getItem('auth')
@@ -219,41 +211,67 @@ const SupervisorRequests: FC = () => {
         }
     }
 
-    const openConfirmDialog = (
+    const handleStatusUpdate = async (
         requestId: string,
         action: 'Accept' | 'Reject',
         userName: string,
         requestType: string,
     ) => {
-        setConfirmDialog({
-            isOpen: true,
-            requestId,
-            action,
-            userName,
-            requestType,
+        // Show confirmation dialog
+        const result = await Swal.fire({
+            title: `Confirm ${action}`,
+            html: `
+                <p style="text-align: left; margin-bottom: 12px; font-size: 14px;">
+                    Are you sure you want to <strong>${action.toLowerCase()}</strong> this request?
+                </p>
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; font-size: 13px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="color: #6b7280;">Employee:</span>
+                        <span style="font-weight: 500; color: #374151;">${userName}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">Request Type:</span>
+                        <span style="font-weight: 500; color: #374151;">${requestType}</span>
+                    </div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: action === 'Accept' ? '#10B981' : '#EF4444',
+            cancelButtonColor: '#6B7280',
+            confirmButtonText: action === 'Accept' ? 'Accept Request' : 'Reject Request',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
         })
-    }
 
-    const closeConfirmDialog = () => {
-        setConfirmDialog(null)
-    }
-
-    const handleConfirmAction = async () => {
-        if (!confirmDialog) return
-
-        try {
-            setActionLoading(true)
-            await updateRequestStatus(
-                confirmDialog.requestId,
-                confirmDialog.action,
-            )
-            await fetchRequests()
-            closeConfirmDialog()
-        } catch (error: any) {
-            console.error('Error updating status:', error)
-            alert(error.message || 'Failed to update status')
-        } finally {
-            setActionLoading(false)
+        if (result.isConfirmed) {
+            try {
+                await updateRequestStatus(requestId, action)
+                
+                // Show success message
+                await Swal.fire({
+                    title: 'Success!',
+                    text: `Request has been ${action.toLowerCase()}ed successfully.`,
+                    icon: 'success',
+                    confirmButtonColor: '#1F3A5F',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false,
+                })
+                
+                // Refresh the requests list
+                await fetchRequests()
+            } catch (error: any) {
+                console.error('Error updating status:', error)
+                
+                // Show error message
+                await Swal.fire({
+                    title: 'Error!',
+                    text: error.message || 'Failed to update status',
+                    icon: 'error',
+                    confirmButtonColor: '#EF4444',
+                })
+            }
         }
     }
 
@@ -509,19 +527,6 @@ const SupervisorRequests: FC = () => {
                             </div>
                         </div>
 
-                        {/* Filters */}
-                        <div className="bg-white border border-none rounded mb-6">
-                            {/* <div className="px-4 py-3 border-b border-[#E5E7EB] flex items-center gap-2">
-                                <HiFilter
-                                    className="text-[#6B7280]"
-                                    size={16}
-                                />
-                                <span className="text-sm font-medium text-[#374151]">
-                                    Filters
-                                </span>
-                            </div> */}
-                        </div>
-
                         {/* Content */}
                         {loading ? (
                             <LoadingState />
@@ -537,7 +542,7 @@ const SupervisorRequests: FC = () => {
                             <>
                                 <RequestsTable
                                     requests={currentItems}
-                                    onStatusUpdate={openConfirmDialog}
+                                    onStatusUpdate={handleStatusUpdate}
                                 />
 
                                 {/* 4. เพิ่ม Pagination UI */}
@@ -650,33 +655,6 @@ const SupervisorRequests: FC = () => {
                                                 </button>
                                             </div>
                                         </div>
-
-                                        {/* Page Size Selector (Optional) */}
-                                        {/* <div className="mt-4 pt-4 border-t border-gray-100">
-                                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                <span>Rows per page:</span>
-                                                <select
-                                                    value={itemsPerPage}
-                                                    onChange={(e) => {
-                                                        // เปลี่ยน itemsPerPage แล้ว reset กลับไปหน้า 1
-                                                        // itemsPerPage ควรเป็น state ถ้าต้องการให้เปลี่ยนได้
-                                                        // แต่ถ้าต้องการคงที่ที่ 10 ก็ไม่ต้องมี select นี้
-                                                    }}
-                                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
-                                                >
-                                                    <option value={5}>5</option>
-                                                    <option value={10}>
-                                                        10
-                                                    </option>
-                                                    <option value={20}>
-                                                        20
-                                                    </option>
-                                                    <option value={50}>
-                                                        50
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        </div> */}
                                     </div>
                                 )}
                             </>
@@ -684,86 +662,6 @@ const SupervisorRequests: FC = () => {
                     </>
                 )}
             </div>
-
-            {/* Confirmation Dialog */}
-            {confirmDialog?.isOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg w-[400px] shadow-xl">
-                        <div
-                            className={`px-4 py-3 rounded-t-lg ${
-                                confirmDialog.action === 'Accept'
-                                    ? 'bg-green-600'
-                                    : 'bg-red-600'
-                            } text-white`}
-                        >
-                            <h3 className="text-sm font-semibold m-0">
-                                Confirm {confirmDialog.action}
-                            </h3>
-                        </div>
-                        <div className="p-4">
-                            <p className="text-sm text-[#374151] m-0 mb-4">
-                                Are you sure you want to{' '}
-                                <strong>
-                                    {confirmDialog.action.toLowerCase()}
-                                </strong>{' '}
-                                this request?
-                            </p>
-                            <div className="bg-[#ffffff] border border-[#E5E7EB] rounded p-3 text-sm">
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-[#6B7280]">
-                                        Employee:
-                                    </span>
-                                    <span className="font-medium text-[#374151]">
-                                        {confirmDialog.userName}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-[#6B7280]">
-                                        Request Type:
-                                    </span>
-                                    <span className="font-medium text-[#374151]">
-                                        {confirmDialog.requestType}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="px-4 py-3 border-t border-[#E5E7EB] flex justify-end gap-2">
-                            <button
-                                onClick={closeConfirmDialog}
-                                disabled={actionLoading}
-                                className="px-4 py-2 border border-[#E5E7EB] rounded text-sm text-[#374151] hover:bg-[#ffffff] transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleConfirmAction}
-                                disabled={actionLoading}
-                                className={`px-4 py-2 rounded text-sm text-white transition-colors flex items-center gap-2 ${
-                                    confirmDialog.action === 'Accept'
-                                        ? 'bg-green-600 hover:bg-green-700'
-                                        : 'bg-red-600 hover:bg-red-700'
-                                }`}
-                            >
-                                {actionLoading ? (
-                                    <>
-                                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        {confirmDialog.action === 'Accept' ? (
-                                            <HiCheck size={16} />
-                                        ) : (
-                                            <HiX size={16} />
-                                        )}
-                                        {confirmDialog.action}
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }
