@@ -533,7 +533,7 @@ const UserList: React.FC<UserListProps> = ({ onEdit }) => {
                                         <th className="px-4 py-3 text-left text-xs font-bold text-[#6B7280] uppercase">
                                             Status
                                         </th>
-                                        <th className="px-4 py-3 text-left text-xs font-bold text-[#6B7280] uppercase text-center">
+                                        <th className="px-4 py-3 pl-20 text-left text-xs font-bold text-[#6B7280] uppercase text-center">
                                             Actions
                                         </th>
                                     </tr>

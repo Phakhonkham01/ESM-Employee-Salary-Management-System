@@ -27,6 +27,7 @@ import {
     MdOutlineDriveFileRenameOutline,
     MdOutlineRequestQuote
 } from 'react-icons/md'
+import { FaPlaneDeparture, FaUmbrellaBeach } from 'react-icons/fa'
 
 // Dashboard statistics interface
 interface DashboardStats {
@@ -433,7 +434,7 @@ const UserDashboard = ({ user }: Props) => {
                                             <div className="flex justify-between items-center">
                                                 <span className="text-slate-600">ພະແນກ</span>
                                                 <span className="font-semibold"> {user.department_id?.[0]?.department_name || 'N/A'}
-</span>
+                                                </span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-slate-600">ຕຳແໜ່ງ</span>
@@ -494,6 +495,16 @@ const UserDashboard = ({ user }: Props) => {
                                         label="Base Salary"
                                         value={`${user.base_salary?.toLocaleString()}₭`}
                                         icon={<PiMoneyFill />}
+                                    />
+                                    <ProfileField
+                                        label="Day off"
+                                        value={String(user.vacation_days)}
+                                        icon={<FaUmbrellaBeach />}
+                                    />
+                                    <ProfileField
+                                        label="Day off"
+                                        value={formatDate(user.start_work)}
+                                        icon={<FaPlaneDeparture />}
                                     />
                                 </div>
                             </div>
@@ -643,7 +654,7 @@ const UserDashboard = ({ user }: Props) => {
                                                             </p>
                                                         </div>
                                                         <div>
-                                                            <p className="text-xs text-slate-400">Vacation</p>
+                                                            <p className="text-xs text-slate-400">Vacation555555</p>
                                                             <p className="font-semibold text-sky-500">
                                                                 {salary.remaining_vacation_days} days
                                                             </p>

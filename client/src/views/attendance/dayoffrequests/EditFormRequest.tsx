@@ -228,7 +228,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                     employee_id: ''
                   })
                 }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 disabled={loadingDepartments}
               >
                 <option value="">
@@ -248,7 +248,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                 disabled={!formData.department_id}
               >
                 <option value="">
@@ -271,7 +271,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <select
                 value={formData.supervisor_id}
                 onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">ເລືອກຫົວໜ້າ</option>
                 {supervisors.map(user => (
@@ -294,7 +294,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="e.g., Family Vacation"
             />
           </div>
@@ -313,7 +313,7 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
                   setEndDate(null)
                 }
               }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="FULL_DAY">ໝົດມື້</option>
               <option value="HALF_DAY">ເຄີ່ງມື້</option>
@@ -392,8 +392,8 @@ const EditFormRequest: React.FC<EditFormRequestProps> = ({
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <p className="text-sm font-semibold text-gray-700 mb-2">ຊ່ວງເວລາ</p>
                 <p className="text-lg font-bold text-blue-600">
-                    {getHalfDayTimes(halfDayPeriod).start} - {getHalfDayTimes(halfDayPeriod).end}
-                  </p>
+                  {getHalfDayTimes(halfDayPeriod).start} - {getHalfDayTimes(halfDayPeriod).end}
+                </p>
               </div>
             </>
           )}

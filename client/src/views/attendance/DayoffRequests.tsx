@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { FaPlus, FaTimes, FaCheck, FaEdit, FaTrash, FaEye, FaFilePdf } from "react-icons/fa"
 import { getAllUsers, updateUser } from '../../services/Create_user/api'
 import type { UserData } from '../../services/Create_user/api'
@@ -17,10 +17,14 @@ import EditFormRequest from './dayoffrequests/EditFormRequest'
 import Swal from 'sweetalert2'
 import {
   Download,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 
 type DayOffType = 'FULL_DAY' | 'HALF_DAY'
 type RequestStatus = 'Pending' | 'Accepted' | 'Rejected'
+
+const ITEMS_PER_PAGE = 8
 
 const DayoffRequests: React.FC = () => {
   const [requests, setRequests] = useState<DayOffRequest[]>([])
@@ -32,6 +36,7 @@ const DayoffRequests: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<DayOffRequest | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   // Filter states
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
@@ -57,8 +62,8 @@ const DayoffRequests: React.FC = () => {
   // Helper function to get month name
   const getMonthName = (month: number): string => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ',
+      'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'
     ]
     return months[month - 1] || ''
   }
@@ -121,7 +126,6 @@ const DayoffRequests: React.FC = () => {
     })
   }
 
-
   const usersWithUpdatedVacationDays = calculatedVacationDays()
 
   const loadDayOffRequests = async () => {
@@ -169,12 +173,12 @@ const DayoffRequests: React.FC = () => {
         }
       }
 
-      // ✅ Day off type filter (FULL / HALF)
+      // Day off type filter
       if (filterDayOffType !== 'ALL' && request.day_off_type !== filterDayOffType) {
         return false
       }
 
-      // ✅ Status filter
+      // Status filter
       if (filterStatus !== 'ALL' && request.status !== filterStatus) {
         return false
       }
@@ -186,11 +190,33 @@ const DayoffRequests: React.FC = () => {
     selectedYear,
     selectedMonth,
     selectedDepartment,
-    filterDayOffType, // ✅ IMPORTANT
-    filterStatus,     // ✅ IMPORTANT
+    filterDayOffType,
+    filterStatus,
     users
   ])
 
+  // Pagination logic
+  const { paginatedRequests, totalPages } = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    const paginated = filteredRequests.slice(startIndex, endIndex)
+    const pages = Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)
+    
+    return {
+      paginatedRequests: paginated,
+      totalPages: pages
+    }
+  }, [filteredRequests, currentPage])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedYear, selectedMonth, selectedDepartment, filterDayOffType, filterStatus])
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const calculateDaysOff = (start: string, end: string, type: DayOffType): number => {
     if (!start || !end) return 0
@@ -227,8 +253,8 @@ const DayoffRequests: React.FC = () => {
     ) {
       await Swal.fire({
         icon: 'warning',
-        title: 'Missing information',
-        text: 'Please fill in all required fields.',
+        title: 'ຂາດຂໍ້ມູນ',
+        text: 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ',
         confirmButtonColor: '#3085d6'
       })
       return
@@ -257,9 +283,10 @@ const DayoffRequests: React.FC = () => {
 
       await Swal.fire({
         icon: 'success',
-        title: 'Success',
-        text: 'Day off request created successfully!',
-        confirmButtonColor: '#3085d6'
+        title: 'ສຳເລັດ',
+        text: 'ສ້າງຄຳຂໍລາພັກສຳເລັດແລ້ວ!',
+        confirmButtonColor: '#3085d6',
+        timer: 2000
       })
 
       setShowAddModal(false)
@@ -270,8 +297,8 @@ const DayoffRequests: React.FC = () => {
 
       await Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to create day off request',
+        title: 'ຜິດພາດ',
+        text: 'ບໍ່ສາມາດສ້າງຄຳຂໍລາພັກໄດ້',
         confirmButtonColor: '#d33'
       })
 
@@ -299,8 +326,8 @@ const DayoffRequests: React.FC = () => {
     ) {
       await Swal.fire({
         icon: 'warning',
-        title: 'Missing information',
-        text: 'Please fill in all required fields.',
+        title: 'ຂາດຂໍ້ມູນ',
+        text: 'ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບຖ້ວນ',
         confirmButtonColor: '#3085d6'
       })
       return
@@ -328,9 +355,10 @@ const DayoffRequests: React.FC = () => {
 
       await Swal.fire({
         icon: 'success',
-        title: 'Success',
-        text: 'ອັບເດດຄຳຮ້ອງຂໍວັນພັກສຳເລັດແລ້ວ!',
-        confirmButtonColor: '#3085d6'
+        title: 'ສຳເລັດ',
+        text: 'ອັບເດດຄຳຂໍສຳເລັດແລ້ວ!',
+        confirmButtonColor: '#3085d6',
+        timer: 2000
       })
 
       setShowEditModal(false)
@@ -342,8 +370,8 @@ const DayoffRequests: React.FC = () => {
 
       await Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: 'Failed to update day off request',
+        title: 'ຜິດພາດ',
+        text: 'ບໍ່ສາມາດອັບເດດຄຳຂໍໄດ້',
         confirmButtonColor: '#d33'
       })
 
@@ -357,19 +385,14 @@ const DayoffRequests: React.FC = () => {
     newStatus: 'Accepted' | 'Rejected'
   ) => {
     const result = await Swal.fire({
-      title: 'ຕ້ອງການຍົກເລິກຄຳຂໍ?',
-      html: 'ການຍົກເລິກນີ້ບໍ່ສາມາດກັບຄືນໄດ້',
-      icon: 'warning',
+      title: "ຢືນຢັນ?",
+      text: `ທ່ານກຳລັງຈະ ${newStatus === 'Accepted' ? 'ອະນຸມັດ' : 'ປະຕິເສດ'} ຄຳຂໍນີ້`,
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'ດຳເນີນການຕໍ່',
-      cancelButtonText: 'ບໍ່, ຍົກເລິກ',
-      reverseButtons: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      customClass: {
-        confirmButton: 'swal2-confirm',
-        cancelButton: 'swal2-cancel'
-      }
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: `ແມ່ນ, ${newStatus === 'Accepted' ? 'ອະນຸມັດ' : 'ປະຕິເສດ'}`,
+      cancelButtonText: 'ຍົກເລີກ'
     })
 
     if (!result.isConfirmed) return
@@ -406,16 +429,17 @@ const DayoffRequests: React.FC = () => {
       await loadDayOffRequests()
 
       Swal.fire({
-        title: "Success",
-        text: `Request ${newStatus.toLowerCase()} successfully`,
-        icon: "success"
+        title: "ສຳເລັດ",
+        text: `${newStatus === 'Accepted' ? 'ອະນຸມັດ' : 'ປະຕິເສດ'}ຄຳຂໍສຳເລັດແລ້ວ`,
+        icon: "success",
+        timer: 2000
       })
 
     } catch (error) {
       console.error('Error updating status:', error)
       Swal.fire({
-        title: "Error",
-        text: "Failed to update request status",
+        title: "ຜິດພາດ",
+        text: "ບໍ່ສາມາດອັບເດດສະຖານະໄດ້",
         icon: "error"
       })
     } finally {
@@ -480,7 +504,15 @@ const DayoffRequests: React.FC = () => {
   }
 
   const getStatusLabel = (status: RequestStatus) => {
-    return status
+    switch (status) {
+      case 'Pending': return 'ກຳລັງດຳເນີນການ'
+      case 'Accepted': return 'ອະນຸມັດແລ້ວ'
+      case 'Rejected': return 'ປະຕິເສດ'
+    }
+  }
+
+  const getDayOffTypeLabel = (type: DayOffType) => {
+    return type === 'FULL_DAY' ? 'ໝົດມື້' : 'ເຄີ່ງມື້'
   }
 
   const handleExportToPDF = useExportToPDF({ requests: filteredRequests, users })
@@ -521,7 +553,7 @@ const DayoffRequests: React.FC = () => {
             <button
               onClick={handleExportToPDF}
               disabled={loading || filteredRequests.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Download className="w-4 h-4" />
               Export to PDF
@@ -557,13 +589,13 @@ const DayoffRequests: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 bg-white p-4 rounded-lg shadow-sm">
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">ປີ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ປີ</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -571,11 +603,11 @@ const DayoffRequests: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">ເດືອນ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ເດືອນ</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                 <option key={month} value={month}>{getMonthName(month)}</option>
@@ -583,42 +615,38 @@ const DayoffRequests: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">ພະແໜກ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ພະແໜກ</label>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               <option value="">ພະແໜກທັງໝົດ</option>
-
               {departments.map((dept: DepartmentData) => (
                 <option key={dept._id} value={dept._id}>
                   {dept.department_name}
                 </option>
               ))}
             </select>
-
           </div>
-          {/* Day off type */}
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">ປະເພດ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ປະເພດ</label>
             <select
               value={filterDayOffType}
               onChange={(e) => setFilterDayOffType(e.target.value as DayOffType | 'ALL')}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               <option value="ALL">ປະເພດທັງໝົດ</option>
               <option value="FULL_DAY">ໝົດມື້</option>
               <option value="HALF_DAY">ເຄີ່ງມື້</option>
             </select>
           </div>
-
           <div>
-            <label className="text-xs text-gray-600 font-medium mb-1 block">ສະຖານະ</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-2 uppercase">ສະຖານະ</label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as RequestStatus | 'ALL')}
-              className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
+              className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
             >
               <option value="ALL">ສະຖານະທັງໝົດ</option>
               <option value="Pending">ກຳລັງດຳເນີນການ</option>
@@ -628,92 +656,258 @@ const DayoffRequests: React.FC = () => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-max">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ພະນັກງານ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ປະເພດ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ມື້</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ເລືອງ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">ສະຖານະ</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {loading && filteredRequests.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500 text-sm">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : filteredRequests.map((request) => {
-                  const isDisabled = request.status === 'Rejected' || request.status === 'Accepted'
-                  return (
-                    <tr key={request._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{getUserName(request.employee_id || request.user_id)}</td>
-                      <td className="px-4 py-3.5 text-gray-900 font-medium text-sm whitespace-nowrap">{request.day_off_type}</td>
-                      <td className="px-4 py-3.5 text-gray-900 font-semibold text-sm whitespace-nowrap">{request.date_off_number}</td>
-                      <td className="px-4 py-3.5 text-gray-900 text-sm whitespace-nowrap">{request.title}</td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className={`px-3 py-1 rounded-md text-xs font-medium ${getStatusColor(request.status)}`}>
-                          {getStatusLabel(request.status)}
-                        </span>
-                      </td>
-                      <td className="py-4 pr-6 whitespace-nowrap">
-  <div className="flex justify-end gap-4 ">
-    <button
-      onClick={() => {
-        setSelectedRequest(request)
-        setShowDetailModal(true)
-      }}
-      className="flex items-center justify-center h-[40px] w-[70px] rounded-sm text-xs transition bg-gray-600 hover:bg-gray-700 text-white"
-    >
-      <FaEye />
-    </button>
-
-    <button
-      onClick={() => handleEdit(request)}
-      disabled={loading || isDisabled}
-      className={`flex items-center justify-center h-[40px] w-[70px] rounded-sm text-xs transition
-        ${
-          isDisabled
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-[#45CC67] hover:bg-[#1fd371] text-white'
-        }`}
-    >
-      <FaEdit />
-    </button>
-
-    <button
-      onClick={() => handleStatusChange(request._id, 'Rejected')}
-      disabled={loading || isDisabled}
-      className={`flex items-center justify-center h-[40px] w-[70px] rounded-sm text-xs transition
-        ${
-          isDisabled
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-red-600 hover:bg-red-700 text-white'
-        }`}
-    >
-      <FaTrash />
-    </button>
-  </div>
-</td>
-
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        {/* Results Info */}
+        <div className="mb-4 text-sm text-gray-600 flex justify-between items-center">
+          <div>
+            ສະແດງ <span className="font-semibold text-gray-900">
+              {paginatedRequests.length > 0 ? ((currentPage - 1) * ITEMS_PER_PAGE + 1) : 0}
+            </span> - <span className="font-semibold text-gray-900">
+              {Math.min(currentPage * ITEMS_PER_PAGE, filteredRequests.length)}
+            </span> ຈາກທັງໝົດ <span className="font-semibold text-gray-900">{filteredRequests.length}</span> ລາຍການ
           </div>
-          {!loading && filteredRequests.length === 0 && (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              No requests found for the selected filters
+          {totalPages > 1 && (
+            <div className="text-gray-500">
+              ໜ້າ {currentPage} / {totalPages}
             </div>
           )}
         </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ພະນັກງານ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ປະເພດ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ມື້
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ເລືອງ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    ສະຖານະ
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {loading && filteredRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 text-sm">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span>ກຳລັງໂຫລດຂໍ້ມູນ...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500 text-sm">
+                      <div className="flex flex-col items-center gap-2">
+                        <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-base font-medium">ບໍ່ພົບຂໍ້ມູນ</span>
+                        <span className="text-xs text-gray-400">ກະລຸນາປ່ຽນຕົວກອງຂໍ້ມູນເພື່ອຄົ້ນຫາຄຳຂໍ</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedRequests.map((request) => {
+                    const isDisabled = request.status === 'Rejected' || request.status === 'Accepted'
+                    return (
+                      <tr key={request._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 text-gray-900 text-sm">
+                          <div className="font-medium">{getUserName(request.employee_id || request.user_id)}</div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                            request.day_off_type === 'FULL_DAY' 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {getDayOffTypeLabel(request.day_off_type)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="inline-flex items-center gap-1.5 bg-cyan-50 text-cyan-700 px-3 py-1.5 rounded-full font-semibold text-sm">
+                            {request.date_off_number} ມື້
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-gray-900 text-sm max-w-xs truncate" title={request.title}>
+                          {request.title}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+                            {getStatusLabel(request.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedRequest(request)
+                                setShowDetailModal(true)
+                              }}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-xs font-medium transition-colors bg-gray-600 hover:bg-gray-700 text-white shadow-sm hover:shadow-md"
+                              title="ເບິ່ງລາຍລະອຽດ"
+                            >
+                              <FaEye size={14} />
+                            </button>
+
+                            <button
+                              onClick={() => handleEdit(request)}
+                              disabled={loading || isDisabled}
+                              className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-medium transition-colors ${
+                                isDisabled
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-[#45CC67] hover:bg-[#1fd371] text-white shadow-sm hover:shadow-md'
+                              }`}
+                              title={isDisabled ? 'ບໍ່ສາມາດແກ້ໄຂໄດ້' : 'ແກ້ໄຂ'}
+                            >
+                              <FaEdit size={14} />
+                            </button>
+
+                            <button
+                              onClick={() => handleStatusChange(request._id, 'Rejected')}
+                              disabled={loading || isDisabled}
+                              className={`inline-flex items-center justify-center p-2 rounded-lg text-xs font-medium transition-colors ${
+                                isDisabled
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md'
+                              }`}
+                              title={isDisabled ? 'ບໍ່ສາມາດລົບໄດ້' : 'ປະຕິເສດ'}
+                            >
+                              <FaTrash size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow-sm">
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  ກຳລັງສະແດງ <span className="font-medium">{((currentPage - 1) * ITEMS_PER_PAGE + 1)}</span> ເຖິງ{' '}
+                  <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, filteredRequests.length)}</span> ຈາກທັງໝົດ{' '}
+                  <span className="font-medium">{filteredRequests.length}</span> ລາຍການ
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center gap-1 rounded-l-md px-3 py-2 text-sm font-medium transition-colors ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                    }`}
+                  >
+                    <ChevronLeft size={16} />
+                    <span className="hidden sm:inline">ກ່ອນໜ້າ</span>
+                  </button>
+
+                  <div className="hidden md:flex">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      const showPage = 
+                        page === 1 || 
+                        page === totalPages || 
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      
+                      const showEllipsis = 
+                        (page === currentPage - 2 && currentPage > 3) ||
+                        (page === currentPage + 2 && currentPage < totalPages - 2)
+
+                      if (showEllipsis) {
+                        return (
+                          <span key={page} className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-400 bg-white border border-gray-300">
+                            ...
+                          </span>
+                        )
+                      }
+
+                      if (!showPage) return null
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`relative inline-flex items-center px-4 py-2 text-sm font-medium transition-colors ${
+                            currentPage === page
+                              ? 'z-10 bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center gap-1 rounded-r-md px-3 py-2 text-sm font-medium transition-colors ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                    }`}
+                  >
+                    <span className="hidden sm:inline">ຕໍ່ໄປ</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </nav>
+              </div>
+            </div>
+
+            {/* Mobile Pagination */}
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
+                  currentPage === 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                ກ່ອນໜ້າ
+              </button>
+              <span className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
+                  currentPage === totalPages
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                }`}
+              >
+                ຕໍ່ໄປ
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Form Modal */}
@@ -737,60 +931,80 @@ const DayoffRequests: React.FC = () => {
 
       {/* Detail Modal */}
       {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center px-[60px] py-[40px]">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white p-6 border-b border-gray-200 flex justify-between items-center z-10 rounded-t-2xl">
               <h2 className="text-2xl font-bold text-gray-900">ລາຍລະອຽດຄຳຂໍ</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
               >
                 <FaTimes className="text-xl" />
               </button>
             </div>
-            <div className="p-6 space-y-6 px-[60px] py-[40px]">
-              <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ພະນັກງານ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{getUserName(selectedRequest.employee_id || selectedRequest.user_id)}</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ພະນັກງານ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {getUserName(selectedRequest.employee_id || selectedRequest.user_id)}
+                  </div>
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-gray-500">ຫົວໜ້າ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{getUserName(selectedRequest.supervisor_id)}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-semibold text-gray-500">ເລືອງ</label>
-                <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.title}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-semibold text-gray-500">ປະເພດມື້ພັກ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.day_off_type}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-500">ຈຳນວນມື້</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{selectedRequest.date_off_number} ມື້</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm font-semibold text-gray-500">ວັນທິ່ເລີ່ມ</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{formatDateTime(selectedRequest.start_date_time)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-500">ຮອດວັນທີ່</label>
-                  <p className="w-full px-3 py-4 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF] mt-1">{formatDateTime(selectedRequest.end_date_time)}</p>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ຫົວໜ້າ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {getUserName(selectedRequest.supervisor_id)}
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-gray-500">ສະຖານະປັດຈຸບັນ</label>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">ເລືອງ</label>
+                <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                  {selectedRequest.title}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ປະເພດມື້ພັກ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      selectedRequest.day_off_type === 'FULL_DAY' 
+                        ? 'bg-purple-100 text-purple-800' 
+                        : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {getDayOffTypeLabel(selectedRequest.day_off_type)}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ຈຳນວນມື້</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm font-semibold">
+                    {selectedRequest.date_off_number} ມື້
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ວັນທີ່ເລີ່ມ</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {formatDateTime(selectedRequest.start_date_time)}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">ຮອດວັນທີ່</label>
+                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm">
+                    {formatDateTime(selectedRequest.end_date_time)}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">ສະຖານະປັດຈຸບັນ</label>
                 <div className="mt-2">
-                  <span className={`px-4 py-2 rounded-lg text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
+                  <span className={`inline-block px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(selectedRequest.status)}`}>
                     {getStatusLabel(selectedRequest.status)}
                   </span>
                 </div>
