@@ -250,7 +250,7 @@ const Attendance: React.FC = () => {
                     <select
                         value={selectedYear}
                         onChange={(e) => setSelectedYear(Number(e.target.value))}
-                        className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+                        className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                     >
                         {[2023, 2024, 2025, 2026].map(year => (
                             <option key={year} value={year}>{year}</option>
@@ -262,7 +262,7 @@ const Attendance: React.FC = () => {
                     <select
                         value={selectedMonth}
                         onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                        className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+                        className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                     >
                         {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
                             <option key={month} value={month}>{getMonthName(month)}</option>
@@ -274,7 +274,7 @@ const Attendance: React.FC = () => {
                     <select
                         value={selectedDepartment}
                         onChange={(e) => setSelectedDepartment(e.target.value)}
-                        className="w-full border border-[#E5E7EB] rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1F3A5F]"
+                        className="w-full h-[50px] px-3 py-2 border border-none rounded-lg bg-[#F2F2F2] text-sm focus:outline-none focus:border-[#FFFFFF] focus:ring-1 focus:ring-[#FFFFFF]"
                         disabled={loading}
                     >
                         <option value="">ພະແໜກທັງໝົດ</option>
@@ -355,7 +355,7 @@ const Attendance: React.FC = () => {
                                     <td className="px-4 py-4 text-center">
                                         <button
                                             onClick={() => handleViewDetail(user)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition bg-gray-600 hover:bg-gray-700 text-white"
+                                            className="flex items-center justify-center h-[40px] w-[90px] rounded-sm text-xs transition bg-gray-600 hover:bg-gray-700 text-white"
                                         >
                                             <FaEye className="text-xs" /> ລາຍລະອຽດ
                                         </button>

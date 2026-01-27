@@ -360,12 +360,12 @@ const Dashboard: React.FC = () => {
                 : totalSalary > 0 ? 100 : 0
 
             // ຄິດໄລ່ອັດຕາການລາພັກ
-            const activeUsers = users.filter(u => u.status === 'Active' || u.status === 'ກຳລັງເຮັດວຽກ').length
+            const activeUsers = users.filter(u => u.status === 'Active' || u.status === 'Active').length
             const leaveRate = activeUsers > 0 
                 ? (dayOffs.filter(d => d.status === 'Accepted' || d.status === 'ອະນຸມັດແລ້ວ').length / activeUsers) * 100 
                 : 0
 
-            // ນັບຈຳນວນແຜນການ ແລະ ຕຳແໜ່ງ
+            // ນັບຈຳນວນຜະແຫນກ ແລະ ຕຳແໜ່ງ
             const departments = new Set(users.map(u => u.department_id?.department_name).filter(Boolean))
             const positions = new Set(users.map(u => u.position_id?.position_name).filter(Boolean))
 
@@ -394,7 +394,7 @@ const Dashboard: React.FC = () => {
                 id: salary._id,
                 type: 'salary',
                 title: `ຄິດໄລ່ເງິນເດືອນສຳລັບ ${salary.user_id?.first_name_en} ${salary.user_id?.last_name_en}`,
-                description: `ຍອດສຸດທິ: ฿${salary.net_salary.toLocaleString()} - ເດືອນ ${salary.month}/${salary.year}`,
+                description: `ຍອດສຸດທິ: ${salary.net_salary.toLocaleString()} - ເດືອນ ${salary.month}/${salary.year}`,
                 status: salary.status,
                 timestamp: salary.created_at,
                 icon: DollarSign,
@@ -408,8 +408,8 @@ const Dashboard: React.FC = () => {
             const userName = req.user_id?.first_name_en ? 
                 `${req.user_id.first_name_en} ${req.user_id.last_name_en}` : 'ຜູ້ໃຊ້'
             
-            const requestType = req.title === 'OT' ? 'ການລົງເວລາ' : 
-                               req.title === 'FIELD_WORK' ? 'ງານນອກສຳນັກງານ' : req.title
+            const requestType = req.title === 'OT' ? 'OT' : 
+                               req.title === 'FIELD_WORK' ? 'ງານນອກ' : req.title
             
             allActivities.push({
                 id: req._id,
@@ -450,7 +450,7 @@ const Dashboard: React.FC = () => {
             .slice(0, 10)
     }, [salaries, requests, dayOffs])
 
-    // ການແຈກຢາຍຕາມແຜນການ
+    // ການແຈກຢາຍຕາມຜະແຫນກ
     const departmentDistribution = useMemo(() => {
         const deptMap = new Map<string, number>()
         
@@ -598,7 +598,36 @@ const Dashboard: React.FC = () => {
             console.error('Error updating status:', error)
         }
     }
+    /////////////
+    const [requestTypeFilter, setRequestTypeFilter] = useState('ALL')
+const [requestStatusFilter, setRequestStatusFilter] = useState('ALL')
+const [leaveTypeFilter, setLeaveTypeFilter] = useState('ALL')
+///////
+const [searchTerm, setSearchTerm] = useState('')
+const [monthFilter, setMonthFilter] = useState('')
+const filteredSalaries = useMemo(() => {
+    return salaries.filter(salary => {
+        // 1. Filter ຕາມຊື່ ຫຼື ອີເມວ
+        const fullName = `${salary.user_id?.first_name_en} ${salary.user_id?.last_name_en}`.toLowerCase();
+        const email = (salary.user_id?.email || '').toLowerCase();
+        const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || 
+                             email.includes(searchTerm.toLowerCase());
 
+        // 2. Filter ຕາມເດືອນ
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        
+        let matchesMonth = true;
+        if (monthFilter === 'current') {
+            matchesMonth = salary.month === currentMonth && salary.year === currentYear;
+        } else if (monthFilter === 'last3') {
+            // Logic ສໍາລັບ 3 ເດືອນຜ່ານມາ (ແບບງ່າຍ)
+            matchesMonth = salary.year === currentYear && salary.month > (currentMonth - 3);
+        }
+
+        return matchesSearch && matchesMonth;
+    });
+}, [salaries, searchTerm, monthFilter]);
     // ຟັງຊັນສຳລັບຄົ້ນຫາ
     const handleSearch = async (searchTerm: string) => {
         if (!searchTerm.trim()) {
@@ -633,75 +662,71 @@ const Dashboard: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
             {/* ສ່ວນຫົວໜ້າ */}
             <div className="bg-white shadow-lg border-b border-gray-200">
-                <div className="px-6 py-6">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">ໜ້າຈໍຄວບຄຸມ HR</h1>
-                            <p className="text-gray-600 mt-2">
-                                ຂໍ້ມູນສະຫຼຸບການຈັດການພະນັກງານ, ເງິນເດືອນ, ແລະ ການອະນຸມັດ
-                            </p>
-                        </div>
-                        
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                            <div className="flex border border-gray-300 rounded-lg overflow-hidden shadow-sm">
-                                <button
-                                    onClick={() => setTimeRange('week')}
-                                    className={`px-4 py-2.5 text-sm font-medium transition-colors ${timeRange === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    ອາທິດນີ້
-                                </button>
-                                <button
-                                    onClick={() => setTimeRange('month')}
-                                    className={`px-4 py-2.5 text-sm font-medium transition-colors ${timeRange === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    ເດືອນນີ້
-                                </button>
-                                <button
-                                    onClick={() => setTimeRange('quarter')}
-                                    className={`px-4 py-2.5 text-sm font-medium transition-colors ${timeRange === 'quarter' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    3 ເດືອນ
-                                </button>
-                            </div>
-                            
-                            <button 
-                                onClick={handleExportData}
-                                className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm"
-                            >
-                                <Download className="w-4 h-4 mr-2" />
-                                ດາວໂຫຼດຂໍ້ມູນ
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {/* ແຖບເລືອກເບິ່ງ */}
-                    <div className="mt-6 flex flex-wrap gap-2">
-                        <button
-                            onClick={() => setActiveTab('overview')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                        >
-                            ໂດຍລວມ
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('employees')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'employees' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                        >
-                            ພະນັກງານ ({users.length})
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('salaries')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'salaries' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                        >
-                            ເງິນເດືອນ ({salaries.length})
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('requests')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'requests' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                        >
-                            ຄຳຮ້ອງຂໍ ({requests.length + dayOffs.length})
-                        </button>
-                    </div>
-                </div>
+           <div className="px-1 py-4 mb-2">
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        {/* Left Side: Navigation Tabs (Metronic Style) */}
+        <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl w-fit">
+            <button
+                onClick={() => setActiveTab('overview')}
+                className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${activeTab === 'overview' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+                ໂດຍລວມ
+            </button>
+            <button
+                onClick={() => setActiveTab('employees')}
+                className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${activeTab === 'employees' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+                ພະນັກງານ <span className="ml-1 opacity-60">({users.length})</span>
+            </button>
+            <button
+                onClick={() => setActiveTab('salaries')}
+                className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${activeTab === 'salaries' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+                ເງິນເດືອນ <span className="ml-1 opacity-60">({salaries.length})</span>
+            </button>
+            <button
+                onClick={() => setActiveTab('requests')}
+                className={`px-4 py-1.5 rounded-lg text-[13px] font-bold transition-all duration-200 ${activeTab === 'requests' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+                ຄຳຮ້ອງຂໍ <span className="ml-1 opacity-60">({requests.length + dayOffs.length})</span>
+            </button>
+        </div>
+        
+        {/* Right Side: Filters & Actions */}
+        <div className="flex items-center gap-3">
+            {/* Time Range Selector (Slim Group) */}
+            <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+                <button
+                    onClick={() => setTimeRange('week')}
+                    className={`px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-tight rounded-md transition-all ${timeRange === 'week' ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:bg-gray-50'}`}
+                >
+                    ອາທິດ
+                </button>
+                <button
+                    onClick={() => setTimeRange('month')}
+                    className={`px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-tight rounded-md transition-all ${timeRange === 'month' ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:bg-gray-50'}`}
+                >
+                    ເດືອນ
+                </button>
+                <button
+                    onClick={() => setTimeRange('quarter')}
+                    className={`px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-tight rounded-md transition-all ${timeRange === 'quarter' ? 'bg-blue-50 text-blue-600' : 'text-gray-400 hover:bg-gray-50'}`}
+                >
+                    3 ເດືອນ
+                </button>
+            </div>
+            
+            {/* Export Button (Minimal) */}
+            <button 
+                onClick={handleExportData}
+                className="inline-flex items-center px-3 py-2 bg-white border border-gray-200 rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-all shadow-sm"
+            >
+                <Download className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                Export
+            </button>
+        </div>
+    </div>
+</div>
             </div>
 
             {/* ເນື້ອໃນຫຼັກ */}
@@ -718,12 +743,12 @@ const Dashboard: React.FC = () => {
                             label: 'ເພີ່ມຂຶ້ນ'
                         }}
                         color="text-blue-600"
-                        subtitle={`${stats.activeEmployees} ກຳລັງເຮັດວຽກ`}
+                        subtitle={`${stats.activeEmployees} Active`}
                     />
                     
                     <StatCard
                         title="ລວມເງິນເດືອນເດືອນນີ້"
-                        value={`฿${stats.totalSalaryThisMonth.toLocaleString()}`}
+                        value={`${stats.totalSalaryThisMonth.toLocaleString()}`}
                         icon={DollarSign}
                         trend={{
                             value: Math.abs(stats.salaryGrowth),
@@ -731,7 +756,7 @@ const Dashboard: React.FC = () => {
                             label: 'ຈາກເດືອນກ່ອນ'
                         }}
                         color="text-green-600"
-                        subtitle={`ສະເລ່ຍ: ฿${Math.round(stats.avgSalary).toLocaleString()}`}
+                        subtitle={`ສະເລ່ຍ: ${Math.round(stats.avgSalary).toLocaleString()}`}
                     />
                     
                     <StatCard
@@ -757,7 +782,7 @@ const Dashboard: React.FC = () => {
                             label: stats.leaveRate < 10 ? 'ປົກກະຕິ' : 'ສູງ'
                         }}
                         color="text-purple-600"
-                        subtitle={`${stats.totalDepartments} ແຜນການ, ${stats.totalPositions} ຕຳແໜ່ງ`}
+                        subtitle={`${stats.totalDepartments} ຜະແຫນກ, ${stats.totalPositions} ຕຳແໜ່ງ`}
                     />
                 </div>
 
@@ -766,12 +791,12 @@ const Dashboard: React.FC = () => {
                     <>
                         {/* ກາຟ ແລະ ສະຖິຕິ */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                            {/* ການແຈກຢາຍຕາມແຜນການ */}
+                            {/* ການແຈກຢາຍຕາມຜະແຫນກ */}
                             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                                 <div className="flex items-center justify-between mb-6">
                                     <div>
-                                        <h3 className="text-lg font-semibold text-gray-900">ການແຈກຢາຍພະນັກງານຕາມແຜນການ</h3>
-                                        <p className="text-sm text-gray-500 mt-1">ຈຳນວນພະນັກງານໃນແຕ່ລະແຜນການ</p>
+                                        <h3 className="text-lg font-semibold text-gray-900">ການແຈກຢາຍພະນັກງານຕາມຜະແຫນກ</h3>
+                                        <p className="text-sm text-gray-500 mt-1">ຈຳນວນພະນັກງານໃນແຕ່ລະຜະແຫນກ</p>
                                     </div>
                                     <PieChart className="w-5 h-5 text-gray-400" />
                                 </div>
@@ -853,10 +878,10 @@ const Dashboard: React.FC = () => {
                                 <div 
                                     className="w-full bg-gradient-to-t from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 rounded-t-lg cursor-pointer"
                                     style={{ height: `${height}%` }}
-                                    title={`ເດືອນ ${data.month}: ฿${Math.round(data.average).toLocaleString()}`}
+                                    title={`ເດືອນ ${data.month}: ${Math.round(data.average).toLocaleString()}`}
                                 >
                                     <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                        ฿{Math.round(data.average).toLocaleString()}
+                                        {Math.round(data.average).toLocaleString()}
                                     </div>
                                 </div>
                             </div>
@@ -877,546 +902,494 @@ const Dashboard: React.FC = () => {
                         </div>
 
                         {/* ກິດຈະກຳລ່າສຸດ */}
-                        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900">ກິດຈະກຳລ່າສຸດ</h3>
-                                    <p className="text-sm text-gray-500 mt-1">ການເຄື່ອນໄຫວລ່າສຸດໃນລະບົບ</p>
-                                </div>
-                                <Activity className="w-5 h-5 text-gray-400" />
+             <div className="mb-6">
+    {/* Header: ກະທັດຮັດຂຶ້ນ */}
+    <div className="flex items-center justify-between mb-4 px-1">
+        <div>
+            <h3 className="text-sm font-extrabold text-gray-800 uppercase tracking-wider">ກິດຈະກຳລ່າສຸດ</h3>
+        </div>
+        <button className="text-[11px] font-bold text-blue-500 hover:text-blue-700 transition-colors">
+            ເບິ່ງທັງໝົດ
+        </button>
+    </div>
+
+    {recentActivities.length > 0 ? (
+        /* 3-Column Mini Grid */
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {recentActivities.map((activity) => {
+                const Icon = activity.icon;
+                
+                // Mini Status Colors
+                const statusTheme = {
+                    pending: "text-orange-500",
+                    accepted: "text-emerald-500",
+                    paid: "text-blue-500",
+                    failed: "text-rose-500"
+                };
+                const currentStatus = activity.status.toLowerCase();
+
+                return (
+                    <div 
+                        key={activity.id} 
+                        className="group bg-white border border-gray-100 rounded-xl p-3 hover:bg-gray-50 transition-all duration-200"
+                    >
+                        <div className="flex items-center gap-3">
+                            {/* Icon: ຂະໜາດນ້ອຍລົງ (Small Icon) */}
+                            <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${activity.color.replace('text-', 'bg-').replace('500', '100')} bg-opacity-30`}>
+                                <Icon className={`w-5 h-5 ${activity.color}`} />
                             </div>
-                            
-                            <div className="space-y-1">
-                                {recentActivities.length > 0 ? (
-                                    recentActivities.map((activity) => {
-                                        const Icon = activity.icon
-                                        return (
-                                            <div key={activity.id} className="flex items-center p-4 hover:bg-gray-50 rounded-lg transition-colors duration-200 group cursor-pointer">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activity.color.replace('text-', 'bg-')} bg-opacity-10`}>
-                                                    <Icon className={`w-5 h-5 ${activity.color}`} />
-                                                </div>
-                                                <div className="ml-4 flex-1 min-w-0">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-                                                                {activity.title}
-                                                            </p>
-                                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                                <span className={`text-xs px-2 py-1 rounded-full ${activity.status === 'pending' || activity.status === 'Pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : activity.status === 'accepted' || activity.status === 'Accepted' || activity.status === 'paid' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'}`}>
-                                                                    {activity.status}
-                                                                </span>
-                                                                <span className="text-xs text-gray-600 truncate">{activity.description}</span>
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
-                                                            {moment(activity.timestamp).fromNow()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })
-                                ) : (
-                                    <div className="text-center py-8">
-                                        <p className="text-gray-500">ຍັງບໍ່ມີກິດຈະກຳ</p>
+
+                            {/* Content Area */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                    <h4 className="text-[13px] font-bold text-gray-800 truncate leading-tight group-hover:text-blue-600">
+                                        {activity.title}
+                                    </h4>
+                                    <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                                        {moment(activity.timestamp).format('HH:mm')}
+                                    </span>
+                                </div>
+                                
+                                <div className="flex items-center justify-between mt-0.5">
+                                    <p className="text-[11px] text-gray-500 truncate pr-2">
+                                        {activity.description}
+                                    </p>
+                                    {/* Mini Dot Status */}
+                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                        <span className={`w-1.5 h-1.5 rounded-full bg-current ${statusTheme[currentStatus] || 'text-gray-400'}`}></span>
+                                        <span className={`text-[10px] font-bold uppercase tracking-tighter ${statusTheme[currentStatus] || 'text-gray-400'}`}>
+                                            {activity.status}
+                                        </span>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
+                    </div>
+                );
+            })}
+        </div>
+    ) : (
+        <div className="bg-gray-50 rounded-xl py-6 text-center border border-dashed border-gray-200">
+            <p className="text-[12px] text-gray-400 font-medium">ບໍ່ມີຂໍ້ມູນ</p>
+        </div>
+    )}
+</div>
 
                         {/* ສະຖິຕິລາຍລະອຽດ */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                            {/* ສະຖິຕິຄຳຮ້ອງຂໍ */}
-                            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-6">ສະຖິຕິຄຳຮ້ອງຂໍ</h3>
-                                
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">ລວມທັງໝົດ</span>
-                                        <span className="text-lg font-bold text-gray-900">{requestStats.total}</span>
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                                                <span className="text-sm text-gray-700">ລໍຖ້າອະນຸມັດ</span>
-                                            </div>
-                                            <span className="font-medium">{requestStats.pending}</span>
-                                        </div>
-                                        
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                                                <span className="text-sm text-gray-700">ອະນຸມັດແລ້ວ</span>
-                                            </div>
-                                            <span className="font-medium">{requestStats.accepted}</span>
-                                        </div>
-                                        
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                                                <span className="text-sm text-gray-700">ປະຕິເສດ</span>
-                                            </div>
-                                            <span className="font-medium">{requestStats.rejected}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="pt-4 border-t border-gray-200">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-blue-50 p-3 rounded-lg">
-                                                <p className="text-sm text-blue-700 font-medium">ການລົງເວລາ</p>
-                                                <p className="text-xl font-bold text-blue-900">{requestStats.otRequests}</p>
-                                            </div>
-                                            <div className="bg-purple-50 p-3 rounded-lg">
-                                                <p className="text-sm text-purple-700 font-medium">ງານນອກສຳນັກງານ</p>
-                                                <p className="text-xl font-bold text-purple-900">{requestStats.fieldWorkRequests}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+    {/* Card 1: ສະຖິຕິຄຳຮ້ອງຂໍ */}
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 flex justify-between items-center">
+            <h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-tight">ສະຖິຕິຄຳຮ້ອງຂໍ</h3>
+            <span className="text-[11px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md">ລວມ: {requestStats.total}</span>
+        </div>
+        
+        <div className="p-5 space-y-4">
+            {/* ລໍຖ້າອະນຸມັດ */}
+            <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[12px]">
+                    <span className="font-medium text-gray-600">ລໍຖ້າອະນຸມັດ</span>
+                    <span className="font-bold text-gray-800">{requestStats.pending}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-yellow-400 h-1.5 rounded-full" style={{ width: `${(requestStats.pending / requestStats.total) * 100}%` }}></div>
+                </div>
+            </div>
 
-                            {/* ສະຖິຕິການລາພັກ */}
-                            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-6">ສະຖິຕິການລາພັກ</h3>
-                                
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-gray-600">ລວມທັງໝົດ</span>
-                                        <span className="text-lg font-bold text-gray-900">{leaveStats.total}</span>
-                                    </div>
-                                    
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-                                                <span className="text-sm text-gray-700">ລໍຖ້າອະນຸມັດ</span>
-                                            </div>
-                                            <span className="font-medium">{leaveStats.pending}</span>
-                                        </div>
-                                        
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                                                <span className="text-sm text-gray-700">ອະນຸມັດແລ້ວ</span>
-                                            </div>
-                                            <span className="font-medium">{leaveStats.accepted}</span>
-                                        </div>
-                                        
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center">
-                                                <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                                                <span className="text-sm text-gray-700">ປະຕິເສດ</span>
-                                            </div>
-                                            <span className="font-medium">{leaveStats.rejected}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="pt-4 border-t border-gray-200">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="bg-orange-50 p-3 rounded-lg">
-                                                <p className="text-sm text-orange-700 font-medium">ຄັ້ງເຄິ່ງວັນ</p>
-                                                <p className="text-xl font-bold text-orange-900">{leaveStats.halfDay}</p>
-                                            </div>
-                                            <div className="bg-indigo-50 p-3 rounded-lg">
-                                                <p className="text-sm text-indigo-700 font-medium">ທັງໝົດວັນ</p>
-                                                <p className="text-xl font-bold text-indigo-900">{leaveStats.fullDay}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            {/* ອະນຸມັດແລ້ວ */}
+            <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[12px]">
+                    <span className="font-medium text-gray-600">ອະນຸມັດແລ້ວ</span>
+                    <span className="font-bold text-gray-800">{requestStats.accepted}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${(requestStats.accepted / requestStats.total) * 100}%` }}></div>
+                </div>
+            </div>
+
+            {/* ປະຕິເສດ */}
+            <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[12px]">
+                    <span className="font-medium text-gray-600">ປະຕິເສດ</span>
+                    <span className="font-bold text-gray-800">{requestStats.rejected}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${(requestStats.rejected / requestStats.total) * 100}%` }}></div>
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 group hover:bg-blue-50 transition-colors">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">OT</p>
+                    <p className="text-lg font-black text-gray-800 group-hover:text-blue-600">{requestStats.otRequests}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 group hover:bg-purple-50 transition-colors">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">ງານນອກ</p>
+                    <p className="text-lg font-black text-gray-800 group-hover:text-purple-600">{requestStats.fieldWorkRequests}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {/* Card 2: ສະຖິຕິການລາພັກ */}
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 flex justify-between items-center">
+            <h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-tight">ສະຖິຕິການລາພັກ</h3>
+            <span className="text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-md">ລວມ: {leaveStats.total}</span>
+        </div>
+        
+        <div className="p-5 space-y-4">
+            {/* ລໍຖ້າອະນຸມັດ */}
+            <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[12px]">
+                    <span className="font-medium text-gray-600">ລໍຖ້າອະນຸມັດ</span>
+                    <span className="font-bold text-gray-800">{leaveStats.pending}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-yellow-400 h-1.5 rounded-full" style={{ width: `${(leaveStats.pending / leaveStats.total) * 100}%` }}></div>
+                </div>
+            </div>
+
+            {/* ອະນຸມັດແລ້ວ */}
+            <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[12px]">
+                    <span className="font-medium text-gray-600">ອະນຸມັດແລ້ວ</span>
+                    <span className="font-bold text-gray-800">{leaveStats.accepted}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${(leaveStats.accepted / leaveStats.total) * 100}%` }}></div>
+                </div>
+            </div>
+
+            {/* ປະຕິເສດ */}
+            <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-[12px]">
+                    <span className="font-medium text-gray-600">ປະຕິເສດ</span>
+                    <span className="font-bold text-gray-800">{leaveStats.rejected}</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                    <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${(leaveStats.rejected / leaveStats.total) * 100}%` }}></div>
+                </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 group hover:bg-orange-50 transition-colors">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">ຄັ້ງເຄິ່ງວັນ</p>
+                    <p className="text-lg font-black text-gray-800 group-hover:text-orange-600">{leaveStats.halfDay}</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 group hover:bg-indigo-50 transition-colors">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-0.5">ທັງໝົດວັນ</p>
+                    <p className="text-lg font-black text-gray-800 group-hover:text-indigo-600">{leaveStats.fullDay}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
                     </>
                 )}
 
                 {/* ສ່ວນພະນັກງານ */}
                 {activeTab === 'employees' && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900">ຂໍ້ມູນພະນັກງານ</h3>
-                                    <p className="text-sm text-gray-500 mt-1">ລວມ {users.length} ຄົນ</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="relative flex-1 md:flex-none">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                        <input
-                                            type="text"
-                                            placeholder="ຄົ້ນຫາພະນັກງານ..."
-                                            className="pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            onChange={(e) => handleSearch(e.target.value)}
-                                        />
-                                    </div>
-                                    <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        ເພີ່ມພະນັກງານ
-                                    </button>
-                                </div>
+               <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden font-sans">
+    {/* Header: Super Slim */}
+    <div className="px-3 py-2 border-b border-gray-50 flex items-center justify-between bg-white">
+        <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-tighter">ພະນັກງານ ({users.length})</h3>
+        <div className="flex items-center gap-2">
+            <div className="relative">
+                <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="ຄົ້ນຫາ..."
+                    className="pl-7 pr-2 py-0.5 bg-gray-50 border-none rounded text-[10px] w-[110px] focus:ring-1 focus:ring-blue-500/20"
+                    onChange={(e) => handleSearch(e.target.value)}
+                />
+            </div>
+            <button className="h-6 w-6 flex items-center justify-center bg-blue-600 text-white rounded hover:bg-blue-700 transition-all shadow-sm">
+                <Plus className="w-3.5 h-3.5" />
+            </button>
+        </div>
+    </div>
+    
+    {/* 4-Column Ultra Compact Grid */}
+    <div className="p-2 bg-[#F9FAFB]">
+        {users.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5">
+                {users.slice(0, 12).map((user) => (
+                    <div 
+                        key={user._id} 
+                        className="group bg-white border border-gray-100 rounded-lg p-2.5 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer relative"
+                        onClick={() => handleViewDetails('user', user._id)}
+                    >
+                        {/* Status Dot */}
+                        <div className={`absolute top-2 right-2 w-1.5 h-1.5 rounded-full ${user.status === 'Active' ? 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.4)]' : 'bg-gray-300'}`}></div>
+
+                        {/* Top: Name & Email */}
+                        <div className="mb-2">
+                            <h4 className="text-[12px] font-bold text-gray-800 truncate leading-none group-hover:text-blue-600 transition-colors">
+                                {user.first_name_en} {user.last_name_en}
+                            </h4>
+                            <p className="text-[9px] text-gray-400 truncate mt-1">{user.email}</p>
+                        </div>
+
+                        {/* Middle: Dept & Position (Compact Row) */}
+                        <div className="flex flex-col gap-0.5 mb-2 py-1.5 border-y border-gray-50">
+                            <div className="flex items-center text-[10px] text-gray-500 font-medium">
+                                <span className="truncate">{user.department_id?.department_name || 'No Dept'}</span>
+                            </div>
+                            <div className="flex items-center text-[9px] text-gray-400">
+                                <span className="truncate">{user.position_id?.position_name || 'Staff'}</span>
                             </div>
                         </div>
-                        
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-200">
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ລຳດັບ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ຊື່-ນາມສະກຸນ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ແຜນການ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ຕຳແໜ່ງ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ເງິນເດືອນພື້ນຖານ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ສະຖານະ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ການກະທຳ
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {users.slice(0, 10).map((user, index) => (
-                                        <tr key={user._id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {index + 1}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div>
-                                                    <div className="font-medium text-gray-900">
-                                                        {user.first_name_en} {user.last_name_en}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">{user.email}</div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {user.department_id?.department_name || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {user.position_id?.position_name || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                {user.base_salary ? `฿${user.base_salary.toLocaleString()}` : '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.status === 'Active' || user.status === 'ກຳລັງເຮັດວຽກ' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                    {user.status === 'Active' ? 'ກຳລັງເຮັດວຽກ' : user.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div className="flex items-center gap-2">
-                                                    <button 
-                                                        onClick={() => handleViewDetails('user', user._id)}
-                                                        className="text-blue-600 hover:text-blue-900 p-1"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => window.location.href = `/salary-calculator?userId=${user._id}`}
-                                                        className="text-green-600 hover:text-green-900 p-1"
-                                                    >
-                                                        <DollarSign className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            
-                            {users.length === 0 && (
-                                <div className="text-center py-12">
-                                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-500">ຍັງບໍ່ມີຂໍ້ມູນພະນັກງານ</p>
-                                </div>
-                            )}
+
+                        {/* Bottom: Full Salary Amount */}
+                        <div className="flex justify-between items-baseline">
+                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-tighter">Net Pay</span>
+                            <span className="text-[13px] font-black text-gray-900 tracking-tight">
+                                {user.base_salary ? user.base_salary.toLocaleString() : '0'}
+                            </span>
                         </div>
                     </div>
+                ))}
+            </div>
+        ) : (
+            <div className="py-8 text-center bg-white rounded-lg border border-dashed border-gray-200">
+                <p className="text-[10px] text-gray-400 font-bold uppercase">ບໍ່ມີຂໍ້ມູນພະນັກງານ</p>
+            </div>
+        )}
+    </div>
+</div>
                 )}
 
                 {/* ສ່ວນເງິນເດືອນ */}
                 {activeTab === 'salaries' && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900">ປະຫວັດເງິນເດືອນ</h3>
-                                    <p className="text-sm text-gray-500 mt-1">ລວມ {salaries.length} ການຄິດໄລ່</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <select 
-                                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        onChange={(e) => {
-                                            // ຟັງຊັນ filter ຕາມເດືອນ
-                                            console.log('Filter by:', e.target.value)
-                                        }}
-                                    >
-                                        <option value="">ທັງໝົດ</option>
-                                        <option value="current">ເດືອນນີ້</option>
-                                        <option value="last3">3 ເດືອນຜ່ານມາ</option>
-                                    </select>
-                                    <button 
-                                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                        onClick={() => window.location.href = '/salary-calculator'}
-                                    >
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        ຄິດໄລ່ເງິນເດືອນໃໝ່
-                                    </button>
-                                </div>
+                   <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    {/* Table Header & Controls */}
+    <div className="p-4 border-b border-gray-50 bg-white">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h3 className="text-[15px] font-black text-gray-800 tracking-tight">ປະຫວັດເງິນເດືອນ</h3>
+                <p className="text-[11px] text-gray-400 font-medium">ລວມ {salaries.length} ລາຍການ</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+                {/* Search Input */}
+                <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+    type="text"
+    placeholder="ຄົ້ນຫາຊື່ ຫຼື ອີເມວ..."
+    value={searchTerm} // ເພີ່ມໂຕນີ້
+    className="pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[12px] w-full md:w-[220px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+    onChange={(e) => setSearchTerm(e.target.value)} // ອັບເດດ State
+/>
+                </div>
+
+                {/* Month Filter */}
+           <select 
+    value={monthFilter} // ເພີ່ມໂຕນີ້
+    className="pl-3 pr-8 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-[12px] font-bold text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer"
+    onChange={(e) => setMonthFilter(e.target.value)} // ອັບເດດ State
+>
+    <option value="">ທຸກເດືອນ</option>
+    <option value="current">ເດືອນນີ້</option>
+    <option value="last3">3 ເດືອນຜ່ານມາ</option>
+</select>
+
+                {/* Add Button - Compact */}
+                <button 
+                    className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 shadow-sm shadow-blue-200 transition-all"
+                    onClick={() => window.location.href = '/salary-calculator'}
+                >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    ຄິດໄລ່ໃໝ່
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    {/* Table Area */}
+    <div className="overflow-x-auto">
+        <table className="w-full">
+            <thead>
+                <tr className="bg-gray-50/50">
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100">ພະນັກງານ</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100">ໄລຍະເວລາ</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100 text-right">ເງິນພື້ນຖານ</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100 text-right">OT / ອຸດໜູນ</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100 text-right">ຫັກເງິນ</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100 text-right">ຍອດສຸດທິ</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+                {filteredSalaries.slice(0, 10).map((salary) => (
+                    <tr key={salary._id} className="hover:bg-blue-50/30 transition-colors group">
+                        <td className="px-5 py-3">
+                            <div className="flex flex-col">
+                                <span className="text-[13px] font-bold text-gray-800 group-hover:text-blue-600 transition-colors">
+                                    {salary.user_id?.first_name_en} {salary.user_id?.last_name_en}
+                                </span>
+                                <span className="text-[11px] text-gray-400">{salary.user_id?.email}</span>
                             </div>
-                        </div>
-                        
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gray-50 border-b border-gray-200">
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ພະນັກງານ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ໄລຍະເວລາ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ເງິນພື້ນຖານ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ລົງເວລາ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ເງິນອຸດໜູນ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ຫັກເງິນ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ຍອດສຸດທິ
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                            ສະຖານະ
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200">
-                                    {salaries.slice(0, 10).map((salary) => (
-                                        <tr key={salary._id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div>
-                                                    <div className="font-medium text-gray-900">
-                                                        {salary.user_id?.first_name_en} {salary.user_id?.last_name_en}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">{salary.user_id?.email}</div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                {salary.month}/{salary.year}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                ฿{salary.base_salary.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
-                                                +฿{salary.ot_amount.toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
-                                                +฿{(salary.bonus + salary.commission).toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
-                                                -฿{(salary.office_expenses + salary.social_security).toLocaleString()}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="text-lg font-bold text-gray-900">
-                                                    ฿{salary.net_salary.toLocaleString()}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${salary.status === 'paid' ? 'bg-green-100 text-green-800' : salary.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                    {salary.status === 'paid' ? 'ຈ່າຍແລ້ວ' : 
-                                                     salary.status === 'pending' ? 'ລໍຖ້າການຈ່າຍ' : salary.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            
-                            {salaries.length === 0 && (
-                                <div className="text-center py-12">
-                                    <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-500">ຍັງບໍ່ມີຂໍ້ມູນເງິນເດືອນ</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                        </td>
+                        <td className="px-5 py-3">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[11px] font-bold">
+                                {salary.month}/{salary.year}
+                            </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                            <span className="text-[12px] font-semibold text-gray-700">
+                                {salary.base_salary.toLocaleString()}
+                            </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                            <div className="flex flex-col">
+                                <span className="text-[12px] font-bold text-emerald-600">+{salary.ot_amount.toLocaleString()}</span>
+                                <span className="text-[10px] text-blue-500 font-medium">+{(salary.bonus + salary.commission).toLocaleString()}</span>
+                            </div>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                            <span className="text-[12px] font-bold text-rose-500">
+                                -{(salary.office_expenses + salary.social_security).toLocaleString()}
+                            </span>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                            <span className="text-[14px] font-black text-gray-900 tracking-tight">
+                                {salary.net_salary.toLocaleString()}
+                            </span>
+                        </td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+        
+        {salaries.length === 0 && (
+            <div className="text-center py-16 bg-gray-50/30">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <DollarSign className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-[13px] text-gray-400 font-bold">ຍັງບໍ່ມີຂໍ້ມູນເງິນເດືອນ</p>
+            </div>
+        )}
+    </div>
+</div>
                 )}
 
                 {/* ສ່ວນຄຳຮ້ອງຂໍ */}
                 {activeTab === 'requests' && (
-                    <div className="space-y-6">
-                        {/* ຄຳຮ້ອງຂໍ OT ແລະ Field Work */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                            <div className="p-6 border-b border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-900">ຄຳຮ້ອງຂໍການລົງເວລາ ແລະ ງານນອກສຳນັກງານ</h3>
-                                <p className="text-sm text-gray-500 mt-1">ລວມ {requests.length} ຄຳຮ້ອງ</p>
+   <div className="space-y-6">
+    {/* --- Section: OT & Field Work (4 Columns) --- */}
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-50 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <h3 className="text-[12px] font-black text-gray-800 uppercase tracking-widest">OT & ງານນອກ ({requests.length})</h3>
+            </div>
+            
+            <div className="flex items-center gap-2">
+                <select 
+                    className="pl-2 pr-7 py-1 bg-gray-50 border-none rounded text-[10px] font-bold text-gray-500 focus:ring-1 focus:ring-blue-500/20"
+                    onChange={(e) => setRequestTypeFilter(e.target.value)}
+                >
+                    <option value="ALL">ທຸກປະເພດ</option>
+                    <option value="OT">OT</option>
+                    <option value="FIELD_WORK">ງານນອກ</option>
+                </select>
+                <select 
+                    className="pl-2 pr-7 py-1 bg-gray-50 border-none rounded text-[10px] font-bold text-gray-500 focus:ring-1 focus:ring-blue-500/20"
+                    onChange={(e) => setRequestStatusFilter(e.target.value)}
+                >
+                    <option value="ALL">ທຸກສະຖານະ</option>
+                    <option value="Pending">ລໍຖ້າ...</option>
+                    <option value="Accept">ອະນຸມັດ</option>
+                    <option value="Reject">ປະຕິເສດ</option>
+                </select>
+            </div>
+        </div>
+
+        <div className="p-3 bg-[#FBFBFC]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {requests
+                    .filter(r => (requestTypeFilter === 'ALL' || r.title === requestTypeFilter) && (requestStatusFilter === 'ALL' || r.status === requestStatusFilter))
+                    .slice(0, 12).map((req) => (
+                    <div key={req._id} className="group bg-white border border-gray-50 rounded-lg p-3 hover:border-blue-200 transition-all shadow-sm relative overflow-hidden">
+                        <div className={`absolute top-0 left-0 w-full h-[1.5px] ${req.status === 'Accept' ? 'bg-emerald-400' : req.status === 'Reject' ? 'bg-rose-400' : 'bg-yellow-400'}`}></div>
+                        
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="min-w-0">
+                                <h4 className="text-[12px] font-bold text-gray-800 truncate group-hover:text-blue-600 transition-colors">
+                                    {req.user_id?.first_name_en}
+                                </h4>
+                                <p className="text-[9px] text-gray-400 font-medium">{moment(req.date).format('DD/MM/YYYY')}</p>
                             </div>
-                            
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-gray-50 border-b border-gray-200">
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ພະນັກງານ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ປະເພດ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ວັນທີ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ເວລາ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ເຫດຜົນ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ສະຖານະ
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {requests.slice(0, 10).map((request) => (
-                                            <tr key={request._id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="font-medium text-gray-900">
-                                                        {request.user_id?.first_name_en} {request.user_id?.last_name_en}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${request.title === 'OT' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
-                                                        {request.title === 'OT' ? 'ການລົງເວລາ' : 'ງານນອກສຳນັກງານ'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {moment(request.date).format('DD/MM/YYYY')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {typeof request.start_hour === 'number' 
-                                                        ? `${Math.floor(request.start_hour)}:${(request.start_hour % 1 * 60).toString().padStart(2, '0')}`
-                                                        : request.start_hour} - {typeof request.end_hour === 'number'
-                                                        ? `${Math.floor(request.end_hour)}:${(request.end_hour % 1 * 60).toString().padStart(2, '0')}`
-                                                        : request.end_hour}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                    {request.reason}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${request.status === 'Accept' ? 'bg-green-100 text-green-800' : request.status === 'Reject' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                        {request.status === 'Accept' ? 'ອະນຸມັດແລ້ວ' : 
-                                                         request.status === 'Reject' ? 'ປະຕິເສດ' : 'ລໍຖ້າອະນຸມັດ'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                
-                                {requests.length === 0 && (
-                                    <div className="text-center py-12">
-                                        <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                        <p className="text-gray-500">ຍັງບໍ່ມີຂໍ້ມູນຄຳຮ້ອງຂໍ</p>
-                                    </div>
-                                )}
-                            </div>
+                            <span className={`px-1 py-0.5 rounded-[4px] text-[8px] font-black uppercase ${req.title === 'OT' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                                {req.title === 'OT' ? 'OT' : 'Field'}
+                            </span>
                         </div>
 
-                        {/* ຄຳຮ້ອງຂໍລາພັກ */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                            <div className="p-6 border-b border-gray-200">
-                                <h3 className="text-lg font-semibold text-gray-900">ຄຳຮ້ອງຂໍລາພັກ</h3>
-                                <p className="text-sm text-gray-500 mt-1">ລວມ {dayOffs.length} ຄຳຮ້ອງ</p>
+                        <div className="bg-gray-50/50 rounded p-1.5 mb-2">
+                            <p className="text-[10px] text-gray-500 line-clamp-1 italic">"{req.reason || 'No reason'}"</p>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-2">
+                            <div className="flex items-center text-gray-400">
+                                <Clock className="w-2.5 h-2.5 mr-1" />
+                                <span className="text-[9px] font-bold text-gray-500">{req.start_hour}-{req.end_hour}</span>
                             </div>
-                            
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-gray-50 border-b border-gray-200">
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ພະນັກງານ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ປະເພດ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ເລີ່ມຕົ້ນ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ສິ້ນສຸດ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ຈຳນວນວັນ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ເຫດຜົນ
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                                                ສະຖານະ
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {dayOffs.slice(0, 10).map((dayOff) => (
-                                            <tr key={dayOff._id} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="font-medium text-gray-900">
-                                                        {dayOff.user_id?.first_name_en} {dayOff.user_id?.last_name_en}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${dayOff.day_off_type === 'HALF_DAY' ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800'}`}>
-                                                        {dayOff.day_off_type === 'HALF_DAY' ? 'ຄັ້ງເຄິ່ງວັນ' : 'ທັງໝົດວັນ'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {moment(dayOff.start_date_time).format('DD/MM/YYYY')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {moment(dayOff.end_date_time).format('DD/MM/YYYY')}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {dayOff.date_off_number} ວັນ
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                                                    {dayOff.title}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${dayOff.status === 'Accepted' ? 'bg-green-100 text-green-800' : dayOff.status === 'Rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                        {dayOff.status === 'Accepted' ? 'ອະນຸມັດແລ້ວ' : 
-                                                         dayOff.status === 'Rejected' ? 'ປະຕິເສດ' : 'ລໍຖ້າອະນຸມັດ'}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                
-                                {dayOffs.length === 0 && (
-                                    <div className="text-center py-12">
-                                        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                                        <p className="text-gray-500">ຍັງບໍ່ມີຂໍ້ມູນການລາພັກ</p>
-                                    </div>
-                                )}
-                            </div>
+                            <span className={`text-[9px] font-black uppercase ${req.status === 'Accept' ? 'text-emerald-500' : req.status === 'Reject' ? 'text-rose-500' : 'text-yellow-600'}`}>
+                                {req.status === 'Accept' ? 'Approved' : req.status === 'Reject' ? 'Rejected' : 'Pending'}
+                            </span>
                         </div>
                     </div>
+                ))}
+            </div>
+        </div>
+    </div>
+
+    {/* --- Section: Day Off Requests (4 Columns) --- */}
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between bg-white">
+            <h3 className="text-[12px] font-black text-gray-800 uppercase tracking-widest">ຄຳຮ້ອງຂໍລາພັກ ({dayOffs.length})</h3>
+            <select 
+                className="pl-2 pr-7 py-1 bg-gray-50 border-none rounded text-[10px] font-bold text-gray-500 focus:ring-1 focus:ring-blue-500/20"
+                onChange={(e) => setLeaveTypeFilter(e.target.value)}
+            >
+                <option value="ALL">ທຸກປະເພດ</option>
+                <option value="HALF_DAY">ເຄິ່ງວັນ</option>
+                <option value="FULL_DAY">ເຕັມວັນ</option>
+            </select>
+        </div>
+
+        <div className="p-3 bg-[#FBFBFC]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {dayOffs
+                    .filter(d => (leaveTypeFilter === 'ALL' || d.day_off_type === leaveTypeFilter))
+                    .slice(0, 12).map((dayOff) => (
+                    <div key={dayOff._id} className="group bg-white border border-gray-50 rounded-lg p-3 hover:border-indigo-200 transition-all shadow-sm">
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-[12px] font-bold text-gray-800 truncate">{dayOff.user_id?.first_name_en}</h4>
+                            <span className="text-[9px] font-black px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded">
+                                {dayOff.date_off_number} ວັນ
+                            </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1.5 text-[9px] text-gray-400 mb-2">
+                            <Calendar className="w-2.5 h-2.5" />
+                            <span className="font-bold">{moment(dayOff.start_date_time).format('DD/MM')}-{moment(dayOff.end_date_time).format('DD/MM')}</span>
+                        </div>
+
+                        <p className="text-[10px] text-gray-400 truncate mb-2 pb-2 border-b border-gray-50">{dayOff.title}</p>
+                        
+                        <div className="flex justify-between items-center">
+                            <span className={`text-[8px] font-black uppercase flex items-center gap-1 ${dayOff.status === 'Accepted' ? 'text-emerald-500' : 'text-yellow-500'}`}>
+                                <span className={`w-1 h-1 rounded-full ${dayOff.status === 'Accepted' ? 'bg-emerald-500' : 'bg-yellow-500 animate-pulse'}`}></span>
+                                {dayOff.status === 'Accepted' ? 'Approved' : 'Pending'}
+                            </span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+</div>
                 )}
 
                 {/* ຂໍ້ມູນສະຫຼຸບທີ່ຢູ່ລຸ່ມ */}
