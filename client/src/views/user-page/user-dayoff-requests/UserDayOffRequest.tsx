@@ -330,9 +330,8 @@ const UserDayOffRequest: React.FC<Props> = ({
           icon: 'success',
           title: 'ຍົກເລິກສຳເລັດ!',
           confirmButtonText: 'ຕົກລົງ',
-          confirmButtonColor: '#10b981',
           timer: 2000,
-          timerProgressBar: true
+          showConfirmButton: false,
         });
 
         refreshRequests();
@@ -340,7 +339,7 @@ const UserDayOffRequest: React.FC<Props> = ({
       } catch (error: any) {
         console.error('Delete error:', error);
         Swal.close();
-        
+
         await Swal.fire({
           icon: 'error',
           title: 'ເກີດຂໍ້ຜິດພາດ',
@@ -357,9 +356,9 @@ const UserDayOffRequest: React.FC<Props> = ({
 
   return (
     <div style={containerStyle}>
-      <Section title="🏖 ຂໍ້ມູນ ຄຳຂໍລາພັກ">
+      <Section title="ຂໍ້ມູນ ຄຳຂໍລາພັກ">
         {/* Filter Section */}
-        <div style={{ display: "flex", justifyContent: "space-between", width: "100%"}}>
+        <div style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
           <div style={filterContainerStyle}>
             <div style={filterGroupStyle}>
               <label className="block text-xs font-semibold text-[#6B7280] mb-1 uppercase">ສະຖານະ</label>

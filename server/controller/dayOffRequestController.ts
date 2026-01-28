@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import DayOffRequestModel from "../model/dayOffRequestModel.js";
 import User from "../model/userModel.js";
-import mongoose from "mongoose";
 
 /**
  * ======================================================

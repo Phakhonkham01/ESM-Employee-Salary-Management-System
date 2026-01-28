@@ -184,18 +184,16 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
     return matchingSupervisor || null
   }, [supervisors, loggedUser?.department_id])
 
-  /* =====================
-     Select supervisor (edit mode uses original if available)
-  ===================== */
   const selectedSupervisor = useMemo(() => {
-    // In edit mode keep original supervisor if still exists
+    // First check if we have the original supervisor from requestData
     if (isEditMode && requestData?.supervisor_id) {
       const originalSupervisor = supervisors.find(s => s._id === requestData.supervisor_id)
-      return originalSupervisor || null
+      if (originalSupervisor) {
+        return originalSupervisor
+      }
     }
 
-    // Only allow supervisor from same department
-    return userSupervisor || null
+    return userSupervisor
   }, [isEditMode, requestData?.supervisor_id, supervisors, userSupervisor])
 
 
@@ -353,8 +351,9 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
           icon: 'success',
           title: 'Success',
           text: 'ແກ້ໄຂຄຳຂໍມື້ພັກສຳເລັດ',
-          confirmButtonColor: '#2563eb',
           timer: 2000,
+          showConfirmButton: false,
+
         })
       } else {
         // Create new request
@@ -363,8 +362,9 @@ const DayOffForm = ({ open, onClose, requestData, onSuccess }: Props) => {
           icon: 'success',
           title: 'Success',
           text: 'ສົ່ງຄຳຂໍມື້ພັກສຳເລັດ',
-          confirmButtonColor: '#2563eb',
           timer: 2000,
+          showConfirmButton: false,
+
         })
       }
 

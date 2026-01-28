@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { FaPlus, FaTimes, FaCheck, FaEdit, FaTrash, FaEye, FaFilePdf } from "react-icons/fa"
 import { getAllUsers, updateUser } from '../../services/Create_user/api'
-import { createAttendanceSummary } from '../../services/Attendance/api'
 import type { UserData } from '../../services/Create_user/api'
 import { getAllDepartments, type DepartmentData } from '../../services/departments/api'
 import {
@@ -425,21 +424,6 @@ const DayoffRequests: React.FC = () => {
             (typeof targetRequest.employee_id === 'string'
               ? targetRequest.employee_id
               : targetRequest.employee_id?._id)
-
-        if (userId) {
-          try {
-            await createAttendanceSummary({
-              user_id: userId,
-              year,
-              month,
-              leave_days: targetRequest.date_off_number || 0,
-              ot_hours: 0,
-              attendance_days: 0,
-            })
-          } catch (err) {
-            console.error('Attendance summary error:', err)
-          }
-        }
       }
 
       await loadDayOffRequests()
@@ -563,7 +547,7 @@ const DayoffRequests: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-gray-900">🏖 ຂໍ້ມູນການລາພັກວຽກ</h1>
+            <h1 className="text-3xl font-bold text-gray-900">ຂໍ້ມູນການລາພັກວຽກ</h1>
           </div>
           <div className="flex items-center gap-3">
             <button

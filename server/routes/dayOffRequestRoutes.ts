@@ -7,7 +7,6 @@ import {
   updateDayOffRequestStatus,
   updateDayOffRequest,
   deleteDayOffRequest,
-  getDayOffRequestsForSupervisorDashboard, // เพิ่ม function ใหม่
 } from "../controller/dayOffRequestController.js";
 
 const router = express.Router();
@@ -22,9 +21,6 @@ router.get("/allusers", getDayOffRequestsAllUser);
 
 // GET /api/day-off-requests/user/:userId
 router.get("/user/:userId", getDayOffRequestsByUser);
-
-// GET /api/day-off-requests/supervisor-dashboard/:supervisorId
-router.get("/supervisor-dashboard/:supervisorId", getDayOffRequestsForSupervisorDashboard);
 
 // PATCH /api/day-off-requests/:id/status
 router.patch("/:id/status", updateDayOffRequestStatus);

@@ -235,7 +235,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
           <div className="grid grid-cols-2 gap-6">
             <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                ພະແໜກ *
+                ພະແນກ
+                <span className="ml-1 text-rose-400 font-semibold"> *</span>
                 {formErrors.department_id && (
                   <span className="text-red-500 text-sm ml-2">{formErrors.department_id}</span>
                 )}
@@ -270,7 +271,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
 
             <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Employee *
+                ພະນັກງານ
+                <span className="ml-1 text-rose-400 font-semibold"> *</span>
                 {formErrors.employee_id && (
                   <span className="text-red-500 text-sm ml-2">{formErrors.employee_id}</span>
                 )}
@@ -303,7 +305,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
 
             <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Supervisor *
+                ຫົວໜ້າ
+                <span className="ml-1 text-rose-400 font-semibold"> *</span>
                 {formErrors.supervisor_id && (
                   <span className="text-red-500 text-sm ml-2">{formErrors.supervisor_id}</span>
                 )}
@@ -322,7 +325,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                 <option value="">Select Supervisor</option>
                 {supervisors.map(user => (
                   <option key={user._id} value={user._id}>
-                    {user.first_name_en} {user.last_name_en}
+                    {user.first_name_en} {user.last_name_en} {user.department_id ? `- ${user.department_id.map((dept: any) => dept.department_name).join(', ')}` : ''}
                   </option>
                 ))}
               </select>
@@ -334,7 +337,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Reason *
+              ເລືອງ
+              <span className="ml-1 text-rose-400 font-semibold"> *</span>
               {formErrors.title && (
                 <span className="text-red-500 text-sm ml-2">{formErrors.title}</span>
               )}
@@ -355,7 +359,10 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Day Off Type *</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              ປະເພດລາພັກ
+              <span className="ml-1 text-rose-400 font-semibold"> *</span>
+            </label>
             <select
               value={formData.day_off_type}
               onChange={(e) => {
@@ -378,14 +385,17 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
 
           {formData.day_off_type === 'HALF_DAY' && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Period *</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                ຊ່ວງເວລາ
+                <span className="ml-1 text-rose-400 font-semibold"> *</span>
+              </label>
               <select
                 value={halfDayPeriod}
                 onChange={(e) => setHalfDayPeriod(e.target.value as 'MORNING' | 'AFTERNOON')}
                 className="w-full h-[50px] px-3 py-2 border border-none rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                <option value="MORNING">Morning (08:30 - 12:00)</option>
-                <option value="AFTERNOON">Afternoon (13:30 - 17:00)</option>
+                <option value="MORNING">ຊ່ວງເຊົ້າ (08:30 - 12:00)</option>
+                <option value="AFTERNOON">ຊ່ວງບ່າຍ (13:30 - 17:00)</option>
               </select>
             </div>
           )}
@@ -394,7 +404,9 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Start Date *
+                  ວັນທິ່ເລີ່ມ
+                  <span className="ml-1 text-rose-400 font-semibold"> *</span>
+
                   {formErrors.start_date && (
                     <span className="text-red-500 text-sm ml-2">{formErrors.start_date}</span>
                   )}
@@ -415,12 +427,14 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                   placeholderText="Select date"
                   minDate={minDate}
                   maxDate={maxDate}
-                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.start_date ? 'border-red-500' : 'border-gray-300'} rounded-sm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.department_id ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  End Date *
+                  ຮອດວັນທີ່
+                  <span className="ml-1 text-rose-400 font-semibold"> *</span>
+
                   {formErrors.end_date && (
                     <span className="text-red-500 text-sm ml-2">{formErrors.end_date}</span>
                   )}
@@ -444,7 +458,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                   placeholderText="Select date"
                   minDate={startDate ?? minDate}
                   maxDate={maxDate}
-                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.end_date || formErrors.date_range ? 'border-red-500' : 'border-gray-300'} rounded-sm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.department_id ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
               </div>
             </div>
@@ -452,7 +466,8 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
             <>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Date *
+                  ວັນທິ່
+                  <span className="ml-1 text-rose-400 font-semibold">*</span>
                   {formErrors.start_date && (
                     <span className="text-red-500 text-sm ml-2">{formErrors.start_date}</span>
                   )}
@@ -470,7 +485,7 @@ const AddFormRequest: React.FC<AddFormRequestProps> = ({
                   placeholderText="Select date"
                   minDate={minDate}
                   maxDate={maxDate}
-                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.start_date ? 'border-red-500' : 'border-gray-300'} rounded-sm bg-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                  className={`w-full h-[50px] px-3 py-2 border ${formErrors.department_id ? 'border-red-500' : 'border-none'} rounded-sm bg-[#F2F2F2] text-sm focus:outline-none focus:ring-1 focus:ring-blue-500`}
                 />
               </div>
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">

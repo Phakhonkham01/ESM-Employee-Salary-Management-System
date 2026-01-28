@@ -10,7 +10,6 @@ import positionRoutes from  "./routes/positionRoute.js";
 import requestRoutes from "./routes/requestRoutes.js";
 import dayOffRequestRoutes from "./routes/dayOffRequestRoutes.js";
 import salaryRoutes from "./routes/salaryRoutes.js";
-import AttendanceSummaryRoutes from "./routes/attendanceSummary.js";
 import emailRoutes from './routes/emailRoutest.js'
 dotenv.config();
 
@@ -23,7 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 const PORT: number = parseInt(process.env.PORT || "8000", 10);
-const MONGOURL: string = process.env.MONGO_URL || process.env.MONGODB_URI || "mongodb://localhost:27017/esm_database";
+const MONGOURL: string = process.env.MONGO_URL || process.env.MONGODB_URI || "mongodb://192.168.1.199:27017/esm_database";
 
 // Database connection
 mongoose
@@ -51,5 +50,4 @@ app.use("/api/positions", positionRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/day-off-requests", dayOffRequestRoutes);
 app.use("/api/salaries", salaryRoutes);
-app.use("/api/attendance", AttendanceSummaryRoutes);
 app.use('/api/salary', emailRoutes); // Email route: POST /api/salary/send-email
