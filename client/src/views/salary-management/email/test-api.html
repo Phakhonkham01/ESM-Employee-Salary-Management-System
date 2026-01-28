@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+    <body>
+        <button onclick="testAPI()">Test API Endpoints</button>
+        <div id="result"></div>
+
+        <script>
+            async function testAPI() {
+                const endpoints = [
+                    './send-salary-email/send-email.ts',
+                    './send-salary-email/sendSalaryEmail.ts',
+                    '/send-salary-email',
+                ]
+
+                const resultDiv = document.getElementById('result')
+                resultDiv.innerHTML = '<p>Testing endpoints...</p>'
+
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                test: true,
+                                to: 'test@example.com',
+                            }),
+                        })
+
+                        const status = response.status
+                        let data
+                        try {
+                            data = await response.json()
+                        } catch {
+                            data = { text: await response.text() }
+                        }
+
+                        resultDiv.innerHTML += `
+                        <div style="margin: 10px 0; padding: 10px; border: 1px solid ${status === 200 ? 'green' : 'red'};">
+                            <strong>${endpoint}</strong><br>
+                            Status: ${status}<br>
+                            Response: ${JSON.stringify(data).substring(0, 200)}
+                        </div>
+                    `
+                    } catch (error) {
+                        resultDiv.innerHTML += `
+                        <div style="margin: 10px 0; padding: 10px; border: 1px solid red;">
+                            <strong>${endpoint}</strong><br>
+                            ERROR: ${error.message}
+                        </div>
+                    `
+                    }
+                }
+            }
+        </script>
+    </body>
+</html>
